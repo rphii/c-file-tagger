@@ -2,11 +2,6 @@
 
 # c-file-tagger
 
-<figure class="video_container">
-    <iframe src="doc/8mb.video-4fY-BLFhXwjh.mp4" frameborder="0" allowfullscreen="true">
-    </iframe>
-</figure>
-
 *\*The command `wp` is just a bash script that sets my background from a list of files.*
 
 ## Install
