@@ -12,7 +12,7 @@ OPTIMIZE := #-march=native -O3 -fdevirtualize-at-ltrans -fipa-pta -fno-semantic-
 		   #-fprofile-partial-training -fauto-profile -fbranch-probabilities \
 
 
-GIT_VERSION := "$(shell git describe --abbrev=4 --dirty --always --tags)"
+GIT_VERSION := "$(shell git describe --abbrev=4 --dirty --always --tags 2>/dev/null)"
 CC      := gcc
 CFLAGS  := -Wall -Wextra -Wimplicit -Wfatal-errors -std=gnu99 \
 		   -Wno-unused-parameter \
@@ -87,18 +87,21 @@ uninstall:
 
 
 # link all .o files
-$(TARGET): $(O_FILES) | $(VERSION_FILE) $(TRG_DIR)
+$(TARGET): $(O_FILES) | $(TRG_DIR)
 	@echo link    : $@ #$^
 	@$(CC) $(LDFLAGS) -o $@ $^
 
 # depend include files
 -include $(D_FILES)
 
-$(VERSION_FILE):
+$(VERSION_FILE): Makefile | $(OBJ_DIR)
+ifneq ($(GIT_VERSION),"")
+	@echo Version: [$(GIT_VERSION)]
 	@echo "\"$(GIT_VERSION)\"" > $(VERSION_FILE)
+endif
 
 # compile all .c Files
-$(OBJ_DIR)/%.o: $(SRC_DIR)/%$(CSUFFIX) Makefile | $(OBJ_DIR)
+$(OBJ_DIR)/%.o: $(SRC_DIR)/%$(CSUFFIX) Makefile | $(OBJ_DIR) $(VERSION_FILE)
 	@echo compile : $<
 	@$(CC) $(CFLAGS) -c -MMD -o $@ $<
 
@@ -109,7 +112,6 @@ $(OBJ_DIR):
 # target dir
 $(TRG_DIR):
 	@mkdir $@
-
 
 #### CLEANING ####
 ifeq ($(OS),Windows_NT)
