@@ -14,6 +14,20 @@ int trtag_cmp(Tag *a, Tag *b) {
     return result;
 };
 
+size_t ttag_hash(Tag tag) {
+    size_t result = str_hash(&tag.filename);
+    //printff("tag:hash:%.*s=%zu", STR_F(&tag->filename), result);
+    return result;
+};
+
+int ttag_cmp(Tag a, Tag b) {
+    int result = str_cmp(&a.filename, &b.filename);
+    //printff("tag:cmp:%.*s<=>%.*s=%u", STR_F(&a->filename), STR_F(&b->filename), result);
+    return result;
+};
+
+LUTD_IMPLEMENT(TTag, ttag, Tag, BY_VAL, ttag_hash, ttag_cmp, 0);
+
 LUTD_IMPLEMENT(TrTag, trtag, Tag, BY_REF, trtag_hash, trtag_cmp, tag_free);
 LUTD_IMPLEMENT(TrrTag, trrtag, Tag, BY_REF, trtag_hash, trtag_cmp, 0);
 //LUTD_IMPLEMENT(TrrTagRef, trrtagref, Tag, BY_REF, trtag_hash, trtag_cmp, 0);
