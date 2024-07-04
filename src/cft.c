@@ -323,7 +323,7 @@ ErrDecl cft_find_fmt(Cft *cft, Str *out, Str *find_any, Str *find_and, Str *find
     int err = 0;
     TrrTag found = {0};
     VrTag results = {0};
-    TRY(trrtag_init(&found, 4), ERR_LUTD_INIT);
+    TRY(trrtag_init(&found, 10), ERR_LUTD_INIT); // TODO switch
     if(str_length(find_any)) {
         TRYC(cft_find_any(cft, &found, find_any));
     }
