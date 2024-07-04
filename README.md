@@ -47,7 +47,7 @@ the other options can be listed with:
 
 ## Adding Tags
 
-By default it looks for a file in `$HOME/.config/tags.cft`.
+By default it looks for a file in `$HOME/.config/cft/tags.cft`.
 
 The file format is basically a `.csv`. The first entry is a file name (or anything you
 want, basically, doesn't have to be a file) and the rest are all tags associated with said file.
