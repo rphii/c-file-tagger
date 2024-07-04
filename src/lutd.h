@@ -76,6 +76,11 @@ typedef enum {
 #define LUTD_REF_BY_REF
 #define LUTD_REF(M)       LUTD_REF_##M
 
+#define LUTD_IS_BY_REF_BY_REF 1
+#define LUTD_IS_BY_REF_BY_VAL 0
+#define LUTD_IS_BY_REF(M)     LUTD_IS_BY_REF_##M
+
+
 #define LUTD_INCLUDE(N, A, T, M) \
     typedef struct N##Bucket { \
         size_t cap; \
@@ -244,7 +249,7 @@ typedef enum {
                 /* NOTE this is ugly, provide a way to give a clear function for sub items... */ \
                 if(F != 0) LUTD_TYPE_FREE(F, &l->buckets[i].items[j], T); \
             } \
-            l->buckets[i].cap = 0; \
+            /*l->buckets[i].cap = 0;*/ \
             l->buckets[i].len = 0; \
         } \
         return 0;   \
@@ -429,7 +434,22 @@ typedef enum {
         } \
         if(exists) { \
             size_t len = l->buckets[hash].len; \
-            memmove(&l->buckets[hash].items[exist_index], &l->buckets[hash].items[1 + exist_index], (len - exist_index - 1) * sizeof(T)); \
+            if(len - exist_index > 1) { \
+                if(F != 0) { \
+                    LUTD_TYPE_FREE(F, &l->buckets[hash].items[exist_index], T); \
+                } \
+                if(LUTD_IS_BY_REF(M)) { \
+                    /* preserve current index so we don't have to free it */ \
+                    T *temp = LUTD_REF(M) l->buckets[hash].items[exist_index]; \
+                    memmove(&l->buckets[hash].items[exist_index], &l->buckets[hash].items[1 + exist_index], sizeof(*l->buckets->items) * (len - exist_index - 1)); \
+                    memmove(&l->buckets[hash].count[exist_index], &l->buckets[hash].count[1 + exist_index], sizeof(size_t) * (len - exist_index - 1)); \
+                    memcpy(&l->buckets[hash].items[len - 1], &temp, sizeof(*l->buckets->items)); \
+                    /* TODO do I also have to zero this temp ?? */ \
+                } else { \
+                    memmove(&l->buckets[hash].items[exist_index], &l->buckets[hash].items[1 + exist_index], sizeof(*l->buckets->items) * (len - exist_index - 1)); \
+                    memmove(&l->buckets[hash].count[exist_index], &l->buckets[hash].count[1 + exist_index], sizeof(size_t) * (len - exist_index - 1)); \
+                } \
+            } \
             l->buckets[hash].len--; \
         } \
         return 0;   \

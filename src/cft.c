@@ -205,7 +205,9 @@ ErrDecl cft_find_and(Cft *cft, TrrTag *found, Str *find) { //{{{
     ASSERT_ARG(cft);
     ASSERT_ARG(found);
     ASSERT_ARG(find);
+    int err = 0;
     TrrTag temp = {0};
+    TrrTag temp_swap = {0};
     TRY(trrtag_init(&temp, found->width), ERR_LUTD_INIT);
     /* search... */
     Str tag = {0};
@@ -237,16 +239,20 @@ ErrDecl cft_find_and(Cft *cft, TrrTag *found, Str *find) { //{{{
             }
         }
         if(iteration) {
-            TrrTag temp2 = *found;
+            temp_swap = *found;
             trrtag_clear(found);
             *found = temp;
-            temp = temp2;
+            temp = temp_swap;
+        } else {
+            //temp_swap =
         }
         ++iteration;
     }
-    return 0;
+clean:
+    trrtag_free(&temp_swap);
+    return err;
 error:
-    return -1;
+    ERR_CLEAN;
 } //}}}
 
 ErrDecl cft_find_not(Cft *cft, TrrTag *found, Str *find) { //{{{
@@ -256,6 +262,7 @@ ErrDecl cft_find_not(Cft *cft, TrrTag *found, Str *find) { //{{{
     /* search... */
     Str tag = {0};
     if(trrtag_empty(found)) {
+        /* add all tags! */
         for(size_t ii = 0; ii < (1ULL << (cft->tags.width - 1)); ++ii) {
             for(size_t jj = 0; jj < cft->tags.buckets[ii].len; ++jj) {
                 Tag *hit = cft->tags.buckets[ii].items[jj];
@@ -315,7 +322,8 @@ ErrDecl cft_find_fmt(Cft *cft, Str *out, Str *find_any, Str *find_and, Str *find
     ASSERT_ARG(find_not);
     int err = 0;
     TrrTag found = {0};
-    TRY(trrtag_init(&found, 10), ERR_LUTD_INIT);
+    VrTag results = {0};
+    TRY(trrtag_init(&found, 4), ERR_LUTD_INIT);
     if(str_length(find_any)) {
         TRYC(cft_find_any(cft, &found, find_any));
     }
@@ -325,7 +333,6 @@ ErrDecl cft_find_fmt(Cft *cft, Str *out, Str *find_any, Str *find_and, Str *find
     if(str_length(find_not)) {
         TRYC(cft_find_not(cft, &found, find_not));
     }
-    VrTag results = {0};
     TRY(trrtag_dump(&found, &results.items, 0, &results.last), ERR_LUTD_DUMP);
     vrtag_sort(&results);
     for(size_t i = 0; i < vrtag_length(&results); ++i) {
@@ -334,6 +341,8 @@ ErrDecl cft_find_fmt(Cft *cft, Str *out, Str *find_any, Str *find_and, Str *find
         //printf("%.*s\n", STR_F(&file->filename));
     }
 clean:
+    trrtag_free(&found);
+    vrtag_free(&results);
     return err;
 error:
     ERR_CLEAN;
