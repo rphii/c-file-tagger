@@ -47,11 +47,15 @@ the other options can be listed with:
 
 ## Adding Tags
 
-The current version is hard-programmed to look for a file in `/home/hp/.config/tags.cft`.
-Yes, that is suboptimal, and I should change that asap.
+By default it looks for a file in `$HOME/.config/tags.cft`.
 
-Either way, the file format is basically a `.csv`. The first entry is a file name (or anything you
+The file format is basically a `.csv`. The first entry is a file name (or anything you
 want, basically, doesn't have to be a file) and the rest are all tags associated with said file.
+
+It is possible to specify the use of a different file:
+
+    cft --file some/other/file
+    cft -f some/other/file
 
 ## About Tags
 
