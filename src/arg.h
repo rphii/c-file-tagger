@@ -67,7 +67,8 @@ typedef enum {
     ARG_AND,
     ARG_NOT,
     ARG_LIST,
-    ARG_EXISTS, // show either ONLY existing files, or NOT EXISTING files, if specified!
+    ARG_FILE,
+    ARG_EXISTS, // show either ONLY existing files, or NOT EXISTING files, if specified! -> nah, make like find. --type ?!
     /* args above */
     ARG__COUNT
 } ArgList;
@@ -82,12 +83,15 @@ typedef struct Arg {
         VrStr tags;
         Str extensions; // TODO: move into sub-struct
         SpecifyList tag;
-        SpecifyList file;
+        Str file;
         bool list;
         Str find_any;
         Str find_and;
         Str find_not;
     } parsed;
+    struct {
+        Str file;
+    } defaults;
     struct {
         int tiny; /* tiny, because short is reserved */
         int main;

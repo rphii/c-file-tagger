@@ -283,3 +283,60 @@ error:
     return -1;
 } //}}}
 
+ErrDecl cft_list_fmt(Cft *cft, Str *out) { //{{{
+    ASSERT_ARG(cft);
+    ASSERT_ARG(out);
+    int err = 0;
+    VrTagRef all = {0};
+    size_t *counts = 0;
+    /* search */
+    TRY(trrtagref_dump(&cft->all, &all.items, &counts, &all.last), ERR_LUTD_DUMP);
+    vrtagref_sort(&all, counts);
+    TRYC(str_fmt(out, "Total Tags: %zu\n", vrtagref_length(&all)));
+    //printf("TOTAL TAGS: %zu\n", vrtagref_length(&all));
+    for(size_t i = 0; i < vrtagref_length(&all); ++i) {
+        TagRef *tag = vrtagref_get_at(&all, i);
+        //printf("  [%zu] %.*s (%zu)\n", i, STR_F(&tag->tag), counts[i]);
+        TRYC(str_fmt(out, "  [%zu] %.*s (%zu)\n", i, STR_F(&tag->tag), counts[i]));
+    }
+clean:
+    vrtagref_free(&all);
+    free(counts);
+    return err;
+error:
+    ERR_CLEAN;
+} //}}}
+
+ErrDecl cft_find_fmt(Cft *cft, Str *out, Str *find_any, Str *find_and, Str *find_not) { //{{{
+    ASSERT_ARG(cft);
+    ASSERT_ARG(out);
+    ASSERT_ARG(find_any);
+    ASSERT_ARG(find_and);
+    ASSERT_ARG(find_not);
+    int err = 0;
+    TrrTag found = {0};
+    TRY(trrtag_init(&found, 10), ERR_LUTD_INIT);
+    if(str_length(find_any)) {
+        TRYC(cft_find_any(cft, &found, find_any));
+    }
+    if(str_length(find_and)) {
+        TRYC(cft_find_and(cft, &found, find_and));
+    }
+    if(str_length(find_not)) {
+        TRYC(cft_find_not(cft, &found, find_not));
+    }
+    VrTag results = {0};
+    TRY(trrtag_dump(&found, &results.items, 0, &results.last), ERR_LUTD_DUMP);
+    vrtag_sort(&results);
+    for(size_t i = 0; i < vrtag_length(&results); ++i) {
+        Tag *file = vrtag_get_at(&results, i);
+        TRYC(str_fmt(out, "%.*s\n", STR_F(&file->filename)));
+        //printf("%.*s\n", STR_F(&file->filename));
+    }
+clean:
+    return err;
+error:
+    ERR_CLEAN;
+
+} //}}}
+

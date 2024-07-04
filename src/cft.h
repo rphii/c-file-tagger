@@ -38,6 +38,12 @@ ErrDecl cft_find_and(Cft *cft, TrrTag *found, Str *find);
 #define ERR_cft_find_not(x, y, find, ...) "failed finding 'not' for tags '%.*s'", STR_F(find)
 ErrDecl cft_find_not(Cft *cft, TrrTag *found, Str *find);
 
+#define ERR_cft_list_fmt(...) "failed formatting list"
+ErrDecl cft_list_fmt(Cft *cft, Str *out);
+
+#define ERR_cft_find_fmt(...) "failed formatting findings"
+ErrDecl cft_find_fmt(Cft *cft, Str *out, Str *find_any, Str *find_and, Str *find_not);
+
 void cft_free(Cft *cft);
 
 #define CFT_H

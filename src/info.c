@@ -70,7 +70,7 @@ void info_handle_prev(InfoList id) {
 }
 
 void info_check(InfoList id, bool status) {
-    InfoTypeList now = info_query_type(id);
+    //InfoTypeList now = info_query_type(id);
     bool output = true;
     if((info_query_disabled(id) & INFO_LEVEL_TEXT)) output = false;
     //platform_trace();
