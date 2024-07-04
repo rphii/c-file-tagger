@@ -1,0 +1,8 @@
+*.o
+*.d
+src/cft
+*.txt
+data
+*.vim
+*.swp
+
