@@ -23,7 +23,7 @@ List files associated with either `sky` or `cloud`:
     cft --any sky,cloud
     cft -O sky,cloud
 
-List files associated with either `sky` and `cloud`:
+List files associated with `sky` and `cloud`:
 
     cft --and sky,cloud
     cft -A sky,cloud
@@ -51,7 +51,7 @@ The current version is hard-programmed to look for a file in `/home/hp/.config/t
 Yes, that is suboptimal, and I should change that asap.
 
 Either way, the file format is basically a `.csv`. The first entry is a file name (or anything you
-want, basically, doesn't have to be a file) and the rest are all tags. Associated with said file.
+want, basically, doesn't have to be a file) and the rest are all tags associated with said file.
 
 ## About Tags
 
