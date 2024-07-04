@@ -2,7 +2,7 @@
 
 # c-file-tagger
 
-[Example](./doc/8mb.video-4fY-BLFhXwjh.mp4)
+![Demonstration](./doc/8mb.video-4fY-BLFhXwjh.mp4)
 
 *The command `wp` is just a bash script that sets my background from a list of files.*
 
