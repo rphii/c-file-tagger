@@ -5,6 +5,8 @@
 #include "str.h"
 #include "vector.h"
 
+#include <pwd.h>
+
 /* arguments */
 
 static const char *static_arg[][2] = {
@@ -22,6 +24,7 @@ static const char *static_arg[][2] = {
     [ARG_NOT] = {"-N", "--not"},
     [ARG_LIST] = {0, "--list"},
     [ARG_EXISTS] = {0, "--exists"},
+    [ARG_FILE] = {"-f", "--file"},
 };
 
 const char *arg_str(ArgList id)
@@ -41,9 +44,10 @@ static const char *static_desc[] = {
     [ARG_MOVE] = "move tags",
     [ARG_ANY] = "list files with any tags",
     [ARG_AND] = "list files having multiple tags",
-    [ARG_NOT] = "list files not having tags (followed by --any or --and)",
+    [ARG_NOT] = "list files not having tags",
     [ARG_LIST] = "list all arguments",
     [ARG_EXISTS] = "show either only existing or not existing files, if specified",
+    [ARG_FILE] = "specify file to be parsed.",
 };
 
 static const char static_version[] = ""
@@ -63,6 +67,7 @@ static const Specify static_specify[ARG__COUNT] = {
     [ARG_AND] = SPECIFY(SPECIFY_LIST),
     [ARG_NOT] = SPECIFY(SPECIFY_LIST),
     [ARG_LIST] = {0},
+    [ARG_FILE] = SPECIFY(SPECIFY_STRING),
 };
 
 static const char *static_specify_str[] = {
@@ -181,6 +186,12 @@ ErrDeclStatic arg_static_execute(Arg *arg, ArgList id)
                 arg->exit_early = true;
             }
         } break;
+        case ARG_FILE: {
+            if(!str_length(&arg->parsed.file)) {
+                printf("%*s" F("%s", BOLD) "=STRING is missing\n", arg->tabs.tiny, "", static_arg[id][1]); // TODO:this is stupid (see below...)
+                arg->exit_early = true;
+            }
+        } break;
         //case ARG_TAG: { spec = &arg->parsed.tag; } break;
         default: THROW(ERR_UNHANDLED_ID" (%d)", id);
     }
@@ -195,11 +206,11 @@ ErrDeclStatic arg_static_execute(Arg *arg, ArgList id)
                     if(spec2->ids[i]) ++n;
                 }
                 printf("%*s" F("%s", BOLD) " (one of %zu below)\n", arg->tabs.tiny, "", static_arg[id][1], n);
-                bool first = true;
+                //bool first = true;
                 for(size_t i = 1; i < spec2->len; i++) {
                     SpecifyList h = spec2->ids[i];
                     if(!h) continue;
-                    first = false;
+                    //first = false;
                     printf("%*s %s%s\n", arg->tabs.main, "", static_specify_str[h], i == 1 ? F(" (default)", IT) : "");
                 }
             } break;
@@ -242,6 +253,9 @@ ErrDeclStatic static_arg_parse_spec(Arg *args, ArgList arg, Str *argY, Specify s
         case ARG_ANY: { to_set = &args->parsed.find_any; } break;
         case ARG_AND: { to_set = &args->parsed.find_and; } break;
         case ARG_NOT: { to_set = &args->parsed.find_not; } break;
+        case ARG_FILE: {
+            to_set = &args->parsed.file;
+        } break;
         //case ARG_TAG: { to_set = &args->parsed.tag; args->add_to = &args->parsed.tags; } break;
         default: THROW("unhandled arg id (%u)", arg);
     }
@@ -309,6 +323,11 @@ int arg_parse(Arg *args, int argc, const char **argv) /* {{{ */
     args->tabs.ext = 34;
     args->tabs.spec = args->tabs.ext + 2;
     args->tabs.max = 80;
+
+    /* TODO add this into a function */
+    struct passwd *pw = getpwuid(getuid());
+    TRYC(str_fmt(&args->defaults.file, "%s/.config/cft/tags.cft", pw->pw_dir));
+    TRYC(str_fmt(&args->parsed.file, "%.*s", STR_F(&args->defaults.file)));
     //arg_help(args);
     /* actually parse */
     for(int i = 1; i < argc; ++i) {
@@ -427,13 +446,13 @@ void arg_help(Arg *arg) /* {{{ */
                         first = false;
                         if(j == 1) {
                             if(specify->ids[0] == SPECIFY_OPTION) {
-                                TRY(str_fmt(&ts, ""F(" (default)", IT)""), ERR_STR_FMT);
+                                TRYC(str_fmt(&ts, ""F(" (default)", IT)""));
                             } else if(specify->ids[0] == SPECIFY_OPTIONAL) {
-                                TRY(str_fmt(&ts, ""F(" (optional)", IT)""), ERR_STR_FMT);
+                                TRYC(str_fmt(&ts, ""F(" (optional)", IT)""));
                             } else if(specify->ids[0] == SPECIFY_LIST) {
-                                TRY(str_fmt(&ts, ""F(" (default)", IT)""), ERR_STR_FMT);
+                                TRYC(str_fmt(&ts, ""F(" (default)", IT)""));
                             } else if(specify->ids[0] == SPECIFY_NUMBER) {
-                                TRY(str_fmt(&ts, ""F(" (default)", IT)""), ERR_STR_FMT);
+                                TRYC(str_fmt(&ts, ""F(" (default)", IT)""));
                             } else {
                                 ABORT("!!! missing behavior hint !!!");
                             }
@@ -442,6 +461,13 @@ void arg_help(Arg *arg) /* {{{ */
                     tp = print_line(arg->tabs.max, arg->tabs.spec, 0, &ts);
                 }
             }
+        }
+        switch(i) {
+            case ARG_FILE: {
+                TRYC(str_fmt(&ts, "\n%.*s" F(" (default)", IT), STR_F(&arg->defaults.file)));
+                tp = print_line(arg->tabs.max, arg->tabs.spec, 0, &ts);
+            } break;
+            default: break;
         }
         printf("\n");
     }
@@ -458,6 +484,8 @@ void arg_free(Arg *arg)
     //str_free(&arg->entry);
     str_free(&arg->unknown);
     str_free(&arg->parsed.extensions);
+    str_free(&arg->parsed.file);
+    str_free(&arg->defaults.file);
     vrstr_free(&arg->parsed.files);
 }
 
