@@ -318,7 +318,6 @@ ErrDecl cft_list_fmt(Cft *cft, Str *out, VrStr *files) { //{{{
     }
     vrtagref_sort(&all, counts);
     TRYC(str_fmt(out, "Total Tags: %zu\n", vrtagref_length(&all)));
-    printff("decorate? %s", cft->options.decorate ? "TRUE" : "FALSE");
     //printf("TOTAL TAGS: %zu\n", vrtagref_length(&all));
     for(size_t i = 0; i < vrtagref_length(&all); ++i) {
         TagRef *tag = vrtagref_get_at(&all, i);
