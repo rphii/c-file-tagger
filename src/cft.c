@@ -308,14 +308,14 @@ ErrDecl cft_list_fmt(Cft *cft, Str *out, VrStr *files) { //{{{
     TrrTag filtered = {0};
     size_t *counts = 0;
     /* search */
-    if(vrstr_length(files)) {
-        //TRY(trrtag_init(&filtered, cft->tags.width), ERR_LUTD_INIT);
-        //for(size_t i = 0; i < vrstr_length(files); ++i) {
-        //    Str *file = vrstr_get_at(files, i);
-        //}
-    } else {
+    //if(vrstr_length(files)) {
+    //    //TRY(trrtag_init(&filtered, cft->tags.width), ERR_LUTD_INIT);
+    //    //for(size_t i = 0; i < vrstr_length(files); ++i) {
+    //    //    Str *file = vrstr_get_at(files, i);
+    //    //}
+    //} else {
         TRY(trrtagref_dump(&cft->all, &all.items, &counts, &all.last), ERR_LUTD_DUMP);
-    }
+    //}
     vrtagref_sort(&all, counts);
     TRYC(str_fmt(out, "Total Tags: %zu\n", vrtagref_length(&all)));
     //printf("TOTAL TAGS: %zu\n", vrtagref_length(&all));
