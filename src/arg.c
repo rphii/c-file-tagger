@@ -400,7 +400,9 @@ int arg_parse(Arg *args, int argc, const char **argv) /* {{{ */
     }
     /* postprocessing */
     if(args->parsed.list && !str_length(&args->parsed.find_and) && !str_length(&args->parsed.find_any) && !str_length(&args->parsed.find_not)) {
-        args->parsed.decorate = SPECIFY_OPTION_YES;
+        if(!args->parsed.decorate) {
+            args->parsed.decorate = SPECIFY_OPTION_YES;
+        }
     }
 #endif
     return 0;
