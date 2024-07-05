@@ -42,7 +42,7 @@ ErrDecl cft_find_not(Cft *cft, TrrTag *found, Str *find);
 ErrDecl cft_list_fmt(Cft *cft, Str *out);
 
 #define ERR_cft_find_fmt(...) "failed formatting findings"
-ErrDecl cft_find_fmt(Cft *cft, Str *out, Str *find_any, Str *find_and, Str *find_not);
+ErrDecl cft_find_fmt(Cft *cft, Str *out, Str *find_any, Str *find_and, Str *find_not, bool list_tags);
 
 void cft_free(Cft *cft);
 

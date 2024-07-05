@@ -94,7 +94,7 @@ $(TARGET): $(O_FILES) | $(TRG_DIR)
 # depend include files
 -include $(D_FILES)
 
-$(VERSION_FILE): Makefile | $(OBJ_DIR)
+$(VERSION_FILE): FORCE Makefile | $(OBJ_DIR)
 ifneq ($(GIT_VERSION),"")
 	@echo Version: [$(GIT_VERSION)]
 	@echo "\"$(GIT_VERSION)\"" > $(VERSION_FILE)
@@ -112,6 +112,8 @@ $(OBJ_DIR):
 # target dir
 $(TRG_DIR):
 	@mkdir $@
+
+FORCE: #leave empty
 
 #### CLEANING ####
 ifeq ($(OS),Windows_NT)

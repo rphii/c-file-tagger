@@ -20,18 +20,7 @@
 
 int main(int argc, const char **argv)
 {
-#if 0
-    char cwd[PATH_MAX];
-    if (getcwd(cwd, sizeof(cwd)) != NULL) {
-        printf("Current working dir: %s\n", cwd);
-    } else {
-        perror("getcwd() error");
-        return 1;
-    }
-#endif
-
     int err = 0;
-
     info_disable_all(INFO_LEVEL_ALL);
     //info_enable_all(INFO_LEVEL_ID | INFO_LEVEL_TEXT);
     TRY(platform_colorprint_init(), ERR_PLATFORM_COLORPRINT_INIT);
@@ -40,10 +29,6 @@ int main(int argc, const char **argv)
     Cft cft = {0};
     Str content = {0};
     Str ostream = {0};
-#if 1
-    //Str parse = STR("../data/test.txt");
-    //Str parse = STR("../data/tags.txt.bkp");
-    //Str parse = STR("/home/hp/.config/cft/tags.cft");
 
     TRY(arg_parse(&arg, argc, argv), ERR_ARG_PARSE);
     if(arg.exit_early) goto clean;
@@ -56,13 +41,6 @@ int main(int argc, const char **argv)
     TRYC(file_str_read(&arg.parsed.file, &content));
     TRYC(cft_parse(&cft, &content));
 
-    /* print all tags */
-    if(arg.parsed.list) {
-        TRYC(cft_list_fmt(&cft, &ostream));
-        printf("%.*s", STR_F(&ostream));
-        goto clean;
-    }
-
     /* reformat */
     if(0) {
         str_clear(&content);
@@ -71,11 +49,14 @@ int main(int argc, const char **argv)
         TRYC(file_str_write(&output, &content));
     }
 
-    /* test search */
-    TRYC(cft_find_fmt(&cft, &ostream, &arg.parsed.find_any, &arg.parsed.find_and, &arg.parsed.find_not));
+    /* print all tags */
+    TRYC(cft_find_fmt(&cft, &ostream, &arg.parsed.find_any, &arg.parsed.find_and, &arg.parsed.find_not, arg.parsed.list));
     printf("%.*s", STR_F(&ostream));
 
-#endif
+    if(!str_length(&ostream) && arg.parsed.list) {
+        TRYC(cft_list_fmt(&cft, &ostream));
+        printf("%.*s", STR_F(&ostream));
+    }
 
 clean:
     str_free(&ostream);
