@@ -38,6 +38,7 @@ int main(int argc, const char **argv)
 
     /* read specified file */
     TRYC(cft_init(&cft));
+    TRYC(cft_arg(&cft, &arg));
     TRYC(file_str_read(&arg.parsed.file, &content));
     TRYC(cft_parse(&cft, &content));
 
@@ -54,7 +55,7 @@ int main(int argc, const char **argv)
     printf("%.*s", STR_F(&ostream));
 
     if(!str_length(&ostream) && arg.parsed.list) {
-        TRYC(cft_list_fmt(&cft, &ostream));
+        TRYC(cft_list_fmt(&cft, &ostream, &arg.parsed.remains));
         printf("%.*s", STR_F(&ostream));
     }
 

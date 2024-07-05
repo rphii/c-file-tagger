@@ -4,15 +4,22 @@
 #include "vector.h"
 #include "lookup.h"
 #include "tag.h"
+#include "arg.h"
 
 typedef struct Cft {
     TrTag tags;
     TrTagRef reverse;
     TrrTagRef all;
+    struct {
+        bool decorate;
+    } options;
 } Cft;
 
 #define ERR_cft_init(...) "failed initializing c-file-tagger"
 ErrDecl cft_init(Cft *cft);
+
+#define ERR_cft_arg(...) "failed passing arguments to c-file-tagger"
+ErrDecl cft_arg(Cft *cft, Arg *arg);
 
 #define ERR_cft_add(x, filename, tag) "failed adding tag '%.*s' to file '%.*s' in c-file-tagger", STR_F(filename), STR_F(tag)
 ErrDecl cft_add(Cft *cft, const Str *filename, const Str *tag);
@@ -39,7 +46,7 @@ ErrDecl cft_find_and(Cft *cft, TrrTag *found, Str *find);
 ErrDecl cft_find_not(Cft *cft, TrrTag *found, Str *find);
 
 #define ERR_cft_list_fmt(...) "failed formatting list"
-ErrDecl cft_list_fmt(Cft *cft, Str *out);
+ErrDecl cft_list_fmt(Cft *cft, Str *out, VrStr *files);
 
 #define ERR_cft_find_fmt(...) "failed formatting findings"
 ErrDecl cft_find_fmt(Cft *cft, Str *out, Str *find_any, Str *find_and, Str *find_not, bool list_tags);

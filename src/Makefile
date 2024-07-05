@@ -12,14 +12,14 @@ OPTIMIZE := #-march=native -O3 -fdevirtualize-at-ltrans -fipa-pta -fno-semantic-
 		   #-fprofile-partial-training -fauto-profile -fbranch-probabilities \
 
 
-GIT_VERSION := "$(shell git describe --abbrev=4 --dirty --always --tags 2>/dev/null)"
+GIT_VERSION := "$(shell git describe --abbrev=6 --always --tags 2>/dev/null)"
 CC      := gcc
 CFLAGS  := -Wall -Wextra -Wimplicit -Wfatal-errors -std=gnu99 \
 		   -Wno-unused-parameter \
 		   -DPROC_COUNT=$(shell nproc --all) \
-		   -O2 -march=native -DNDEBUG \
-		   ##############\
 		   -rdynamic -Og -ggdb3 \
+		   ##############\
+		   -O2 -march=native -DNDEBUG \
 		   ${OPTIMIZE} \
 		   -O3 -march=native -DNDEBUG \
 		   -pg -rdynamic \
@@ -41,8 +41,8 @@ CFLAGS  := -Wall -Wextra -Wimplicit -Wfatal-errors -std=gnu99 \
 		   ###############
 LDFLAGS := \
 		   -lm \
-		   ##############\
 		   -fsanitize=address -rdynamic \
+		   ##############\
 		   ${OPTIMIZE} \
 		   -pg -rdynamic \
 		   -rdynamic -ggdb3 \

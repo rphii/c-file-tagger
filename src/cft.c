@@ -13,6 +13,15 @@ error:
     return -1;
 } //}}}
 
+ErrDecl cft_arg(Cft *cft, Arg *arg) { //{{{
+    ASSERT_ARG(cft);
+    ASSERT_ARG(arg);
+    cft->options.decorate = (arg->parsed.decorate == SPECIFY_OPTION_YES || arg->parsed.decorate == SPECIFY_OPTION_TRUE);
+    return 0;
+error:
+    return -1;
+} //}}}
+
 ErrDecl cft_find_by_tag(Cft *cft, TagRef **foundr, const Str *tag, bool create_if_nonexist) { //{{{
     ASSERT_ARG(cft);
     ASSERT_ARG(tag);
@@ -290,23 +299,41 @@ error:
     return -1;
 } //}}}
 
-ErrDecl cft_list_fmt(Cft *cft, Str *out) { //{{{
+ErrDecl cft_list_fmt(Cft *cft, Str *out, VrStr *files) { //{{{
     ASSERT_ARG(cft);
     ASSERT_ARG(out);
+    ASSERT_ARG(files);
     int err = 0;
     VrTagRef all = {0};
+    TrrTag filtered = {0};
     size_t *counts = 0;
     /* search */
-    TRY(trrtagref_dump(&cft->all, &all.items, &counts, &all.last), ERR_LUTD_DUMP);
+    if(vrstr_length(files)) {
+        //TRY(trrtag_init(&filtered, cft->tags.width), ERR_LUTD_INIT);
+        //for(size_t i = 0; i < vrstr_length(files); ++i) {
+        //    Str *file = vrstr_get_at(files, i);
+        //}
+    } else {
+        TRY(trrtagref_dump(&cft->all, &all.items, &counts, &all.last), ERR_LUTD_DUMP);
+    }
     vrtagref_sort(&all, counts);
     TRYC(str_fmt(out, "Total Tags: %zu\n", vrtagref_length(&all)));
+    printff("decorate? %s", cft->options.decorate ? "TRUE" : "FALSE");
     //printf("TOTAL TAGS: %zu\n", vrtagref_length(&all));
     for(size_t i = 0; i < vrtagref_length(&all); ++i) {
         TagRef *tag = vrtagref_get_at(&all, i);
         //printf("  [%zu] %.*s (%zu)\n", i, STR_F(&tag->tag), counts[i]);
-        TRYC(str_fmt(out, "  [%zu] %.*s (%zu)\n", i, STR_F(&tag->tag), counts[i]));
+        if(cft->options.decorate) {
+            TRYC(str_fmt(out, "  [%zu] ", i));
+        }
+        TRYC(str_fmt(out, "%.*s", STR_F(&tag->tag)));
+        if(cft->options.decorate) {
+            TRYC(str_fmt(out, " (%zu)", counts[i]));
+        }
+        TRYC(str_fmt(out, "\n"));
     }
 clean:
+    trrtag_free(&filtered);
     vrtagref_free(&all);
     free(counts);
     return err;
@@ -337,15 +364,24 @@ ErrDecl cft_find_fmt(Cft *cft, Str *out, Str *find_any, Str *find_and, Str *find
     vrtag_sort(&results);
     for(size_t i = 0; i < vrtag_length(&results); ++i) {
         Tag *file = vrtag_get_at(&results, i);
+        if(cft->options.decorate) {
+            TRYC(str_fmt(out, "  [%zu] ", i));
+        }
         TRYC(str_fmt(out, "%.*s", STR_F(&file->filename)));
-        if(list_tags) {
-            size_t ii, jj;
+        size_t ii, jj;
+        Tag *found = 0;
+        if(list_tags || cft->options.decorate) {
             TRY(trtag_find(&cft->tags, file, &ii, &jj), ERR_LUTD_FIND);
-            Tag *found = cft->tags.buckets[ii].items[jj];
+            found = cft->tags.buckets[ii].items[jj];
+        }
+        if(list_tags) {
             for(size_t j = 0; j < vrstr_length(&found->tags); ++j) {
                 Str *tag = vrstr_get_at(&found->tags, j);
                 TRYC(str_fmt(out, ",%.*s", STR_F(tag)));
             }
+        }
+        if(cft->options.decorate) {
+            TRYC(str_fmt(out, " (%zu)", vrstr_length(&found->tags)));
         }
         TRYC(str_fmt(out, "\n"));
         //printf("%.*s\n", STR_F(&file->filename));

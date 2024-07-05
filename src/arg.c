@@ -25,6 +25,7 @@ static const char *static_arg[][2] = {
     [ARG_LIST] = {0, "--list"},
     [ARG_EXISTS] = {0, "--exists"},
     [ARG_FILE] = {"-f", "--file"},
+    [ARG_DECORATE] = {0, "--decorate"}
 };
 
 const char *arg_str(ArgList id)
@@ -48,6 +49,7 @@ static const char *static_desc[] = {
     [ARG_LIST] = "list all arguments",
     [ARG_EXISTS] = "show either only existing or not existing files, if specified",
     [ARG_FILE] = "specify file to be parsed.",
+    [ARG_DECORATE] = "specify decoration",
 };
 
 static const char static_version[] = ""
@@ -68,6 +70,7 @@ static const Specify static_specify[ARG__COUNT] = {
     [ARG_NOT] = SPECIFY(SPECIFY_LIST),
     [ARG_LIST] = {0},
     [ARG_FILE] = SPECIFY(SPECIFY_STRING),
+    [ARG_DECORATE] = SPECIFY(SPECIFY_OPTION, SPECIFY_OPTION_NO, SPECIFY_OPTION_FALSE, SPECIFY_OPTION_YES, SPECIFY_OPTION_TRUE),
 };
 
 static const char *static_specify_str[] = {
@@ -144,7 +147,7 @@ static void arg_static_print_version(Arg *arg)
 {
     ASSERT(arg, ERR_NULL_ARG);
     if(strlen(static_version)) {
-        printf("%s version %s %s\n", arg->name, static_version, PLATFORM_NAME);
+        printf("%s version %s-%s\n", arg->name, static_version, PLATFORM_NAME);
     } else {
         printf(F("failed ", FG_RD) "(no version present)\n");
     }
@@ -167,6 +170,9 @@ ErrDeclStatic arg_static_execute(Arg *arg, ArgList id)
         } break;
         case ARG_LIST: {
             arg->parsed.list = true;
+        } break;
+        case ARG_DECORATE: {
+            spec = &arg->parsed.decorate;
         } break;
         case ARG_ANY: {
             if(!str_length(&arg->parsed.find_any)) {
@@ -253,6 +259,7 @@ ErrDeclStatic static_arg_parse_spec(Arg *args, ArgList arg, Str *argY, Specify s
         case ARG_ANY: { to_set = &args->parsed.find_any; } break;
         case ARG_AND: { to_set = &args->parsed.find_and; } break;
         case ARG_NOT: { to_set = &args->parsed.find_not; } break;
+        case ARG_DECORATE: { to_set = &args->parsed.decorate; } break;
         case ARG_FILE: {
             to_set = &args->parsed.file;
         } break;
@@ -363,7 +370,7 @@ int arg_parse(Arg *args, int argc, const char **argv) /* {{{ */
             break;
         }
         if(str_length(&arg) >= 1 && str_get_at(&arg, 0) != '-') {
-            TRY(vrstr_push_back(&args->parsed.files, &arg), ERR_VEC_PUSH_BACK);
+            TRY(vrstr_push_back(&args->parsed.remains, &arg), ERR_VEC_PUSH_BACK);
             //printf("[%zu] %.*s\n", vrstr_length(&args->files), STR_F(&arg));
             unknown_arg = false;
         }
@@ -390,6 +397,10 @@ int arg_parse(Arg *args, int argc, const char **argv) /* {{{ */
             if(args->exit_early) break;
         }
         if(args->exit_early) break;
+    }
+    /* postprocessing */
+    if(args->parsed.list && !str_length(&args->parsed.find_and) && !str_length(&args->parsed.find_any) && !str_length(&args->parsed.find_not)) {
+        args->parsed.decorate = SPECIFY_OPTION_YES;
     }
 #endif
     return 0;
@@ -471,8 +482,14 @@ void arg_help(Arg *arg) /* {{{ */
         }
         switch(i) {
             case ARG_FILE: {
+                str_clear(&ts);
                 TRYC(str_fmt(&ts, "\n%.*s" F(" (default)", IT), STR_F(&arg->defaults.file)));
-                tp = print_line(arg->tabs.max, arg->tabs.spec, 0, &ts);
+                tp = print_line(arg->tabs.max, 0, arg->tabs.spec, &ts);
+            } break;
+            case ARG_DECORATE: {
+                str_clear(&ts);
+                TRYC(str_fmt(&ts, "\n" F("(if only --list, default to %s)", IT), specify_str(SPECIFY_OPTION_YES)));
+                tp = print_line(arg->tabs.max, 0, arg->tabs.spec, &ts);
             } break;
             default: break;
         }
@@ -493,7 +510,7 @@ void arg_free(Arg *arg)
     str_free(&arg->parsed.extensions);
     str_free(&arg->parsed.file);
     str_free(&arg->defaults.file);
-    vrstr_free(&arg->parsed.files);
+    vrstr_free(&arg->parsed.remains);
 }
 
 
