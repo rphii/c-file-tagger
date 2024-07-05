@@ -314,7 +314,7 @@ error:
     ERR_CLEAN;
 } //}}}
 
-ErrDecl cft_find_fmt(Cft *cft, Str *out, Str *find_any, Str *find_and, Str *find_not) { //{{{
+ErrDecl cft_find_fmt(Cft *cft, Str *out, Str *find_any, Str *find_and, Str *find_not, bool list_tags) { //{{{
     ASSERT_ARG(cft);
     ASSERT_ARG(out);
     ASSERT_ARG(find_any);
@@ -337,7 +337,17 @@ ErrDecl cft_find_fmt(Cft *cft, Str *out, Str *find_any, Str *find_and, Str *find
     vrtag_sort(&results);
     for(size_t i = 0; i < vrtag_length(&results); ++i) {
         Tag *file = vrtag_get_at(&results, i);
-        TRYC(str_fmt(out, "%.*s\n", STR_F(&file->filename)));
+        TRYC(str_fmt(out, "%.*s", STR_F(&file->filename)));
+        if(list_tags) {
+            size_t ii, jj;
+            TRY(trtag_find(&cft->tags, file, &ii, &jj), ERR_LUTD_FIND);
+            Tag *found = cft->tags.buckets[ii].items[jj];
+            for(size_t j = 0; j < vrstr_length(&found->tags); ++j) {
+                Str *tag = vrstr_get_at(&found->tags, j);
+                TRYC(str_fmt(out, ",%.*s", STR_F(tag)));
+            }
+        }
+        TRYC(str_fmt(out, "\n"));
         //printf("%.*s\n", STR_F(&file->filename));
     }
 clean:
