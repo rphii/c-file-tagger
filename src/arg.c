@@ -347,9 +347,16 @@ int arg_parse(Arg *args, int argc, const char **argv) /* {{{ */
             if(str_cmp(&argX, &cmp)) continue; /* arg to cmp to is not equal */
             Specify spec = static_specify[j];
             //printf("FOUND!! -> id %s (HAS %zu)\n", static_arg[j][1], spec.len);
-            if(!str_length(&argY) && i + 1 < argc) {
-                argY = STR_L((char *)argv[i + 1]);
-                ++i;
+            switch(spec.len ? spec.ids[0] : SPECIFY_NONE) {
+                case SPECIFY_STRING:
+                case SPECIFY_LIST:
+                case SPECIFY_OPTION: {
+                    if(!str_length(&argY) && i + 1 < argc) {
+                        argY = STR_L((char *)argv[i + 1]);
+                        ++i;
+                    }
+                } break;
+                default: break;
             }
             TRY(static_arg_parse_spec(args, j, &argY, spec), ERR_ARG_PARSE_SPEC);
             unknown_arg = false;
