@@ -28,6 +28,9 @@ typedef enum {
         SPECIFY_OPTION_LIST,
         SPECIFY_OPTION_CLEAR,
         SPECIFY_OPTION_SELECT,
+        SPECIFY_OPTION_SORT_STRING,
+        SPECIFY_OPTION_SORT_NUMBER,
+        SPECIFY_OPTION_SORT_NONE,
     SPECIFY_NUMBER,
     SPECIFY_STRING,
     SPECIFY_LIST,
@@ -68,6 +71,7 @@ typedef enum {
     ARG_NOT,
     ARG_LIST,
     ARG_FILE,
+    ARG_DECORATE,
     ARG_EXISTS, // show either ONLY existing files, or NOT EXISTING files, if specified! -> nah, make like find. --type ?!
     /* args above */
     ARG__COUNT
@@ -79,12 +83,13 @@ typedef struct Arg {
     bool exit_early;
     VrStr *add_to;
     struct {
-        VrStr files;
+        VrStr remains;
         VrStr tags;
         Str extensions; // TODO: move into sub-struct
         SpecifyList tag;
         Str file;
         bool list;
+        SpecifyList decorate;
         Str find_any;
         Str find_and;
         Str find_not;
