@@ -83,6 +83,7 @@ void info_handle_abort(void);
     if (!(stmt)) { \
         (void)screen_leave(); \
         info_handle_abort(); \
+        /*platform_trace();*/ \
         ABORT("assertion of '" ERR_STRINGIFY(stmt) "' failed... " fmt, ##__VA_ARGS__); } \
     } while(0)
 #define ASSERT_ARG(arg)     ASSERT(arg, ERR_NULL_ARG)
