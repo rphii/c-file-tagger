@@ -200,7 +200,7 @@ ErrDecl cft_parse(Cft *cft, const Str *str) { //{{{
                         /* TODO: only read comments when we plan to write out to the file again !!! */
                         /* OTHER TODO: the order will get messed up... because we sort the rest
                          * again, for now... so fix that somehow (but later) */
-                        TRYC(str_fmt(&cft->comments, "%.*s%.*s\n", STR_F(&cft->comments), STR_F(&line)));
+                        TRYC(str_fmt(&cft->comments, "%.*s\n", STR_F(&line)));
                         break;
                     }
                 }
@@ -219,6 +219,8 @@ error:
     return -1;
 } //}}}
 
+/* TODO: re-work how I add tags. talking folders, specifically... don't expand them there, make some
+ * other table ??? maybe ????? */
 ErrDecl cft_fmt(Cft *cft, Str *str) { //{{{
     ASSERT_ARG(cft);
     ASSERT_ARG(str);
