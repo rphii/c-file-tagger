@@ -51,11 +51,11 @@ int main(int argc, const char **argv)
     }
 
     /* print all tags */
-    TRYC(cft_find_fmt(&cft, &ostream, &arg.parsed.find_any, &arg.parsed.find_and, &arg.parsed.find_not, arg.parsed.list));
+    TRYC(cft_find_fmt(&cft, &ostream, &arg.parsed.find_any, &arg.parsed.find_and, &arg.parsed.find_not, arg.parsed.list_tags));
     printf("%.*s", STR_F(&ostream));
 
-    if(!str_length(&ostream) && arg.parsed.list) {
-        TRYC(cft_list_fmt(&cft, &ostream, &arg.parsed.remains));
+    if(!str_length(&ostream) && arg.parsed.list_tags) {
+        TRYC(cft_tags_fmt(&cft, &ostream, &arg.parsed.remains));
         printf("%.*s", STR_F(&ostream));
     }
 
