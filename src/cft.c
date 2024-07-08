@@ -354,6 +354,25 @@ error:
     return -1;
 } //}}}
 
+ErrDecl cft_tags_add(Cft *cft, VrStr *files, Str *tags) { //{{{
+    ASSERT_ARG(cft);
+    ASSERT_ARG(files);
+    ASSERT_ARG(tags);
+    for(size_t i = 0; i < vrstr_length(files); ++i) {
+        Str *file = vrstr_get_at(files, i);
+        Str tag = {0};
+        for(;;) {
+            if(str_iter_end(&tag) >= str_iter_end(tags)) break;
+            tag = str_splice(tags, &tag, ',');
+            TRYC(cft_add(cft, file, &tag));
+            //printff("tag [%.*s] with [%.*s]", STR_F(file), STR_F(&tag));
+        }
+    }
+    return 0;
+error:
+    return -1;
+} //}}}
+
 ErrDecl cft_tags_fmt(Cft *cft, Str *out, VrStr *files) { //{{{
     ASSERT_ARG(cft);
     ASSERT_ARG(out);

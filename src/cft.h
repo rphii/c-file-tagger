@@ -48,6 +48,9 @@ ErrDecl cft_find_and(Cft *cft, TrrTag *found, Str *find);
 #define ERR_cft_find_not(x, y, find, ...) "failed finding 'not' for tags '%.*s'", STR_F(find)
 ErrDecl cft_find_not(Cft *cft, TrrTag *found, Str *find);
 
+#define ERR_cft_tags_add(...) "failed adding tags"
+ErrDecl cft_tags_add(Cft *cft, VrStr *files, Str *tags);
+
 #define ERR_cft_tags_fmt(...) "failed formatting tags"
 ErrDecl cft_tags_fmt(Cft *cft, Str *out, VrStr *files);
 

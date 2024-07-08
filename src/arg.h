@@ -91,8 +91,8 @@ typedef struct Arg {
         Str file;
         bool list_tags;
         SpecifyList decorate;
-        Str tag_add;
-        Str tag_del;
+        Str tags_add;
+        Str tags_del;
         Str find_any;
         Str find_and;
         Str find_not;
