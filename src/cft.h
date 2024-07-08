@@ -9,6 +9,7 @@
 typedef struct Cft {
     TrTag tags;
     TrTagRef reverse;
+    Str comments;
     //TrrTagRef all;
     struct {
         bool decorate;

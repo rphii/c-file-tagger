@@ -192,7 +192,18 @@ ErrDecl cft_parse(Cft *cft, const Str *str) { //{{{
             //printff("TAG %zu..%zu:'%.*s'", tag.first, tag.last, STR_F(&tag));
             //printff("[%zu..%zu] %.*s", line.first, line.last, STR_F(&line));getchar();
             if(!filename.s) {
+                /* first entry is the filename */
                 filename = tag;
+                if(str_length(&filename)) {
+                    str_trim(&filename);
+                    if(str_get_front(&filename) == '#') {
+                        /* TODO: only read comments when we plan to write out to the file again !!! */
+                        /* OTHER TODO: the order will get messed up... because we sort the rest
+                         * again, for now... so fix that somehow (but later) */
+                        TRYC(str_fmt(&cft->comments, "%.*s%.*s\n", STR_F(&cft->comments), STR_F(&line)));
+                        break;
+                    }
+                }
             } else {
                 //printff("add %.*s to %.*s", STR_F(&tag), STR_F(&filename));
                 TRYC(cft_add(cft, &filename, &tag));
@@ -225,6 +236,9 @@ ErrDecl cft_fmt(Cft *cft, Str *str) { //{{{
         }
         TRYC(str_fmt(str, "\n"));
     }
+    if(str_length(&cft->comments)) {
+        TRYC(str_fmt(str, "%.*s", STR_F(&cft->comments)));
+    }
     info_check(INFO_formatting, true);
 clean:
     vrtag_free(&tags);
@@ -236,6 +250,7 @@ void cft_free(Cft *cft) { //{{{
     ASSERT_ARG(cft);
     trtag_free(&cft->tags);
     trtagref_free(&cft->reverse);
+    str_free(&cft->comments);
     //trrtagref_free(&cft->all);
 } //}}}
 
