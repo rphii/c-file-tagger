@@ -24,6 +24,9 @@ ErrDecl cft_arg(Cft *cft, Arg *arg);
 #define ERR_cft_add(x, filename, tag) "failed adding tag '%.*s' to file '%.*s' in c-file-tagger", STR_F(filename), STR_F(tag)
 ErrDecl cft_add(Cft *cft, const Str *filename, const Str *tag);
 
+#define ERR_cft_del(x, filename, tag) "failed removing tag '%.*s' from file '%.*s' in c-file-tagger", STR_F(filename), STR_F(tag)
+ErrDecl cft_del(Cft *cft, const Str *filename, const Str *tag);
+
 #define ERR_cft_find_by_tag(cft, x, tag, ...) "failed finding tag: '%.*s'", STR_F(tag)
 ErrDecl cft_find_by_tag(Cft *cft, TagRef **foundr, const Str *tag, bool create_if_nonexist);
 
@@ -45,8 +48,8 @@ ErrDecl cft_find_and(Cft *cft, TrrTag *found, Str *find);
 #define ERR_cft_find_not(x, y, find, ...) "failed finding 'not' for tags '%.*s'", STR_F(find)
 ErrDecl cft_find_not(Cft *cft, TrrTag *found, Str *find);
 
-#define ERR_cft_list_fmt(...) "failed formatting list"
-ErrDecl cft_list_fmt(Cft *cft, Str *out, VrStr *files);
+#define ERR_cft_tags_fmt(...) "failed formatting tags"
+ErrDecl cft_tags_fmt(Cft *cft, Str *out, VrStr *files);
 
 #define ERR_cft_find_fmt(...) "failed formatting findings"
 ErrDecl cft_find_fmt(Cft *cft, Str *out, Str *find_any, Str *find_and, Str *find_not, bool list_tags);

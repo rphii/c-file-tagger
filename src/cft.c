@@ -122,6 +122,61 @@ error:
     return -1;
 } //}}}
 
+#if 0
+ErrDecl cft_del(Cft *cft, const Str *filename, const Str *tag) { //{{{
+    ASSERT_ARG(cft);
+    ASSERT_ARG(filename);
+    ASSERT_ARG(tag);
+    /* search if we have a matching file ... */
+    Str tag_search = *tag;
+    Tag *found = 0;
+    TRYC(cft_find_by_filename(cft, &found, filename, true));
+    if(!found) return 0;
+    for(;;) {
+        /* check if the tag is present */
+        bool present = false;
+        for(size_t i = 0; i < vrstr_length(&found->tags); ++i) {
+            Str *cmp = vrstr_get_at(&found->tags, i);
+            if(str_cmp(cmp, &tag_search)) continue;
+            present = true;
+            break;
+        }
+        /* search for a file tagged with such tag */
+        TagRef *foundr = 0;
+        TRYC(cft_find_by_tag(cft, &foundr, &tag_search, true));
+        if(!foundr) return 0;
+        /* check if the file is present */
+        bool presentr = false;
+        for(size_t i = 0; i < vrstr_length(&foundr->filenames); ++i) {
+            Str *cmp = vrstr_get_at(&foundr->filenames, i);
+            if(str_cmp(cmp, filename)) continue;
+            presentr = true;
+            break;
+        }
+        /* remove */
+        if(!presentr) {
+            printff("REMOVE FILENAME %.*s", STR_F(&found->filename));
+            //TRY(vrstr_push_back(&foundr->filenames, &found->filename), ERR_VEC_PUSH_BACK);
+            //printff("added filename '%.*s' to tag '%.*s'", STR_F(&found->filename), STR_F(&foundr->tag));
+        }
+        if(!present) {
+            printff("REMOVE TAG %.*s", STR_F(&foundr->tag));
+            //TRY(vrstr_push_back(&found->tags, &foundr->tag), ERR_VEC_PUSH_BACK);
+            //printff("added tag '%.*s' to filename '%.*s'", STR_F(&foundr->tag), STR_F(&found->filename));
+        }
+        //info(tag_done, "Tagged '%.*s' with '%.*s'", STR_F(&found->filename), STR_F(&foundr->tag));
+        break;
+        /* check next : */
+        //// size_t iE = str_rch(&tag_search, ':', 0);
+        //// if(iE >= str_length(&tag_search)) break;
+        //// tag_search.last = tag_search.first + iE;
+    }
+    return 0;
+error:
+    return -1;
+} //}}}
+#endif
+
 ErrDecl cft_parse(Cft *cft, const Str *str) { //{{{
     ASSERT_ARG(cft);
     ASSERT_ARG(str);
@@ -299,7 +354,7 @@ error:
     return -1;
 } //}}}
 
-ErrDecl cft_list_fmt(Cft *cft, Str *out, VrStr *files) { //{{{
+ErrDecl cft_tags_fmt(Cft *cft, Str *out, VrStr *files) { //{{{
     ASSERT_ARG(cft);
     ASSERT_ARG(out);
     ASSERT_ARG(files);

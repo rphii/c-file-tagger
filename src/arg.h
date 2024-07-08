@@ -69,7 +69,7 @@ typedef enum {
     ARG_ANY,
     ARG_AND,
     ARG_NOT,
-    ARG_LIST,
+    ARG_TAGS,
     ARG_FILE,
     ARG_DECORATE,
     // ARG_DEPTSH // folder depth
@@ -89,8 +89,10 @@ typedef struct Arg {
         Str extensions; // TODO: move into sub-struct
         SpecifyList tag;
         Str file;
-        bool list;
+        bool list_tags;
         SpecifyList decorate;
+        Str tag_add;
+        Str tag_del;
         Str find_any;
         Str find_and;
         Str find_not;
