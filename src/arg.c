@@ -199,13 +199,13 @@ ErrDeclStatic arg_static_execute(Arg *arg, ArgList id)
             }
         } break;
         case ARG_TAG: {
-            if(!str_length(&arg->parsed.tag_add)) {
+            if(!str_length(&arg->parsed.tags_add)) {
                 printf("%*s" F("%s", BOLD) "=STRING is missing\n", arg->tabs.tiny, "", static_arg[id][1]); // TODO:this is stupid (see below...)
                 arg->exit_early = true;
             }
         } break;
         case ARG_UNTAG: {
-            if(!str_length(&arg->parsed.tag_del)) {
+            if(!str_length(&arg->parsed.tags_del)) {
                 printf("%*s" F("%s", BOLD) "=STRING is missing\n", arg->tabs.tiny, "", static_arg[id][1]); // TODO:this is stupid (see below...)
                 arg->exit_early = true;
             }
@@ -272,8 +272,8 @@ ErrDeclStatic static_arg_parse_spec(Arg *args, ArgList arg, Str *argY, Specify s
         case ARG_AND: { to_set = &args->parsed.find_and; } break;
         case ARG_NOT: { to_set = &args->parsed.find_not; } break;
         case ARG_DECORATE: { to_set = &args->parsed.decorate; } break;
-        case ARG_TAG: { to_set = &args->parsed.tag_add; } break;
-        case ARG_UNTAG: { to_set = &args->parsed.tag_del; } break;
+        case ARG_TAG: { to_set = &args->parsed.tags_add; } break;
+        case ARG_UNTAG: { to_set = &args->parsed.tags_del; } break;
         case ARG_FILE: {
             to_set = &args->parsed.file;
         } break;

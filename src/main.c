@@ -43,11 +43,13 @@ int main(int argc, const char **argv)
     TRYC(cft_parse(&cft, &content));
 
     /* reformat */
-    if(0) {
+    TRYC(cft_tags_add(&cft, &arg.parsed.remains, &arg.parsed.tags_add));
+    if(1) {
         str_clear(&content);
         TRYC(cft_fmt(&cft, &content));
         Str output = STR("../data/tags-output.txt");
-        TRYC(file_str_write(&output, &content));
+        printf("%.*s", STR_F(&content));
+        //TRYC(file_str_write(&output, &content));
     }
 
     /* print all tags */
