@@ -35,30 +35,36 @@ int main(int argc, const char **argv)
     //screen_enter();
 
     /* program start */
-
-    /* read specified file */
     TRYC(cft_init(&cft));
     TRYC(cft_arg(&cft, &arg));
+
+    /* read specified file */
     TRYC(file_str_read(&arg.parsed.file, &content));
     TRYC(cft_parse(&cft, &content));
 
     /* reformat */
-    TRYC(cft_tags_add(&cft, &arg.parsed.remains, &arg.parsed.tags_add));
-    if(1) {
+    if(cft.options.modify) {
+        TRYC(cft_tags_add(&cft, &arg.parsed.remains, &arg.parsed.tags_add));
         str_clear(&content);
+        TRYC(cft_del_duplicate_folders(&cft));
         TRYC(cft_fmt(&cft, &content));
-        Str output = STR("../data/tags-output.txt");
         printf("%.*s", STR_F(&content));
-        //TRYC(file_str_write(&output, &content));
+        TRYC(file_str_write(&arg.parsed.file, &content));
+        goto clean;
     }
 
-    /* print all tags */
-    TRYC(cft_find_fmt(&cft, &ostream, &arg.parsed.find_any, &arg.parsed.find_and, &arg.parsed.find_not, arg.parsed.list_tags));
-    printf("%.*s", STR_F(&ostream));
+    /* query files */
+    if(cft.options.query) {
+        TRYC(cft_find_fmt(&cft, &ostream, &arg.parsed.find_any, &arg.parsed.find_and, &arg.parsed.find_not));
+        printf("%.*s", STR_F(&ostream));
+        goto clean;
+    }
 
-    if(!str_length(&ostream) && arg.parsed.list_tags) {
+    /* print tags */
+    if(cft.options.tags_list) {
         TRYC(cft_tags_fmt(&cft, &ostream, &arg.parsed.remains));
         printf("%.*s", STR_F(&ostream));
+        goto clean;
     }
 
 clean:
@@ -71,5 +77,5 @@ clean:
     return err;
 error:
     ERR_CLEAN;
-}
+        }
 
