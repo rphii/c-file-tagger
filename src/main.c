@@ -48,7 +48,6 @@ int main(int argc, const char **argv)
         str_clear(&content);
         TRYC(cft_del_duplicate_folders(&cft));
         TRYC(cft_fmt(&cft, &content));
-        printf("%.*s", STR_F(&content));
         TRYC(file_str_write(&arg.parsed.file, &content));
         goto clean;
     }
