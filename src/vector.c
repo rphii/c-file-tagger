@@ -57,3 +57,25 @@ void vrtagref_sort(VrTagRef *vec, size_t *counts)
     }
 }
 
+void vrstr_sort(VrStr *vec)
+{
+    /* shell sort, https://rosettacode.org/wiki/Sorting_algorithms/Shell_sort#C */
+    size_t h, i, j, n = vrstr_length(vec);
+    Str temp;
+    size_t temp2;
+    for (h = n; h /= 2;) {
+        for (i = h; i < n; i++) {
+            //t = a[i];
+            temp = *vrstr_get_at(vec, i);
+            //for (j = i; j >= h && t < a[j - h]; j -= h) {
+            for (j = i; j >= h && str_cmp(&temp, vrstr_get_at(vec, j-h)) < 0; j -= h) {
+                vrstr_set_at(vec, j, vrstr_get_at(vec, j-h));
+                //a[j] = a[j - h];
+            }
+            //a[j] = t;
+            vrstr_set_at(vec, j, &temp);
+        }
+    }
+}
+
+

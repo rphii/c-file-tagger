@@ -17,9 +17,9 @@ CC      := gcc
 CFLAGS  := -Wall -Wextra -Wimplicit -Wfatal-errors -std=gnu99 \
 		   -Wno-unused-parameter \
 		   -DPROC_COUNT=$(shell nproc --all) \
-		   -rdynamic -Og -ggdb3 \
-		   ##############\
 		   -O2 -march=native -DNDEBUG \
+		   ##############\
+		   -rdynamic -Og -ggdb3 \
 		   ${OPTIMIZE} \
 		   -O3 -march=native -DNDEBUG \
 		   -pg -rdynamic \
@@ -41,8 +41,8 @@ CFLAGS  := -Wall -Wextra -Wimplicit -Wfatal-errors -std=gnu99 \
 		   ###############
 LDFLAGS := \
 		   -lm \
-		   -fsanitize=address -rdynamic \
 		   ##############\
+		   -fsanitize=address -rdynamic \
 		   ${OPTIMIZE} \
 		   -pg -rdynamic \
 		   -rdynamic -ggdb3 \

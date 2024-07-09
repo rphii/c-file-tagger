@@ -283,6 +283,7 @@ typedef enum {
             if(A##_static_reserve(l, hash, exist_index, cap)) return LUTD_ERROR_REALLOC; \
             T *item = LUTD_REF(M) l->buckets[hash].items[exist_index];\
             memcpy(item, LUTD_REF(M) v, sizeof(T)); \
+            l->buckets[hash].count[exist_index] = 0; \
             l->buckets[hash].len++; \
         } \
         l->buckets[hash].count[exist_index] += count; \

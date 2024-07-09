@@ -41,6 +41,7 @@ VEC_INCLUDE(VrTagRef, vrtagref, TagRef, BY_REF);
 
 void vrtag_sort(VrTag *vec);
 void vrtagref_sort(VrTagRef *vec, size_t *counts);
+void vrstr_sort(VrStr *vec);
 
 #define VECTOR_H
 #endif

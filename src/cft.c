@@ -16,7 +16,17 @@ error:
 ErrDecl cft_arg(Cft *cft, Arg *arg) { //{{{
     ASSERT_ARG(cft);
     ASSERT_ARG(arg);
+    /* bools */
     cft->options.decorate = (arg->parsed.decorate == SPECIFY_OPTION_YES || arg->parsed.decorate == SPECIFY_OPTION_TRUE);
+    cft->options.query = (str_length(&arg->parsed.find_and) || str_length(&arg->parsed.find_any) || str_length(&arg->parsed.find_not));
+    cft->options.modify = (str_length(&arg->parsed.tags_add) || str_length(&arg->parsed.tags_del));
+    cft->options.tags_list = arg->parsed.list_tags;
+    /* strings */
+    //cft->options.find_and = &arg->parsed.find_and;
+    //cft->options.find_any = &arg->parsed.find_any;
+    //cft->options.find_not = &arg->parsed.find_not;
+    //cft->options.tags_add = &arg->parsed.tags_add;
+    //cft->options.tags_del = &arg->parsed.tags_del;
     return 0;
 error:
     return -1;
@@ -82,6 +92,8 @@ ErrDecl cft_add(Cft *cft, const Str *filename, const Str *tag) { //{{{
     if(!found) return 0;
     //printff("filename retrieved '%.*s'", STR_F(&found->filename));
     for(;;) {
+        str_trim(&tag_search); // TODO: is this and the line below actually correct + needed ?
+        if(!str_length(&tag_search)) break;
         /* check if the tag is present */
         bool present = false;
         for(size_t i = 0; i < vrstr_length(&found->tags); ++i) {
@@ -219,6 +231,59 @@ error:
     return -1;
 } //}}}
 
+ErrDecl cft_del_duplicate_folders(Cft *cft) { //{{{
+    ASSERT_ARG(cft);
+    int err = 0;
+    /* .. this might sound stupid, but I'll just make a NEW lookup table, just for this! */
+    TrrTagRef duplicates = {0};
+    // TODO maybe add options for all lookup table sizes ?!? I don't think the table for THIS has to
+    // be SO LARGE ??? -> edit... magic number for now
+    // or just use lut.h ??? pepethink
+    bool clear = false;
+    TRY(trrtagref_init(&duplicates, 6), ERR_LUTD_INIT);
+    for(size_t ii = 0; ii < (1ULL << (cft->tags.width - 1)); ++ii) {
+        for(size_t jj = 0; jj < cft->tags.buckets[ii].len; ++jj) {
+            /* clear if we previously used the table */
+            if(clear) {
+                trrtagref_clear(&duplicates);
+                clear = false;
+            }
+            /* add tags to lookup table */
+            Tag *tag = cft->tags.buckets[ii].items[jj];
+            for(size_t i = 0; i < vrstr_length(&tag->tags); ++i) {
+                Str *tagg = vrstr_get_at(&tag->tags, i);
+                Str tag_search = *tagg;
+                for(;;) {
+                    str_trim(&tag_search); // TODO: is this and the line below actually correct + needed ?
+                    if(!str_length(&tag_search)) break;
+                    TagRef ref = { .tag = tag_search };
+                    TRY(trrtagref_add(&duplicates, &ref), ERR_LUTD_ADD);
+                    clear = true;
+                    /* check next : */
+                    size_t iE = str_rch(&tag_search, ':', 0);
+                    if(iE >= str_length(&tag_search)) break;
+                    tag_search.last = tag_search.first + iE;
+                }
+            }
+            /* now go over duplicates and add if not one. simple! */
+            vrstr_clear(&tag->tags);
+            for(size_t ii = 0; ii < (1ULL << (duplicates.width - 1)); ++ii) {
+                for(size_t jj = 0; jj < duplicates.buckets[ii].len; ++jj) {
+                    TagRef *ref = duplicates.buckets[ii].items[jj];
+                    size_t count = duplicates.buckets[ii].count[jj];
+                    if(count > 1) continue;
+                    TRY(vrstr_push_back(&tag->tags, &ref->tag), ERR_VEC_PUSH_BACK);
+                }
+            }
+        }
+    }
+clean:
+    trrtagref_free(&duplicates);
+    return err;
+error:
+    ERR_CLEAN;
+} //}}}
+
 /* TODO: re-work how I add tags. talking folders, specifically... don't expand them there, make some
  * other table ??? maybe ????? */
 ErrDecl cft_fmt(Cft *cft, Str *str) { //{{{
@@ -231,6 +296,7 @@ ErrDecl cft_fmt(Cft *cft, Str *str) { //{{{
     vrtag_sort(&tags); // TODO add switch
     for(size_t i = 0; i < vrtag_length(&tags); ++i) {
         Tag *tag = vrtag_get_at(&tags, i);
+        vrstr_sort(&tag->tags);
         TRYC(str_fmt(str, "%.*s", STR_F(&tag->filename)));
         for(size_t j = 0; j < vrstr_length(&tag->tags); ++j) {
             Str *tagg = vrstr_get_at(&tag->tags, j);
@@ -449,7 +515,7 @@ error:
     ERR_CLEAN;
 } //}}}
 
-ErrDecl cft_find_fmt(Cft *cft, Str *out, Str *find_any, Str *find_and, Str *find_not, bool list_tags) { //{{{
+ErrDecl cft_find_fmt(Cft *cft, Str *out, Str *find_any, Str *find_and, Str *find_not) { //{{{
     ASSERT_ARG(cft);
     ASSERT_ARG(out);
     ASSERT_ARG(find_any);
@@ -478,11 +544,11 @@ ErrDecl cft_find_fmt(Cft *cft, Str *out, Str *find_any, Str *find_and, Str *find
         TRYC(str_fmt(out, "%.*s", STR_F(&file->filename)));
         size_t ii, jj;
         Tag *found = 0;
-        if(list_tags || cft->options.decorate) {
+        if(cft->options.tags_list || cft->options.decorate) {
             TRY(trtag_find(&cft->tags, file, &ii, &jj), ERR_LUTD_FIND);
             found = cft->tags.buckets[ii].items[jj];
         }
-        if(list_tags) {
+        if(cft->options.tags_list) {
             for(size_t j = 0; j < vrstr_length(&found->tags); ++j) {
                 Str *tag = vrstr_get_at(&found->tags, j);
                 TRYC(str_fmt(out, ",%.*s", STR_F(tag)));

@@ -13,6 +13,15 @@ typedef struct Cft {
     //TrrTagRef all;
     struct {
         bool decorate;
+        bool query;
+        bool modify;
+        bool tags_list;
+        //Str *find_and;
+        //Str *find_any;
+        //Str *find_not;
+        //Str *tags_add;
+        //Str *tags_del;
+
     } options;
 } Cft;
 
@@ -37,6 +46,9 @@ ErrDecl cft_find_by_filename(Cft *cft, Tag **found, const Str *filename, bool cr
 #define ERR_cft_parse(...) "failed parsing"
 ErrDecl cft_parse(Cft *cft, const Str *str);
 
+#define ERR_cft_del_duplicate_folders(...) "failed removing duplicate folders (for export)"
+ErrDecl cft_del_duplicate_folders(Cft *cft);
+
 #define ERR_cft_fmt(...) "failed formatting"
 ErrDecl cft_fmt(Cft *cft, Str *str);
 
@@ -56,7 +68,7 @@ ErrDecl cft_tags_add(Cft *cft, VrStr *files, Str *tags);
 ErrDecl cft_tags_fmt(Cft *cft, Str *out, VrStr *files);
 
 #define ERR_cft_find_fmt(...) "failed formatting findings"
-ErrDecl cft_find_fmt(Cft *cft, Str *out, Str *find_any, Str *find_and, Str *find_not, bool list_tags);
+ErrDecl cft_find_fmt(Cft *cft, Str *out, Str *find_any, Str *find_and, Str *find_not);
 
 void cft_free(Cft *cft);
 
