@@ -52,6 +52,21 @@ int main(int argc, const char **argv)
         goto clean;
     }
 
+    /* read all other specified files */
+    for(size_t i = 0; i < vrstr_length(&arg.parsed.inputs); ++i) {
+        Str *input = vrstr_get_at(&arg.parsed.inputs, i);
+        if(!str_cmp(input, &arg.parsed.file)) {
+            /* TODO add some info here that skips two exact file paths... doesn't
+             * break anything if we DO, but helps to inform the user about what
+             * he's doing (absolutely not happened to me and I did NOT get confused
+             * by it) besides, expanding paths (.. / ~ / . etc) exists, sooo... */
+            continue;
+        }
+        str_clear(&content);
+        TRYC(file_str_read(input, &content));
+        TRYC(cft_parse(&cft, &content));
+    }
+
     /* query files */
     if(cft.options.query) {
         TRYC(cft_find_fmt(&cft, &ostream, &arg.parsed.find_any, &arg.parsed.find_and, &arg.parsed.find_not));

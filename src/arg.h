@@ -33,6 +33,7 @@ typedef enum {
         SPECIFY_OPTION_SORT_NONE,
     SPECIFY_NUMBER,
     SPECIFY_STRING,
+    SPECIFY_STRINGS,
     SPECIFY_LIST,
     SPECIFY_BOOL,
     /* certain default values */
@@ -72,6 +73,8 @@ typedef enum {
     ARG_TAGS,
     ARG_FILE,
     ARG_DECORATE,
+    ARG_INPUT,
+    ARG_MERGE,
     // ARG_DEPTSH // folder depth
     ARG_EXISTS, // show either ONLY existing files, or NOT EXISTING files, if specified! -> nah, make like find. --type ?!
     /* args above */
@@ -85,11 +88,12 @@ typedef struct Arg {
     VrStr *add_to;
     struct {
         VrStr remains;
-        VrStr tags;
+        VrStr inputs;
         Str extensions; // TODO: move into sub-struct
         SpecifyList tag;
         Str file;
         bool list_tags;
+        bool merge;
         SpecifyList decorate;
         Str tags_add;
         Str tags_del;
