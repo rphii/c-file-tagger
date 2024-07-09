@@ -25,7 +25,9 @@ static const char *static_arg[][2] = {
     [ARG_TAGS] = {0, "--tags"},
     [ARG_EXISTS] = {0, "--exists"},
     [ARG_FILE] = {"-f", "--file"},
-    [ARG_DECORATE] = {0, "--decorate"}
+    [ARG_DECORATE] = {0, "--decorate"},
+    [ARG_INPUT] = {"-i", "--input"},
+    [ARG_MERGE] = {0, "--merge"},
 };
 
 const char *arg_str(ArgList id)
@@ -48,8 +50,10 @@ static const char *static_desc[] = {
     [ARG_NOT] = "list files not having tags",
     [ARG_TAGS] = "list all tags",
     [ARG_EXISTS] = "show either only existing or not existing files, if specified",
-    [ARG_FILE] = "specify file to be parsed.",
+    [ARG_FILE] = "specify main file to be parsed.",
     [ARG_DECORATE] = "specify decoration",
+    [ARG_INPUT] = "specify additional input files",
+    [ARG_MERGE] = "merge all input files into the main file",
 };
 
 static const char static_version[] = ""
@@ -71,6 +75,8 @@ static const Specify static_specify[ARG__COUNT] = {
     [ARG_TAGS] = {0},
     [ARG_FILE] = SPECIFY(SPECIFY_STRING),
     [ARG_DECORATE] = SPECIFY(SPECIFY_OPTION, SPECIFY_OPTION_NO, SPECIFY_OPTION_FALSE, SPECIFY_OPTION_YES, SPECIFY_OPTION_TRUE),
+    [ARG_INPUT] = SPECIFY(SPECIFY_STRINGS),
+    [ARG_MERGE] = {0},
 };
 
 static const char *static_specify_str[] = {
@@ -92,6 +98,7 @@ static const char *static_specify_str[] = {
         [SPECIFY_OPTION_SELECT] = "select",
     [SPECIFY_NUMBER] = "NUMBER",
     [SPECIFY_STRING] = "STRING",
+    [SPECIFY_STRINGS] = "STRINGS",
     [SPECIFY_LIST] = "LIST",
     [SPECIFY_BOOL] = "< y | n >",
     /* certain default values */
@@ -210,6 +217,12 @@ ErrDeclStatic arg_static_execute(Arg *arg, ArgList id)
                 arg->exit_early = true;
             }
         } break;
+        case ARG_INPUT: {
+            if(!vrstr_length(&arg->parsed.inputs)) {
+                printf("%*s" F("%s", BOLD) "=STRING is missing\n", arg->tabs.tiny, "", static_arg[id][1]); // TODO:this is stupid (see below...)
+                arg->exit_early = true;
+            }
+        } break;
         //case ARG_TAG: { spec = &arg->parsed.tag; } break;
         default: THROW(ERR_UNHANDLED_ID" (%d)", id);
     }
@@ -277,6 +290,7 @@ ErrDeclStatic static_arg_parse_spec(Arg *args, ArgList arg, Str *argY, Specify s
         case ARG_FILE: {
             to_set = &args->parsed.file;
         } break;
+        case ARG_INPUT: { to_set = &args->parsed.inputs; } break;
         //case ARG_TAG: { to_set = &args->parsed.tag; args->add_to = &args->parsed.tags; } break;
         default: THROW("unhandled arg id (%u)", arg);
     }
@@ -296,6 +310,11 @@ ErrDeclStatic static_arg_parse_spec(Arg *args, ArgList arg, Str *argY, Specify s
             }
         } break;
         case SPECIFY_STRING: {
+            if(str_length((Str *)to_set)) {
+                printf("%*s" F("%s=%.*s", BOLD) " can't specify more than one string\n", args->tabs.tiny, "", arg_str(arg), STR_F(argY));
+                args->exit_early = true;
+                return 0;
+            }
             str_clear((Str *)to_set);
             TRYC(str_fmt((Str *)to_set, "%.*s", STR_F(argY)));
         } break;
@@ -324,6 +343,11 @@ ErrDeclStatic static_arg_parse_spec(Arg *args, ArgList arg, Str *argY, Specify s
             if(errno) THROW("strtoll conversion error");
             *(size_t *)to_set = val;
         } break;
+        case SPECIFY_STRINGS: {
+            //str_clear((Str *)to_set);
+            TRY(vrstr_push_back((VrStr *)to_set, argY), ERR_VEC_PUSH_BACK);
+            //TRYC(str_fmt((Str *)to_set, "%.*s", STR_F(argY)));
+        } break;
         default: THROW("unhandled id0! (%u)", id0);
     }
     return 0;
@@ -335,8 +359,6 @@ int arg_parse(Arg *args, int argc, const char **argv) /* {{{ */
 {
     ASSERT(args, ERR_NULL_ARG);
     ASSERT(argv, ERR_NULL_ARG);
-    /* default arguments */
-    TRYC(str_fmt(&args->parsed.extensions, "%s", static_specify_str[SPECIFY_EXTENSION]));
     /* set up */
     args->name = argv[0];
     args->tabs.tiny = 2;
@@ -348,7 +370,6 @@ int arg_parse(Arg *args, int argc, const char **argv) /* {{{ */
     /* TODO add this into a function */
     struct passwd *pw = getpwuid(getuid());
     TRYC(str_fmt(&args->defaults.file, "%s/.config/cft/tags.cft", pw->pw_dir));
-    TRYC(str_fmt(&args->parsed.file, "%.*s", STR_F(&args->defaults.file)));
     //arg_help(args);
     /* actually parse */
     for(int i = 1; i < argc; ++i) {
@@ -374,15 +395,16 @@ int arg_parse(Arg *args, int argc, const char **argv) /* {{{ */
                 //THROW("\s%s does not take
             }
             switch(spec.len ? spec.ids[0] : SPECIFY_NONE) {
-                case SPECIFY_STRING:
-                case SPECIFY_LIST:
-                case SPECIFY_OPTION: {
+                //case SPECIFY_STRING:
+                //case SPECIFY_LIST:
+                //case SPECIFY_OPTION: {
+                //} break;
+                default: {
                     if(!str_length(&argY) && i + 1 < argc) {
                         argY = STR_L((char *)argv[i + 1]);
                         ++i;
                     }
                 } break;
-                default: break;
             }
             TRY(static_arg_parse_spec(args, j, &argY, spec), ERR_ARG_PARSE_SPEC);
             unknown_arg = false;
@@ -426,6 +448,14 @@ int arg_parse(Arg *args, int argc, const char **argv) /* {{{ */
         if(!args->parsed.decorate) {
             args->parsed.decorate = SPECIFY_OPTION_YES;
         }
+    }
+    /* TODO add this into a function */
+    /* default arguments */
+    if(!str_length(&args->parsed.extensions)) {
+        TRYC(str_fmt(&args->parsed.extensions, "%s", static_specify_str[SPECIFY_EXTENSION]));
+    }
+    if(!str_length(&args->parsed.file)) {
+        TRYC(str_fmt(&args->parsed.file, "%.*s", STR_F(&args->defaults.file)));
     }
 #endif
     return 0;
@@ -536,6 +566,7 @@ void arg_free(Arg *arg)
     str_free(&arg->parsed.file);
     str_free(&arg->defaults.file);
     vrstr_free(&arg->parsed.remains);
+    vrstr_free(&arg->parsed.inputs);
 }
 
 
