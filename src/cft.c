@@ -483,10 +483,15 @@ ErrDecl cft_tags_fmt(Cft *cft, Str *out, VrStr *files) { //{{{
         }
         //TRY(trrtag_dump(&filtered, &all.items, &counts, &all.last), ERR_LUTD_DUMP);
     } else {
-        for(size_t i = 0; i < (1ULL << (cft->reverse.width - 1)); ++i) {
-            for(size_t j = 0; j < cft->reverse.buckets[i].len; ++j) {
-                TagRef *add = cft->reverse.buckets[i].items[j];
-                TRY(trrtagref_add(&filteredr, add), ERR_LUTD_ADD);
+        for(size_t ii = 0; ii < (1ULL << (cft->tags.width - 1)); ++ii) {
+            for(size_t jj = 0; jj < cft->tags.buckets[ii].len; ++jj) {
+                Tag *add = cft->tags.buckets[ii].items[jj];
+                for(size_t i = 0; i < vrstr_length(&add->tags); ++i) {
+                    Str *adds = vrstr_get_at(&add->tags, i);
+                    TagRef addt = { .tag = *adds };
+                    TRY(trrtagref_add(&filteredr, &addt), ERR_LUTD_ADD);
+                    //printff("ADD: [%.*s]", STR_F(&add->tag));
+                }
             }
         }
     }
