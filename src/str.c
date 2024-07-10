@@ -322,6 +322,7 @@ int str_cmp(const Str *a, const Str *b) //{{{
     size_t la = str_length(a);
     size_t lb = str_length(b);
     int result = -1;
+    //printff("CMP %zu[%.*s] %zu[%.*s]", str_length(a), STR_F(a), str_length(b), STR_F(b));
     if(la != lb) {
         size_t less = la < lb ? la : lb;
         result = memcmp(str_iter_begin(a), str_iter_begin(b), less);

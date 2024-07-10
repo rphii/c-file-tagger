@@ -11,23 +11,23 @@
 
 static const char *static_arg[][2] = {
     [ARG_NONE] = {0, 0},
-    [ARG_HELP] = {"-h", "--help"},
+    [ARG_HELP] = {"h", "--help"},
     [ARG_VERSION] = {0, "--version"},
-    [ARG_TAG] = {"-t", "--tag"},
-    [ARG_UNTAG] = {"-u", "--untag"},
-    [ARG_COPY] = {"-c", "--copy"},
+    [ARG_TAG] = {"t", "--tag"},
+    [ARG_UNTAG] = {"u", "--untag"},
+    [ARG_COPY] = {"c", "--copy"},
     //[ARG_LINK] = {"-l", "--link"},
     [ARG_REMOVE] = {0, "--remove"},
-    [ARG_MOVE] = {"-m", "--move"},
-    [ARG_ANY] = {"-O", "--any"},
-    [ARG_AND] = {"-A", "--and"},
-    [ARG_NOT] = {"-N", "--not"},
-    [ARG_LIST_TAGS] = {"-l", "--list-tags"},
-    [ARG_LIST_FILES] = {"-L", "--list-files"},
+    [ARG_MOVE] = {"m", "--move"},
+    [ARG_ANY] = {"O", "--any"},
+    [ARG_AND] = {"A", "--and"},
+    [ARG_NOT] = {"N", "--not"},
+    [ARG_LIST_TAGS] = {"l", "--list-tags"},
+    [ARG_LIST_FILES] = {"L", "--list-files"},
     [ARG_EXISTS] = {0, "--exists"},
-    [ARG_FILE] = {"-f", "--file"},
-    [ARG_DECORATE] = {0, "--decorate"},
-    [ARG_INPUT] = {"-i", "--input"},
+    [ARG_FILE] = {"f", "--file"},
+    [ARG_DECORATE] = {"d", "--decorate"},
+    [ARG_INPUT] = {"i", "--input"},
     [ARG_MERGE] = {0, "--merge"},
     [ARG_COMPACT] = {0, "--compact"},
 };
@@ -168,11 +168,13 @@ static void arg_static_print_version(Arg *arg)
 }
 
 #define ERR_ARG_EXECUTE "failed executing argument"
-ErrDeclStatic arg_static_execute(Arg *arg, ArgList id)
+ErrDeclStatic arg_static_execute(Arg *arg, ArgList id, Str *argY)
 {
-    ASSERT(arg, ERR_NULL_ARG);
+    ASSERT_ARG(arg);
+    ASSERT_ARG(argY);
     if(id >= ARG__COUNT) THROW("incorrect id (%u)", id);
-    SpecifyList *spec = 0;
+    //SpecifyList spec = 0;
+    void *to_verify = 0;
     switch(id) {
         case ARG_HELP: {
             arg_help(arg);
@@ -191,58 +193,88 @@ ErrDeclStatic arg_static_execute(Arg *arg, ArgList id)
             arg->parsed.list_files = 1;
         } break;
         case ARG_DECORATE: {
-            spec = &arg->parsed.decorate;
+            to_verify = &arg->parsed.decorate;
         } break;
         case ARG_MERGE: {
             arg->parsed.merge = true;
         } break;
         case ARG_ANY: {
-            if(!str_length(&arg->parsed.find_any)) {
-                printf("%*s" F("%s", BOLD) "=STRING is missing\n", arg->tabs.tiny, "", static_arg[id][1]); // TODO:this is stupid (see below...)
-                arg->exit_early = true;
-            }
+            to_verify = &arg->parsed.find_any;
         } break;
         case ARG_AND: {
-            if(!str_length(&arg->parsed.find_and)) {
-                printf("%*s" F("%s", BOLD) "=STRING is missing\n", arg->tabs.tiny, "", static_arg[id][1]); // TODO:this is stupid (see below...)
-                arg->exit_early = true;
-            }
+            to_verify = &arg->parsed.find_and;
         } break;
         case ARG_NOT: {
-            if(!str_length(&arg->parsed.find_not)) {
-                printf("%*s" F("%s", BOLD) "=STRING is missing\n", arg->tabs.tiny, "", static_arg[id][1]); // TODO:this is stupid (see below...)
-                arg->exit_early = true;
-            }
+            to_verify = &arg->parsed.find_not;
         } break;
         case ARG_FILE: {
-            if(!str_length(&arg->parsed.file)) {
-                printf("%*s" F("%s", BOLD) "=STRING is missing\n", arg->tabs.tiny, "", static_arg[id][1]); // TODO:this is stupid (see below...)
-                arg->exit_early = true;
-            }
+            to_verify = &arg->parsed.file;
         } break;
         case ARG_TAG: {
-            if(!str_length(&arg->parsed.tags_add)) {
-                printf("%*s" F("%s", BOLD) "=STRING is missing\n", arg->tabs.tiny, "", static_arg[id][1]); // TODO:this is stupid (see below...)
-                arg->exit_early = true;
-            }
+            to_verify = &arg->parsed.tags_add;
         } break;
         case ARG_UNTAG: {
-            if(!str_length(&arg->parsed.tags_del)) {
-                printf("%*s" F("%s", BOLD) "=STRING is missing\n", arg->tabs.tiny, "", static_arg[id][1]); // TODO:this is stupid (see below...)
-                arg->exit_early = true;
-            }
+            to_verify = &arg->parsed.tags_del;
         } break;
         case ARG_INPUT: {
-            if(!vrstr_length(&arg->parsed.inputs)) {
-                printf("%*s" F("%s", BOLD) "=STRING is missing\n", arg->tabs.tiny, "", static_arg[id][1]); // TODO:this is stupid (see below...)
-                arg->exit_early = true;
-            }
+            to_verify = &arg->parsed.inputs;
         } break;
-        //case ARG_TAG: { spec = &arg->parsed.tag; } break;
         default: THROW(ERR_UNHANDLED_ID" (%d)", id);
     }
-    if(spec) {
-        switch(*spec) {
+    if(to_verify) {
+        Specify spec = static_specify[id];
+        if(spec.len) {
+            SpecifyList id_spec = spec.ids[0]; //*(SpecifyList *)to_verify; //spec.ids[0];
+            if(id_spec <= SPECIFY__OPTION_END && id_spec >= SPECIFY__OPTION_BEGIN) {
+                id_spec = SPECIFY_NONE;
+            }
+            switch(id_spec) {
+                case SPECIFY_OPTION: {
+                    id_spec = *(SpecifyList *)to_verify;
+                    if(id_spec <= SPECIFY__OPTION_END && id_spec >= SPECIFY__OPTION_BEGIN) {
+                        break;
+                    }
+                    arg->exit_early = true;
+                    /* list options available */
+                    const Specify *spec2 = &static_specify[id];
+                    size_t n = 0;
+                    for(size_t i = 1; i < spec2->len; ++i) {
+                        if(spec2->ids[i]) ++n;
+                    }
+                    if(str_length(argY)) {
+                        printf("%*s" F("%s", BOLD) " (one of %zu below; invalid provided: '" F("%.*s", BOLD) "')\n", arg->tabs.tiny, "", static_arg[id][1], n, STR_F(argY));
+                    } else {
+                        printf("%*s" F("%s", BOLD) " (one of %zu below; none provided)\n", arg->tabs.tiny, "", static_arg[id][1], n);
+                    }
+                    //bool first = true;
+                    for(size_t i = 1; i < spec2->len; i++) {
+                        SpecifyList h = spec2->ids[i];
+                        if(!h) continue;
+                        //first = false;
+                        printf("%*s %s%s\n", arg->tabs.main, "", static_specify_str[h], i == 1 ? F(" (default)", IT) : "");
+                    }
+                    THROW("wrong or no option specified");
+                } break;
+                case SPECIFY_STRING: {
+                    if(str_length((Str *)to_verify)) break;
+                    arg->exit_early = true;
+                    printf("%*s" F("%s %s", BOLD) " is empty\n", arg->tabs.tiny, "", arg_str(id), specify_str(id_spec));
+                    THROW("no string specified");
+                } break;
+                case SPECIFY_STRINGS: {
+                    if(vrstr_length((VrStr *)to_verify)) break;
+                    arg->exit_early = true;
+                    printf("%*s" F("%s %s", BOLD) " is empty\n", arg->tabs.tiny, "", arg_str(id), specify_str(id_spec));
+                    THROW("no string specified");
+                } break;
+                case SPECIFY_NONE: break;
+                default: THROW(ERR_UNHANDLED_ID" (%d) '%s' for %s", id_spec, specify_str(id_spec), arg_str(id));
+            }
+        }
+    }
+#if 0
+    //if(spec) {
+        switch(spec) {
             case SPECIFY_OPTION: {
                 arg->exit_early = true;
                 /* list options available */
@@ -268,7 +300,8 @@ ErrDeclStatic arg_static_execute(Arg *arg, ArgList id)
             } break;
             default: break;
         }
-    }
+    //}
+#endif
     return 0;
 error:
     return -1;
@@ -280,14 +313,14 @@ ErrDeclStatic arg_static_add_to_unknown(Arg *arg, Str *s)
     ASSERT(arg, ERR_NULL_ARG);
     ASSERT(s, ERR_NULL_ARG);
     bool add_comma = (str_length(&arg->unknown) != 0);
-    TRY(str_fmt(&arg->unknown, "%s%.*s", add_comma ? ", " : "", STR_F(s)), ERR_STR_FMT);
+    TRY(str_fmt(&arg->unknown, "%s%s%.*s", add_comma ? ", " : "", str_length(s) > 1 ? "" : "-", STR_F(s)), ERR_STR_FMT);
     return 0;
 error:
     return -1;
 }
 
 #define ERR_ARG_PARSE_SPEC "failed parsing specific argument"
-ErrDeclStatic static_arg_parse_spec(Arg *args, ArgList arg, Str *argY, Specify spec)
+ErrDeclStatic static_arg_parse_spec(Arg *args, ArgList arg, Str *argY, Specify spec, bool *argY_consumed)
 {
     ASSERT(args, ERR_NULL_ARG);
     ASSERT(argY, ERR_NULL_ARG);
@@ -301,17 +334,15 @@ ErrDeclStatic static_arg_parse_spec(Arg *args, ArgList arg, Str *argY, Specify s
         case ARG_DECORATE: { to_set = &args->parsed.decorate; } break;
         case ARG_TAG: { to_set = &args->parsed.tags_add; } break;
         case ARG_UNTAG: { to_set = &args->parsed.tags_del; } break;
-        case ARG_FILE: {
-            to_set = &args->parsed.file;
-        } break;
+        case ARG_FILE: { to_set = &args->parsed.file; } break;
         case ARG_INPUT: { to_set = &args->parsed.inputs; } break;
-        //case ARG_TAG: { to_set = &args->parsed.tag; args->add_to = &args->parsed.tags; } break;
         default: THROW("unhandled arg id (%u)", arg);
     }
     switch(id0) {
         case SPECIFY_OPTION: {
             SpecifyList *id_set = (SpecifyList *)to_set;
             *id_set = SPECIFY_OPTION;
+            *argY_consumed = true;
             for(size_t k = 1; k < spec.len; ++k) {
                 SpecifyList id = spec.ids[k];
                 if(!id) continue;
@@ -324,8 +355,10 @@ ErrDeclStatic static_arg_parse_spec(Arg *args, ArgList arg, Str *argY, Specify s
             }
         } break;
         case SPECIFY_STRING: {
+            if(!str_length(argY)) THROW("no string specified"); // TODO:do I need this??
+            *argY_consumed = true;
             if(str_length((Str *)to_set)) {
-                printf("%*s" F("%s=%.*s", BOLD) " can't specify more than one string\n", args->tabs.tiny, "", arg_str(arg), STR_F(argY));
+                printf("%*s" F("%s %.*s", BOLD) " can't specify more than one string\n", args->tabs.tiny, "", arg_str(arg), STR_F(argY));
                 args->exit_early = true;
                 return 0;
             }
@@ -333,6 +366,7 @@ ErrDeclStatic static_arg_parse_spec(Arg *args, ArgList arg, Str *argY, Specify s
             TRYC(str_fmt((Str *)to_set, "%.*s", STR_F(argY)));
         } break;
         case SPECIFY_LIST: { /* TODO: can I really just memcpy? why did I fmt SPECIFY_STRING?? is that because if I rebuild? */
+            *argY_consumed = true;
             memcpy((Str *)to_set, argY, sizeof(*argY));
         } break;
 #if 0
@@ -346,6 +380,7 @@ ErrDeclStatic static_arg_parse_spec(Arg *args, ArgList arg, Str *argY, Specify s
 #endif
         case SPECIFY_NUMBER: {
             if(!str_length(argY)) THROW("no number specified");
+            *argY_consumed = true;
             errno = 0;
             char *endptr = 0;
             char *begin = str_iter_begin(argY);
@@ -358,7 +393,8 @@ ErrDeclStatic static_arg_parse_spec(Arg *args, ArgList arg, Str *argY, Specify s
             *(size_t *)to_set = val;
         } break;
         case SPECIFY_STRINGS: {
-            if(!str_length(argY)) THROW("%s did not give any string", arg_str(arg));
+            if(!str_length(argY)) THROW(F("%s %s", BOLD) " is missing", arg_str(arg), specify_str(SPECIFY_STRING));
+            *argY_consumed = true;
             //str_clear((Str *)to_set);
             TRY(vrstr_push_back((VrStr *)to_set, argY), ERR_VEC_PUSH_BACK);
             //TRYC(str_fmt((Str *)to_set, "%.*s", STR_F(argY)));
@@ -370,89 +406,101 @@ error:
     return -1;
 }
 
-int arg_parse(Arg *args, int argc, const char **argv) /* {{{ */
+int arg_parse(Arg *args, size_t argc, const char **argv) /* {{{ */
 {
     ASSERT(args, ERR_NULL_ARG);
     ASSERT(argv, ERR_NULL_ARG);
     /* set up */
+    size_t err_index = 0;
+    ArgList err_arg = 0;
     args->name = argv[0];
     args->tabs.tiny = 2;
     args->tabs.main = 7;
     args->tabs.ext = 34;
     args->tabs.spec = args->tabs.ext + 2;
     args->tabs.max = 80;
-
+    //VrStr many_cmp = {0};
     /* TODO add this into a function */
     struct passwd *pw = getpwuid(getuid());
     TRYC(str_fmt(&args->defaults.file, "%s/.config/cft/tags.cft", pw->pw_dir));
     //arg_help(args);
     /* actually parse */
-    for(int i = 1; i < argc; ++i) {
-        /* verify command line arguments */
+    for(size_t i = 1; i < argc; ++i) {
+        err_index = i;
+        /* current argument */
         Str arg = STR_L((char *)argv[i]);
-        size_t posX = str_find_substring(&arg, &STR("=")) - 1;
-        bool unknown_arg = true;
-        bool arg_opt = true; /* assume arg is two dashes */
-        if(str_length(&arg) == 2) arg_opt = false; /* arg is 1 dash, since too short */
-        if(str_length(&arg) >= 2 && posX == 2) arg_opt = false; /* arg is 1 dash, but with = */
-        for(ArgList j = 0; j < ARG__COUNT; ++j) {
-            Str cmp = STR_L((char *)static_arg[j][arg_opt]);
-            Str argX = STR_LL(str_iter_begin(&arg), SIZE_IS_NEG(posX) ? str_length(&arg) : posX);
-            Str argY = str_length(&arg) > str_length(&argX) + 1 ? STR_LL(str_iter_at(&arg, str_length(&argX) + 1), str_length(&arg) - str_length(&argX) - 1) : STR("");
-            //printff("%.*s // %zi // X %.*s // Y %.*s === %.*s", STR_F(&arg), posX, STR_F(&argX), STR_F(&argY), STR_F(&cmp));
-            if(!str_length(&cmp)) continue; /* arg to cmp is not even an argument */
-            if(str_cmp(&argX, &cmp)) continue; /* arg to cmp to is not equal */
-            Specify spec = static_specify[j];
-            //printf("FOUND!! -> id %s (HAS %zu)\n", static_arg[j][1], spec.len);
-            if(str_length(&argY) && !spec.len) {
-                printf("%*s" F("%s", BOLD) " does not take anything\n", args->tabs.tiny, "", arg_str(j)); // TODO:this is stupid (see below...)
-                args->exit_early = true;
-            }
-            switch(spec.len ? spec.ids[0] : SPECIFY_NONE) {
-                case SPECIFY_NONE: {} break;
-                default: {
-                    if(!str_length(&argY) && i + 1 < argc) {
-                        argY = STR_L((char *)argv[i + 1]);
-                        ++i;
-                    }
-                } break;
-            }
-            TRY(static_arg_parse_spec(args, j, &argY, spec), ERR_ARG_PARSE_SPEC);
-            unknown_arg = false;
-            break;
-        }
-        if(str_length(&arg) >= 1 && str_get_at(&arg, 0) != '-') {
+        Str argX = {0};
+        /* determine if it's short arguments or full text */
+        size_t argY_i = 0;
+        size_t arg_many = 0;
+        if(str_get_front(&arg) != '-') {
             TRY(vrstr_push_back(&args->parsed.remains, &arg), ERR_VEC_PUSH_BACK);
-            //printf("[%zu] %.*s\n", vrstr_length(&args->files), STR_F(&arg));
-            unknown_arg = false;
+            continue;
         }
-        if(unknown_arg) {
-            TRY(arg_static_add_to_unknown(args, &arg), ERR_ARG_ADD_TO_UNKNOWN);
+        bool arg_opt = false; /* assume arg is one dash */
+        if(!str_cmp(&STR_LL(str_iter_begin(&arg), str_length(&arg) > 2 ? 2 : str_length(&arg)), &STR("--"))) arg_opt = true; /* arg is two dashes */
+        if(!arg_opt) ++arg_many;
+        /* get a possible value provided with = */
+        size_t posY = str_ch(&arg, '=', 0);
+        Str argYY = STR("");
+        bool argYY_available = false;
+        if(posY < str_length(&arg)) {
+            argYY = STR_L(str_iter_at(&arg, posY + 1));
+            argYY_available = true;
         }
+        //printff("[%zu] argYY [%.*s] available ? %s", i, STR_F(&argYY), argYY_available ? "true" : "false");
+        /* find matching argument from our list */
+        for(;;) {
+            ArgList j = 0;
+            for(j = 0; j < ARG__COUNT; ++j) {
+                /* prepare for comparison to find current argument */
+                Str cmp = STR_L((char *)static_arg[j][arg_opt]);
+                if(!str_length(&cmp)) continue; /* arg to cmp is not even an argument */
+                argX = STR_LL(str_iter_at(&arg, arg_many), 1); /* assume short arguments -> length 1 */
+                if(arg_opt) argX.last = argX.first + posY; /* if long arguments, fix length */
+                if(str_cmp(&argX, &cmp)) continue; /* arg to cmp to is not equal */
+                /* found our current argument! */
+                err_arg = j;
+                Specify spec = static_specify[j];
+                /* get a possible arg value */
+                bool argY_consumed = false;
+                Str argY = STR("");
+                if(argYY_available) argY = argYY;
+                else if(i + argY_i + 1 < argc) argY = STR_L((char *)argv[i + argY_i + 1]);
+                /* parse & process */
+                //printff("[%s] argY = [%zu]->[%.*s]", arg_str(j), i+argY_i+1, STR_F(&argY));
+                TRY(static_arg_parse_spec(args, j, &argY, spec, &argY_consumed), ERR_ARG_PARSE_SPEC);
+                TRY(arg_static_execute(args, j, &argY), ERR_ARG_EXECUTE);
+                //printff("argY consumed? %s", argY_consumed ? "true" : "false");
+                if(argY_consumed) {
+                    if(argYY_available) {
+                        argYY_available = false;
+                    } else {
+                        ++argY_i;
+                    }
+                }
+                break;
+                //printff("[i+argY_i+1] = [%zu+%zu+1]", i, argY_i);
+                //getchar();
+            }
+            /* confirm for a valid option */
+            if(j == ARG__COUNT) {
+                if(arg_opt) {
+                    TRY(arg_static_add_to_unknown(args, &arg), ERR_ARG_ADD_TO_UNKNOWN);
+                } else {
+                    TRY(arg_static_add_to_unknown(args, &argX), ERR_ARG_ADD_TO_UNKNOWN);
+                }
+            }
+            /* done, next */
+            if(arg_opt) break;
+            ++arg_many;
+            if(arg_many >= posY) break;
+        }
+        i += argY_i;
     }
 #if 1
-    /* done checking */
     if(str_length(&args->unknown)) {
-        THROW("unknown arguments: %.*s", STR_F(&args->unknown));
-    } else for(int i = 1; i < argc; i++) {
-        /* run arguments */
-        //const char *arg = argv[i];
-        Str arg = STR_L((char *)argv[i]);
-        size_t posX = str_find_substring(&arg, &STR("=")) - 1;
-        size_t arg_opt = 1; /* assume that argument is a full-string flag */
-        if(str_length(&arg) == 2) arg_opt = false; /* arg is 1 dash, since too short */
-        if(str_length(&arg) >= 2 && posX == 2) arg_opt = false; /* arg is 1 dash, but with = */
-        //if(arg[1] && !arg[2]) arg_opt = 0; /* argument is a one-character flag */
-        for(ArgList j = 0; j < ARG__COUNT; j++) {
-            //if(arg[1] && arg[2] == '=' && static_specify[j].len) arg_opt = 0;
-            Str cmp = STR_L((char *)static_arg[j][arg_opt]);
-            Str argX = STR_LL(str_iter_begin(&arg), SIZE_IS_NEG(posX) ? str_length(&arg) : posX);
-            if(!str_length(&cmp)) continue; /* arg to cmp is not even an argument */
-            if(str_cmp(&argX, &cmp)) continue; /* arg to cmp to is not equal */
-            TRY(arg_static_execute(args, j), ERR_ARG_EXECUTE);
-            if(args->exit_early) break;
-        }
-        if(args->exit_early) break;
+        THROW("unknown arguments"); //: %.*s", STR_F(&args->unknown));
     }
     /* post processing */
     if((args->parsed.list_tags || args->parsed.list_files) && !str_length(&args->parsed.find_and) && !str_length(&args->parsed.find_any) && !str_length(&args->parsed.find_not)) {
@@ -472,8 +520,17 @@ int arg_parse(Arg *args, int argc, const char **argv) /* {{{ */
         THROW("no input files specified (" F("%s", BOLD) "), nothing to merge", arg_str(ARG_INPUT));
     }
 #endif
+    //vrstr_free(&many_cmp);
     return 0;
 error:
+    if(str_length(&args->unknown)) {
+        printf("%*sUnknown arguments: '%.*s'\n", args->tabs.tiny, "", STR_F(&args->unknown));
+    }
+    if(err_index) {
+        if(err_arg && err_arg < ARG__COUNT) {
+            printf("%*sFailed parsing argument: '" F("%s", BOLD) "' (from [%zu] '" F("%s", BOLD) "')\n", args->tabs.tiny, "", arg_str(err_arg), err_index, argv[err_index] );
+        }
+    }
     return -1;
 }; /* }}} */
 
@@ -497,7 +554,7 @@ void arg_help(Arg *arg) /* {{{ */
         const char *arg_long = static_arg[i][1];
         if(arg_short) {
             str_clear(&ts);
-            TRY(str_fmt(&ts, "%s,", arg_short), ERR_STR_FMT);
+            TRY(str_fmt(&ts, "-%s,", arg_short), ERR_STR_FMT);
             tp = print_line(arg->tabs.max, arg->tabs.tiny, arg->tabs.tiny, &ts);
             tabs_offs += tp;
         }

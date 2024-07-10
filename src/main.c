@@ -30,7 +30,7 @@ int main(int argc, const char **argv)
     Str content = {0};
     Str ostream = {0};
 
-    TRY(arg_parse(&arg, argc, argv), ERR_ARG_PARSE);
+    TRY(arg_parse(&arg, argc > 0 ? (size_t)argc : 0, argv), ERR_ARG_PARSE);
     if(arg.exit_early) goto clean;
     //screen_enter();
 
