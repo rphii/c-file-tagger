@@ -412,6 +412,7 @@ int arg_parse(Arg *args, size_t argc, const char **argv) /* {{{ */
     ASSERT(argv, ERR_NULL_ARG);
     /* set up */
     size_t err_index = 0;
+    size_t err_arg_many = 0;
     ArgList err_arg = 0;
     args->name = argv[0];
     args->tabs.tiny = 2;
@@ -452,6 +453,7 @@ int arg_parse(Arg *args, size_t argc, const char **argv) /* {{{ */
         /* find matching argument from our list */
         for(;;) {
             ArgList j = 0;
+            err_arg_many = arg_many;
             for(j = 0; j < ARG__COUNT; ++j) {
                 /* prepare for comparison to find current argument */
                 Str cmp = STR_L((char *)static_arg[j][arg_opt]);
@@ -529,7 +531,11 @@ error:
     }
     if(err_index) {
         if(err_arg && err_arg < ARG__COUNT) {
-            printf("%*sFailed parsing argument: '" F("%s", BOLD) "' (from [%zu] '" F("%s", BOLD) "')\n", args->tabs.tiny, "", arg_str(err_arg), err_index, argv[err_index] );
+            if(err_arg_many) {
+                printf("%*sFailed parsing argument: '" F("%s", BOLD) "' (from [%zu] of '" F("%s", BOLD) "')\n", args->tabs.tiny, "", arg_str(err_arg), err_arg_many - 1, argv[err_index] );
+            } else {
+                printf("%*sFailed parsing argument: '" F("%s", BOLD) "' (from '" F("%s", BOLD) "')\n", args->tabs.tiny, "", arg_str(err_arg), argv[err_index] );
+            }
         }
     }
     return -1;
