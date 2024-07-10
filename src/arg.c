@@ -419,7 +419,7 @@ int arg_parse(Arg *args, size_t argc, const char **argv) /* {{{ */
     args->tabs.main = 7;
     args->tabs.ext = 34;
     args->tabs.spec = args->tabs.ext + 2;
-    args->tabs.max = 80;
+    args->tabs.max = 100;
     //VrStr many_cmp = {0};
     /* TODO add this into a function */
     struct passwd *pw = getpwuid(getuid());
