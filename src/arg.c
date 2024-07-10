@@ -495,6 +495,7 @@ int arg_parse(Arg *args, size_t argc, const char **argv) /* {{{ */
             if(arg_opt) break;
             ++arg_many;
             if(arg_many >= posY) break;
+            err_arg = 0;
         }
         i += argY_i;
     }
