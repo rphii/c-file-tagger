@@ -28,7 +28,7 @@ List all files:
     cft -L
 
     # list only files filename-A & filename-B
-    cft --list-tags filename-A filename-B
+    cft --list-files filename-A filename-B
 
 List all files with tags associated
 
