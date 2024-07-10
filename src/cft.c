@@ -268,7 +268,9 @@ ErrDecl cft_del_duplicate_folders(Cft *cft) { //{{{
                 for(size_t jj = 0; jj < duplicates.buckets[ii].len; ++jj) {
                     TagRef *ref = duplicates.buckets[ii].items[jj];
                     size_t count = duplicates.buckets[ii].count[jj];
-                    if(count > 1) continue;
+                    if(count > 1) {
+                        continue;
+                    }
                     TRY(vrstr_push_back(&tag->tags, &ref->tag), ERR_VEC_PUSH_BACK);
                 }
             }
@@ -289,6 +291,7 @@ ErrDecl cft_fmt(Cft *cft, Str *str) { //{{{
     info(formatting, "Formatting");
     int err = 0;
     VrTag tags = {0};
+    TRYC(cft_del_duplicate_folders(cft));
     trtag_dump(&cft->tags, &tags.items, 0, &tags.last);
     vrtag_sort(&tags); // TODO add switch
     for(size_t i = 0; i < vrtag_length(&tags); ++i) {
@@ -536,6 +539,7 @@ ErrDecl cft_files_fmt(Cft *cft, Str *out, VrStr *files) { //{{{
     int err = 0;
     VrTag all = {0};
     TrrTag filtered = {0};
+    TRYC(cft_del_duplicate_folders(cft));
     if(vrstr_length(files)) {
         TRY(trrtag_init(&filtered, cft->tags.width), ERR_LUTD_INIT);
         for(size_t i = 0; i < vrstr_length(files); ++i) {
@@ -558,6 +562,7 @@ ErrDecl cft_files_fmt(Cft *cft, Str *out, VrStr *files) { //{{{
     //printf("TOTAL TAGS: %zu\n", vrtag_length(&all));
     for(size_t i = 0; i < vrtag_length(&all); ++i) {
         Tag *tag = vrtag_get_at(&all, i);
+        vrstr_sort(&tag->tags);
         //printf("  [%zu] %.*s (%zu)\n", i, STR_F(&tag->tag), counts[i]);
         if(cft->options.decorate) {
             TRYC(str_fmt(out, "  [%zu] ", i));

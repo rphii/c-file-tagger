@@ -63,7 +63,6 @@ int main(int argc, const char **argv)
     if(cft.options.modify || cft.options.merge) {
         TRYC(cft_tags_add(&cft, &arg.parsed.remains, &arg.parsed.tags_add));
         str_clear(&content);
-        TRYC(cft_del_duplicate_folders(&cft));
         TRYC(cft_fmt(&cft, &content));
         TRYC(file_str_write(&arg.parsed.file, &content));
         goto clean;

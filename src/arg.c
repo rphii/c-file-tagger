@@ -255,6 +255,7 @@ ErrDeclStatic arg_static_execute(Arg *arg, ArgList id, Str *argY)
                     }
                     THROW("wrong or no option specified");
                 } break;
+                case SPECIFY_LIST:
                 case SPECIFY_STRING: {
                     if(str_length((Str *)to_verify)) break;
                     arg->exit_early = true;

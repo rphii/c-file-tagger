@@ -19,26 +19,34 @@ List all tags:
     cft --list-tags
     cft -l
 
+    # list only tags of filename-A & filename-B
+    cft --list-tags filename-A filename-B
+
 List all files:
 
     cft --list-files
     cft -L
+
+    # list only files filename-A & filename-B
+    cft --list-tags filename-A filename-B
 
 List all files with tags associated
 
     cft --list-tags --list-files
     cft -lL
 
+    # to disable decoration
     cft --list-tags --list-files --decoration no
-    cft -lLd no         # disable decoration
+    cft -lLd no
 
 List all tags with files associated
 
     cft --list-files --list-tags
     cft -Ll
 
+    # to disable decoration
     cft --list-files --list-tags --decoration no
-    cft -Lld no         # disable decoration
+    cft -Lld no     # should in theory give the same output as your file(s) (combined)
 
 Tags have to be matched exactly (yes, case sensitive). (...reminder that this is an early version,
 but I want the program to be quite flexible later on, so I'm thinking of adding an option, or
