@@ -76,8 +76,19 @@ int main(int argc, const char **argv)
         goto clean;
     }
 
+    //printff("list-tags %i", cft.options.list_tags);
+    //printff("list-files %i", cft.options.list_files);
+    //return 0;
+
+    /* print files */
+    if(cft.options.list_files && cft.options.list_files > cft.options.list_tags) {
+        TRYC(cft_files_fmt(&cft, &ostream, &arg.parsed.remains));
+        printf("%.*s", STR_F(&ostream));
+        goto clean;
+    }
+
     /* print tags */
-    if(cft.options.tags_list) {
+    if(cft.options.list_tags && cft.options.list_tags > cft.options.list_files) {
         TRYC(cft_tags_fmt(&cft, &ostream, &arg.parsed.remains));
         printf("%.*s", STR_F(&ostream));
         goto clean;

@@ -15,8 +15,10 @@ typedef enum {
     /* below */
     SPECIFY_OPTIONAL,
     SPECIFY_OPTION,
+        SPECIFY_OPTION_Y,
         SPECIFY_OPTION_YES,
         SPECIFY_OPTION_TRUE,
+        SPECIFY_OPTION_N,
         SPECIFY_OPTION_NO,
         SPECIFY_OPTION_FALSE,
         SPECIFY_OPTION_NORMAL,
@@ -71,6 +73,7 @@ typedef enum {
     ARG_AND,
     ARG_NOT,
     ARG_LIST_TAGS,
+    ARG_LIST_FILES,
     ARG_FILE,
     ARG_DECORATE,
     ARG_INPUT,
@@ -94,7 +97,8 @@ typedef struct Arg {
         Str extensions; // TODO: move into sub-struct
         SpecifyList tag;
         Str file;
-        bool list_tags;
+        int list_tags;
+        int list_files;
         bool merge;
         SpecifyList decorate;
         Str tags_add;

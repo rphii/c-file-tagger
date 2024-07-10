@@ -23,6 +23,7 @@ static const char *static_arg[][2] = {
     [ARG_AND] = {"-A", "--and"},
     [ARG_NOT] = {"-N", "--not"},
     [ARG_LIST_TAGS] = {"-l", "--list-tags"},
+    [ARG_LIST_FILES] = {"-L", "--list-files"},
     [ARG_EXISTS] = {0, "--exists"},
     [ARG_FILE] = {"-f", "--file"},
     [ARG_DECORATE] = {0, "--decorate"},
@@ -50,6 +51,7 @@ static const char *static_desc[] = {
     [ARG_AND] = "list files having multiple tags",
     [ARG_NOT] = "list files not having tags",
     [ARG_LIST_TAGS] = "list all tags",
+    [ARG_LIST_FILES] = "list all files",
     [ARG_EXISTS] = "TBD show either only existing or not existing files, if specified",
     [ARG_FILE] = "specify main file to be parsed",
     [ARG_DECORATE] = "specify decoration",
@@ -75,8 +77,9 @@ static const Specify static_specify[ARG__COUNT] = {
     [ARG_AND] = SPECIFY(SPECIFY_LIST),
     [ARG_NOT] = SPECIFY(SPECIFY_LIST),
     [ARG_LIST_TAGS] = {0},
+    [ARG_LIST_FILES] = {0},
     [ARG_FILE] = SPECIFY(SPECIFY_STRING),
-    [ARG_DECORATE] = SPECIFY(SPECIFY_OPTION, SPECIFY_OPTION_NO, SPECIFY_OPTION_FALSE, SPECIFY_OPTION_YES, SPECIFY_OPTION_TRUE),
+    [ARG_DECORATE] = SPECIFY(SPECIFY_OPTION, SPECIFY_OPTION_NO, SPECIFY_OPTION_N, SPECIFY_OPTION_FALSE, SPECIFY_OPTION_YES, SPECIFY_OPTION_TRUE, SPECIFY_OPTION_Y),
     [ARG_INPUT] = SPECIFY(SPECIFY_STRINGS),
     [ARG_MERGE] = {0},
 };
@@ -90,8 +93,10 @@ static const char *static_specify_str[] = {
         [SPECIFY_OPTION_SEARCH_SUB] = "search-sub",
         [SPECIFY_OPTION_ICON] = "icon",
         [SPECIFY_OPTION_TRUE] = "true",
+        [SPECIFY_OPTION_Y] = "y",
         [SPECIFY_OPTION_YES] = "yes",
         [SPECIFY_OPTION_FALSE] = "false",
+        [SPECIFY_OPTION_N] = "n",
         [SPECIFY_OPTION_NO] = "no",
         [SPECIFY_OPTION_ADD] = "add",
         [SPECIFY_OPTION_DELETE] = "delete",
@@ -178,7 +183,12 @@ ErrDeclStatic arg_static_execute(Arg *arg, ArgList id)
             arg->exit_early = true;
         } break;
         case ARG_LIST_TAGS: {
-            arg->parsed.list_tags = true;
+            if(arg->parsed.list_files) ++arg->parsed.list_files;
+            arg->parsed.list_tags = 1;
+        } break;
+        case ARG_LIST_FILES: {
+            if(arg->parsed.list_tags) ++arg->parsed.list_tags;
+            arg->parsed.list_files = 1;
         } break;
         case ARG_DECORATE: {
             spec = &arg->parsed.decorate;
@@ -285,7 +295,6 @@ ErrDeclStatic static_arg_parse_spec(Arg *args, ArgList arg, Str *argY, Specify s
     SpecifyList id0 = spec.ids[0];
     void *to_set = 0;
     switch(arg) {
-        case ARG_LIST_TAGS: { to_set = &args->parsed.list_tags; } break;
         case ARG_ANY: { to_set = &args->parsed.find_any; } break;
         case ARG_AND: { to_set = &args->parsed.find_and; } break;
         case ARG_NOT: { to_set = &args->parsed.find_not; } break;
@@ -445,8 +454,8 @@ int arg_parse(Arg *args, int argc, const char **argv) /* {{{ */
         }
         if(args->exit_early) break;
     }
-    /* postprocessing */
-    if(args->parsed.list_tags && !str_length(&args->parsed.find_and) && !str_length(&args->parsed.find_any) && !str_length(&args->parsed.find_not)) {
+    /* post processing */
+    if((args->parsed.list_tags || args->parsed.list_files) && !str_length(&args->parsed.find_and) && !str_length(&args->parsed.find_any) && !str_length(&args->parsed.find_not)) {
         if(!args->parsed.decorate) {
             args->parsed.decorate = SPECIFY_OPTION_YES;
         }
