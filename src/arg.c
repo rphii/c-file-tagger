@@ -614,7 +614,7 @@ void arg_help(Arg *arg) /* {{{ */
             } break;
             case ARG_DECORATE: {
                 str_clear(&ts);
-                TRYC(str_fmt(&ts, "\n" F("(if only %s, default to %s)", IT), arg_str(ARG_LIST_TAGS), specify_str(SPECIFY_OPTION_YES)));
+                TRYC(str_fmt(&ts, "\n" F("(if only %s or %s, default to %s)", IT), arg_str(ARG_LIST_TAGS), arg_str(ARG_LIST_FILES), specify_str(SPECIFY_OPTION_YES)));
                 tp = print_line(arg->tabs.max, 0, arg->tabs.spec, &ts);
             } break;
             default: break;
