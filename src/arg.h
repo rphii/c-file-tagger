@@ -124,7 +124,7 @@ typedef struct Arg {
 
 /* }}} */
 
-#define LINK_GITHUB "https://github.com/rphii/c-nexus"
+#define LINK_GITHUB "https://github.com/rphii/c-file-tagger"
 
 #define ERR_ARG_PARSE "failed parsing arguments"
 ErrDecl arg_parse(Arg *arg, size_t argc, const char **argv);
