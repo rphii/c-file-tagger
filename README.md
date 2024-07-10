@@ -30,7 +30,7 @@ List all files:
     # list only files filename-A & filename-B
     cft --list-files filename-A filename-B
 
-List all files with tags associated
+List all tags with files associated
 
     cft --list-tags --list-files
     cft -lL
@@ -39,7 +39,7 @@ List all files with tags associated
     cft --list-tags --list-files --decoration no
     cft -lLd no
 
-List all tags with files associated
+List all files with tags associated
 
     cft --list-files --list-tags
     cft -Ll
