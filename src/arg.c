@@ -349,6 +349,7 @@ ErrDeclStatic static_arg_parse_spec(Arg *args, ArgList arg, Str *argY, Specify s
             *(size_t *)to_set = val;
         } break;
         case SPECIFY_STRINGS: {
+            if(!str_length(argY)) THROW("%s did not give any string", arg_str(arg));
             //str_clear((Str *)to_set);
             TRY(vrstr_push_back((VrStr *)to_set, argY), ERR_VEC_PUSH_BACK);
             //TRYC(str_fmt((Str *)to_set, "%.*s", STR_F(argY)));

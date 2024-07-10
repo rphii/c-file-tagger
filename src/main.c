@@ -43,7 +43,7 @@ int main(int argc, const char **argv)
     TRYC(cft_parse(&cft, &content));
 
     /* read all other specified files */
-    if(cft.options.merge) {
+    if(!cft.options.modify || cft.options.merge) {
         for(size_t i = 0; i < vrstr_length(&arg.parsed.inputs); ++i) {
             Str *input = vrstr_get_at(&arg.parsed.inputs, i);
             if(!str_cmp(input, &arg.parsed.file)) {
