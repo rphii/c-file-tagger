@@ -16,13 +16,13 @@ static const char *static_arg[][2] = {
     [ARG_TAG] = {"-t", "--tag"},
     [ARG_UNTAG] = {"-u", "--untag"},
     [ARG_COPY] = {"-c", "--copy"},
-    [ARG_LINK] = {"-l", "--link"},
+    //[ARG_LINK] = {"-l", "--link"},
     [ARG_REMOVE] = {0, "--remove"},
     [ARG_MOVE] = {"-m", "--move"},
     [ARG_ANY] = {"-O", "--any"},
     [ARG_AND] = {"-A", "--and"},
     [ARG_NOT] = {"-N", "--not"},
-    [ARG_TAGS] = {0, "--tags"},
+    [ARG_LIST_TAGS] = {"-l", "--list-tags"},
     [ARG_EXISTS] = {0, "--exists"},
     [ARG_FILE] = {"-f", "--file"},
     [ARG_DECORATE] = {0, "--decorate"},
@@ -43,13 +43,13 @@ static const char *static_desc[] = {
     [ARG_TAG] = "tag files",
     [ARG_UNTAG] = "TBD untag files",
     [ARG_COPY] = "TBD copy tags",
-    [ARG_LINK] = "TBD link tags",
+    //[ARG_LINK] = "TBD link tags",
     [ARG_REMOVE] = "TBD remove tags",
     [ARG_MOVE] = "TBD move tags",
     [ARG_ANY] = "list files with any tags",
     [ARG_AND] = "list files having multiple tags",
     [ARG_NOT] = "list files not having tags",
-    [ARG_TAGS] = "list all tags",
+    [ARG_LIST_TAGS] = "list all tags",
     [ARG_EXISTS] = "TBD show either only existing or not existing files, if specified",
     [ARG_FILE] = "specify main file to be parsed",
     [ARG_DECORATE] = "specify decoration",
@@ -68,13 +68,13 @@ static const Specify static_specify[ARG__COUNT] = {
     [ARG_TAG] = SPECIFY(SPECIFY_LIST),
     [ARG_UNTAG] = SPECIFY(SPECIFY_LIST),
     [ARG_COPY] = SPECIFY(SPECIFY_LIST),
-    [ARG_LINK] = SPECIFY(SPECIFY_LIST),
+    //[ARG_LINK] = SPECIFY(SPECIFY_LIST),
     [ARG_REMOVE] = {0},
     [ARG_MOVE] = SPECIFY(SPECIFY_STRING),
     [ARG_ANY] = SPECIFY(SPECIFY_LIST),
     [ARG_AND] = SPECIFY(SPECIFY_LIST),
     [ARG_NOT] = SPECIFY(SPECIFY_LIST),
-    [ARG_TAGS] = {0},
+    [ARG_LIST_TAGS] = {0},
     [ARG_FILE] = SPECIFY(SPECIFY_STRING),
     [ARG_DECORATE] = SPECIFY(SPECIFY_OPTION, SPECIFY_OPTION_NO, SPECIFY_OPTION_FALSE, SPECIFY_OPTION_YES, SPECIFY_OPTION_TRUE),
     [ARG_INPUT] = SPECIFY(SPECIFY_STRINGS),
@@ -177,7 +177,7 @@ ErrDeclStatic arg_static_execute(Arg *arg, ArgList id)
             arg_static_print_version(arg);
             arg->exit_early = true;
         } break;
-        case ARG_TAGS: {
+        case ARG_LIST_TAGS: {
             arg->parsed.list_tags = true;
         } break;
         case ARG_DECORATE: {
@@ -285,7 +285,7 @@ ErrDeclStatic static_arg_parse_spec(Arg *args, ArgList arg, Str *argY, Specify s
     SpecifyList id0 = spec.ids[0];
     void *to_set = 0;
     switch(arg) {
-        case ARG_TAGS: { to_set = &args->parsed.list_tags; } break;
+        case ARG_LIST_TAGS: { to_set = &args->parsed.list_tags; } break;
         case ARG_ANY: { to_set = &args->parsed.find_any; } break;
         case ARG_AND: { to_set = &args->parsed.find_and; } break;
         case ARG_NOT: { to_set = &args->parsed.find_not; } break;
@@ -548,7 +548,7 @@ void arg_help(Arg *arg) /* {{{ */
             } break;
             case ARG_DECORATE: {
                 str_clear(&ts);
-                TRYC(str_fmt(&ts, "\n" F("(if only %s, default to %s)", IT), arg_str(ARG_TAGS), specify_str(SPECIFY_OPTION_YES)));
+                TRYC(str_fmt(&ts, "\n" F("(if only %s, default to %s)", IT), arg_str(ARG_LIST_TAGS), specify_str(SPECIFY_OPTION_YES)));
                 tp = print_line(arg->tabs.max, 0, arg->tabs.spec, &ts);
             } break;
             default: break;

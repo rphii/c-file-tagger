@@ -64,19 +64,20 @@ typedef enum {
     ARG_TAG,
     ARG_UNTAG,
     ARG_COPY,
-    ARG_LINK,
+    //ARG_LINK,
     ARG_REMOVE,
     ARG_MOVE,
     ARG_ANY,
     ARG_AND,
     ARG_NOT,
-    ARG_TAGS,
+    ARG_LIST_TAGS,
     ARG_FILE,
     ARG_DECORATE,
     ARG_INPUT,
     ARG_MERGE,
     ARG_COMPACT,
     // ARG_DEPTSH // folder depth
+    // ARG_TAGS_RENAME
     ARG_EXISTS, // show either ONLY existing files, or NOT EXISTING files, if specified! -> nah, make like find. --type ?!
     /* args above */
     ARG__COUNT
