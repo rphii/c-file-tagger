@@ -75,6 +75,7 @@ typedef enum {
     ARG_DECORATE,
     ARG_INPUT,
     ARG_MERGE,
+    ARG_COMPACT,
     // ARG_DEPTSH // folder depth
     ARG_EXISTS, // show either ONLY existing files, or NOT EXISTING files, if specified! -> nah, make like find. --type ?!
     /* args above */

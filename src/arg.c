@@ -28,6 +28,7 @@ static const char *static_arg[][2] = {
     [ARG_DECORATE] = {0, "--decorate"},
     [ARG_INPUT] = {"-i", "--input"},
     [ARG_MERGE] = {0, "--merge"},
+    [ARG_COMPACT] = {0, "--compact"},
 };
 
 const char *arg_str(ArgList id)
@@ -40,20 +41,21 @@ static const char *static_desc[] = {
     [ARG_HELP] = "print this help",
     [ARG_VERSION] = "display the version",
     [ARG_TAG] = "tag files",
-    [ARG_UNTAG] = "untag files",
-    [ARG_COPY] = "copy tags",
-    [ARG_LINK] = "link tags",
-    [ARG_REMOVE] = "remove tags",
-    [ARG_MOVE] = "move tags",
+    [ARG_UNTAG] = "TBD untag files",
+    [ARG_COPY] = "TBD copy tags",
+    [ARG_LINK] = "TBD link tags",
+    [ARG_REMOVE] = "TBD remove tags",
+    [ARG_MOVE] = "TBD move tags",
     [ARG_ANY] = "list files with any tags",
     [ARG_AND] = "list files having multiple tags",
     [ARG_NOT] = "list files not having tags",
     [ARG_TAGS] = "list all tags",
-    [ARG_EXISTS] = "show either only existing or not existing files, if specified",
-    [ARG_FILE] = "specify main file to be parsed.",
+    [ARG_EXISTS] = "TBD show either only existing or not existing files, if specified",
+    [ARG_FILE] = "specify main file to be parsed",
     [ARG_DECORATE] = "specify decoration",
     [ARG_INPUT] = "specify additional input files",
-    [ARG_MERGE] = "merge all input files into the main file",
+    [ARG_MERGE] = "TBD merge all input files into the main file",
+    [ARG_COMPACT] = "TBD compact output"
 };
 
 static const char static_version[] = ""
@@ -180,6 +182,9 @@ ErrDeclStatic arg_static_execute(Arg *arg, ArgList id)
         } break;
         case ARG_DECORATE: {
             spec = &arg->parsed.decorate;
+        } break;
+        case ARG_MERGE: {
+            arg->parsed.merge = true;
         } break;
         case ARG_ANY: {
             if(!str_length(&arg->parsed.find_any)) {
@@ -392,13 +397,9 @@ int arg_parse(Arg *args, int argc, const char **argv) /* {{{ */
             if(str_length(&argY) && !spec.len) {
                 printf("%*s" F("%s", BOLD) " does not take anything\n", args->tabs.tiny, "", arg_str(j)); // TODO:this is stupid (see below...)
                 args->exit_early = true;
-                //THROW("\s%s does not take
             }
             switch(spec.len ? spec.ids[0] : SPECIFY_NONE) {
-                //case SPECIFY_STRING:
-                //case SPECIFY_LIST:
-                //case SPECIFY_OPTION: {
-                //} break;
+                case SPECIFY_NONE: {} break;
                 default: {
                     if(!str_length(&argY) && i + 1 < argc) {
                         argY = STR_L((char *)argv[i + 1]);
@@ -456,6 +457,9 @@ int arg_parse(Arg *args, int argc, const char **argv) /* {{{ */
     }
     if(!str_length(&args->parsed.file)) {
         TRYC(str_fmt(&args->parsed.file, "%.*s", STR_F(&args->defaults.file)));
+    }
+    if(args->parsed.merge && !vrstr_length(&args->parsed.inputs)) { /* TODO: ... do I want this in arg.c or in cft.c ??? */
+        THROW("no input files specified (" F("%s", BOLD) "), nothing to merge", arg_str(ARG_INPUT));
     }
 #endif
     return 0;

@@ -15,6 +15,7 @@ typedef struct Cft {
         bool decorate;
         bool query;
         bool modify;
+        bool merge;
         bool tags_list;
         //Str *find_and;
         //Str *find_any;

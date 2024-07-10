@@ -20,13 +20,9 @@ ErrDecl cft_arg(Cft *cft, Arg *arg) { //{{{
     cft->options.decorate = (arg->parsed.decorate == SPECIFY_OPTION_YES || arg->parsed.decorate == SPECIFY_OPTION_TRUE);
     cft->options.query = (str_length(&arg->parsed.find_and) || str_length(&arg->parsed.find_any) || str_length(&arg->parsed.find_not));
     cft->options.modify = (str_length(&arg->parsed.tags_add) || str_length(&arg->parsed.tags_del));
+    cft->options.merge = arg->parsed.merge;
     cft->options.tags_list = arg->parsed.list_tags;
-    /* strings */
-    //cft->options.find_and = &arg->parsed.find_and;
-    //cft->options.find_any = &arg->parsed.find_any;
-    //cft->options.find_not = &arg->parsed.find_not;
-    //cft->options.tags_add = &arg->parsed.tags_add;
-    //cft->options.tags_del = &arg->parsed.tags_del;
+    /* error checking */
     return 0;
 error:
     return -1;
