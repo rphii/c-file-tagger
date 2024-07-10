@@ -16,7 +16,8 @@ typedef struct Cft {
         bool query;
         bool modify;
         bool merge;
-        bool tags_list;
+        int list_tags;
+        int list_files;
         //Str *find_and;
         //Str *find_any;
         //Str *find_not;
@@ -67,6 +68,9 @@ ErrDecl cft_tags_add(Cft *cft, VrStr *files, Str *tags);
 
 #define ERR_cft_tags_fmt(...) "failed formatting tags"
 ErrDecl cft_tags_fmt(Cft *cft, Str *out, VrStr *files);
+
+#define ERR_cft_files_fmt(...) "failed formatting files"
+ErrDecl cft_files_fmt(Cft *cft, Str *out, VrStr *files);
 
 #define ERR_cft_find_fmt(...) "failed formatting findings"
 ErrDecl cft_find_fmt(Cft *cft, Str *out, Str *find_any, Str *find_and, Str *find_not);

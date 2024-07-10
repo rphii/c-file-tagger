@@ -17,11 +17,12 @@ ErrDecl cft_arg(Cft *cft, Arg *arg) { //{{{
     ASSERT_ARG(cft);
     ASSERT_ARG(arg);
     /* bools */
-    cft->options.decorate = (arg->parsed.decorate == SPECIFY_OPTION_YES || arg->parsed.decorate == SPECIFY_OPTION_TRUE);
+    cft->options.decorate = (arg->parsed.decorate == SPECIFY_OPTION_YES || arg->parsed.decorate == SPECIFY_OPTION_TRUE || arg->parsed.decorate == SPECIFY_OPTION_Y);
     cft->options.query = (str_length(&arg->parsed.find_and) || str_length(&arg->parsed.find_any) || str_length(&arg->parsed.find_not));
     cft->options.modify = (str_length(&arg->parsed.tags_add) || str_length(&arg->parsed.tags_del));
     cft->options.merge = arg->parsed.merge;
-    cft->options.tags_list = arg->parsed.list_tags;
+    cft->options.list_tags = arg->parsed.list_tags;
+    cft->options.list_files = arg->parsed.list_files;
     /* error checking */
     return 0;
 error:
@@ -491,9 +492,12 @@ ErrDecl cft_tags_fmt(Cft *cft, Str *out, VrStr *files) { //{{{
             }
         }
     }
+    /* generate output */
     TRY(trrtagref_dump(&filteredr, &all.items, &counts, &all.last), ERR_LUTD_DUMP);
     vrtagref_sort(&all, counts);
-    TRYC(str_fmt(out, "Total Tags: %zu\n", vrtagref_length(&all)));
+    if(cft->options.decorate) { // TODO maybe new switch??
+        TRYC(str_fmt(out, "Total Tags: %zu\n", vrtagref_length(&all)));
+    }
     //printf("TOTAL TAGS: %zu\n", vrtagref_length(&all));
     for(size_t i = 0; i < vrtagref_length(&all); ++i) {
         TagRef *tag = vrtagref_get_at(&all, i);
@@ -505,12 +509,73 @@ ErrDecl cft_tags_fmt(Cft *cft, Str *out, VrStr *files) { //{{{
         if(cft->options.decorate) {
             TRYC(str_fmt(out, " (%zu)", counts[i]));
         }
+        if(cft->options.list_files) {
+            size_t ii, jj;
+            TRY(trtagref_find(&cft->reverse, tag, &ii, &jj), ERR_UNREACHABLE " / " ERR_LUTD_FIND);
+            TagRef *tag_actual = cft->reverse.buckets[ii].items[jj];
+            for(size_t j = 0; j < vrstr_length(&tag_actual->filenames); ++j) {
+                Str *file = vrstr_get_at(&tag_actual->filenames, j);
+                TRYC(str_fmt(out, "%s%.*s", cft->options.decorate && !j ? " " : "," , STR_F(file)));
+            }
+        }
         TRYC(str_fmt(out, "\n"));
     }
 clean:
     trrtagref_free(&filteredr);
     vrtagref_free(&all);
     free(counts);
+    return err;
+error:
+    ERR_CLEAN;
+} //}}}
+
+ErrDecl cft_files_fmt(Cft *cft, Str *out, VrStr *files) { //{{{
+    ASSERT_ARG(cft);
+    ASSERT_ARG(out);
+    ASSERT_ARG(files);
+    int err = 0;
+    VrTag all = {0};
+    TrrTag filtered = {0};
+    if(vrstr_length(files)) {
+        TRY(trrtag_init(&filtered, cft->tags.width), ERR_LUTD_INIT);
+        for(size_t i = 0; i < vrstr_length(files); ++i) {
+            Str *file = vrstr_get_at(files, i);
+            Tag search = { .filename = *file };
+            size_t ii, jj;
+            if(trtag_find(&cft->tags, &search, &ii, &jj)) continue;
+            Tag *found = cft->tags.buckets[ii].items[jj];
+            TRY(trrtag_add(&filtered, found), ERR_LUTD_ADD);
+        }
+        TRY(trrtag_dump(&filtered, &all.items, 0, &all.last), ERR_LUTD_DUMP);
+    } else {
+        TRY(trtag_dump(&cft->tags, &all.items, 0, &all.last), ERR_LUTD_DUMP);
+    }
+    /* generate output */
+    vrtag_sort(&all);
+    if(cft->options.decorate) { // TODO maybe new switch??
+        TRYC(str_fmt(out, "Total Files: %zu\n", vrtag_length(&all)));
+    }
+    //printf("TOTAL TAGS: %zu\n", vrtag_length(&all));
+    for(size_t i = 0; i < vrtag_length(&all); ++i) {
+        Tag *tag = vrtag_get_at(&all, i);
+        //printf("  [%zu] %.*s (%zu)\n", i, STR_F(&tag->tag), counts[i]);
+        if(cft->options.decorate) {
+            TRYC(str_fmt(out, "  [%zu] ", i));
+        }
+        TRYC(str_fmt(out, "%.*s", STR_F(&tag->filename)));
+        if(cft->options.decorate) {
+            TRYC(str_fmt(out, " (%zu)", vrstr_length(&tag->tags)));
+        }
+        if(cft->options.list_tags) {
+            for(size_t j = 0; j < vrstr_length(&tag->tags); ++j) {
+                Str *tagg = vrstr_get_at(&tag->tags, j);
+                TRYC(str_fmt(out, "%s%.*s", cft->options.decorate && !j ? " " : ",",  STR_F(tagg)));
+            }
+        }
+        TRYC(str_fmt(out, "\n"));
+    }
+clean:
+    vrtag_free(&all);
     return err;
 error:
     ERR_CLEAN;
@@ -545,11 +610,11 @@ ErrDecl cft_find_fmt(Cft *cft, Str *out, Str *find_any, Str *find_and, Str *find
         TRYC(str_fmt(out, "%.*s", STR_F(&file->filename)));
         size_t ii, jj;
         Tag *found = 0;
-        if(cft->options.tags_list || cft->options.decorate) {
+        if(cft->options.list_tags || cft->options.decorate) {
             TRY(trtag_find(&cft->tags, file, &ii, &jj), ERR_LUTD_FIND);
             found = cft->tags.buckets[ii].items[jj];
         }
-        if(cft->options.tags_list) {
+        if(cft->options.list_tags) {
             for(size_t j = 0; j < vrstr_length(&found->tags); ++j) {
                 Str *tag = vrstr_get_at(&found->tags, j);
                 TRYC(str_fmt(out, ",%.*s", STR_F(tag)));
