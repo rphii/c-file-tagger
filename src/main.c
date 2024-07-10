@@ -42,29 +42,31 @@ int main(int argc, const char **argv)
     TRYC(file_str_read(&arg.parsed.file, &content));
     TRYC(cft_parse(&cft, &content));
 
+    /* read all other specified files */
+    if(cft.options.merge) {
+        for(size_t i = 0; i < vrstr_length(&arg.parsed.inputs); ++i) {
+            Str *input = vrstr_get_at(&arg.parsed.inputs, i);
+            if(!str_cmp(input, &arg.parsed.file)) {
+                /* TODO add some info here that skips two exact file paths... doesn't
+                 * break anything if we DO, but helps to inform the user about what
+                 * he's doing (absolutely not happened to me and I did NOT get confused
+                 * by it) besides, expanding paths (.. / ~ / . etc) exists, sooo... */
+                continue;
+            }
+            str_clear(&content);
+            TRYC(file_str_read(input, &content));
+            TRYC(cft_parse(&cft, &content));
+        }
+    }
+
     /* reformat */
-    if(cft.options.modify) {
+    if(cft.options.modify || cft.options.merge) {
         TRYC(cft_tags_add(&cft, &arg.parsed.remains, &arg.parsed.tags_add));
         str_clear(&content);
         TRYC(cft_del_duplicate_folders(&cft));
         TRYC(cft_fmt(&cft, &content));
         TRYC(file_str_write(&arg.parsed.file, &content));
         goto clean;
-    }
-
-    /* read all other specified files */
-    for(size_t i = 0; i < vrstr_length(&arg.parsed.inputs); ++i) {
-        Str *input = vrstr_get_at(&arg.parsed.inputs, i);
-        if(!str_cmp(input, &arg.parsed.file)) {
-            /* TODO add some info here that skips two exact file paths... doesn't
-             * break anything if we DO, but helps to inform the user about what
-             * he's doing (absolutely not happened to me and I did NOT get confused
-             * by it) besides, expanding paths (.. / ~ / . etc) exists, sooo... */
-            continue;
-        }
-        str_clear(&content);
-        TRYC(file_str_read(input, &content));
-        TRYC(cft_parse(&cft, &content));
     }
 
     /* query files */
