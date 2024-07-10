@@ -54,7 +54,7 @@ static const char *static_desc[] = {
     [ARG_FILE] = "specify main file to be parsed",
     [ARG_DECORATE] = "specify decoration",
     [ARG_INPUT] = "specify additional input files",
-    [ARG_MERGE] = "TBD merge all input files into the main file",
+    [ARG_MERGE] = "merge all input files into the main file",
     [ARG_COMPACT] = "TBD compact output"
 };
 
