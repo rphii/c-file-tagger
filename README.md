@@ -16,7 +16,29 @@
 
 List all tags:
 
-    cft --list
+    cft --list-tags
+    cft -l
+
+List all files:
+
+    cft --list-files
+    cft -L
+
+List all files with tags associated
+
+    cft --list-tags --list-files
+    cft -lL
+
+    cft --list-tags --list-files --decoration no
+    cft -lLd no         # disable decoration
+
+List all tags with files associated
+
+    cft --list-files --list-tags
+    cft -Ll
+
+    cft --list-files --list-tags --decoration no
+    cft -Lld no         # disable decoration
 
 Tags have to be matched exactly (yes, case sensitive). (...reminder that this is an early version,
 but I want the program to be quite flexible later on, so I'm thinking of adding an option, or
