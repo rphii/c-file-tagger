@@ -74,6 +74,10 @@ any file with tags `sky` or `cloud`, of which include `girl` and `blue`, but is 
 
     cft --any sky,cloud --and girl,blue --not nsfw,sketchy
 
+Fuzzy search might be built in one day, but it is already possible with the help of other CLI tools:
+
+    cft --any $(cft -ld no | grep FUZZY-SEARCH | tr '\n' ',')
+
 Almost none of the other options work and are more of a sketched out plan or route I might take. All
 the other options can be listed with:
 
