@@ -86,10 +86,20 @@ By default it looks for a file in `$HOME/.config/cft/tags.cft`.
 The file format is basically a `.csv`. The first entry is a file name (or anything you
 want, basically, doesn't have to be a file) and the rest are all tags associated with said file.
 
-It is possible to specify the use of a different file:
+It is possible to specify the use of **one** different **main file**:
 
     cft --file some/other/file
     cft -f some/other/file
+
+One can also specify **multiple** additional input files alongside the main file:
+
+    cft --input path/file-A --input path/file-B
+    cft -ii path/file-A path/file-B
+
+It is also possible to merge tag files. The sources are `--input` and it will merge into `--file`.
+
+    cft --merge -ii path/file-A path/file-B     # merge into default file
+    cft --merge -fii path/output path/file-A path/file-B
 
 ## About Tags
 
@@ -112,4 +122,13 @@ The folder structuring with `:` allows for more than a single level, too.
 When searching for files with `anime`, one will find all three files regardless of folder or not.
 To only find the Bleach-Wallpaper, you would do `cft --any anime:bleach`, which will respect your
 choice of tag and only list those tagged accordingly.
+
+To add tags with the cli to the **main file**, one can do:
+
+    cft string-to-tag --tag list,of,tags
+    cft string-to-tag -t list,of,tags
+    cft -f path/output string-to-tag -t list,of,tags
+
+### TODO so I won't forget
+- undo? hmm
 
