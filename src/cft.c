@@ -391,7 +391,7 @@ error:
     return -1;
 } //}}}
 
-ErrDecl cft_find_and(Cft *cft, TrrTag *found, Str *find) { //{{{
+ErrDecl cft_find_and(Cft *cft, TrrTag *found, Str *find, bool first_query) { //{{{
     ASSERT_ARG(cft);
     ASSERT_ARG(found);
     ASSERT_ARG(find);
@@ -401,10 +401,7 @@ ErrDecl cft_find_and(Cft *cft, TrrTag *found, Str *find) { //{{{
     TRY(trrtag_init(&temp, found->width), ERR_LUTD_INIT);
     /* search... */
     Str tag = {0};
-    size_t iteration = 0;
-    if(!trrtag_empty(found)) {
-        ++iteration;
-    }
+    size_t iteration = (size_t)(!first_query);
     for(;;) {
         if(str_iter_end(&tag) >= str_iter_end(find)) break;
         tag = str_splice(find, &tag, ',');
@@ -445,13 +442,13 @@ error:
     ERR_CLEAN;
 } //}}}
 
-ErrDecl cft_find_not(Cft *cft, TrrTag *found, Str *find) { //{{{
+ErrDecl cft_find_not(Cft *cft, TrrTag *found, Str *find, bool first_query) { //{{{
     ASSERT_ARG(cft);
     ASSERT_ARG(found);
     ASSERT_ARG(find);
     /* search... */
     Str tag = {0};
-    if(trrtag_empty(found)) {
+    if(first_query) {
         /* add all tags! */
         for(size_t ii = 0; ii < (1ULL << (cft->tags.width - 1)); ++ii) {
             for(size_t jj = 0; jj < cft->tags.buckets[ii].len; ++jj) {
@@ -685,14 +682,18 @@ ErrDecl cft_find_fmt(Cft *cft, Str *out, Str *find_any, Str *find_and, Str *find
     TrrTag found = {0};
     VrTag results = {0};
     TRY(trrtag_init(&found, 10), ERR_LUTD_INIT); // TODO switch
+    bool first = true;
     if(str_length(find_any)) {
         TRYC(cft_find_any(cft, &found, find_any));
+        first = false;
     }
     if(str_length(find_and)) {
-        TRYC(cft_find_and(cft, &found, find_and));
+        TRYC(cft_find_and(cft, &found, find_and, first));
+        first = false;
     }
     if(str_length(find_not)) {
-        TRYC(cft_find_not(cft, &found, find_not));
+        TRYC(cft_find_not(cft, &found, find_not, first));
+        first = false;
     }
     TRY(trrtag_dump(&found, &results.items, 0, &results.last), ERR_LUTD_DUMP);
     vrtag_sort(&results);
