@@ -216,6 +216,9 @@ ErrDecl cft_parse(Cft *cft, const Str *input, const Str *str) { //{{{
     Str line = *str;
     //printff("str_length %zu", str_length(str));
     Str filename_real = {0};
+    Str prepend = {0};
+    TRYC(str_fmt(&prepend, "%.*s", STR_F(input)));
+    TRYC(str_expand_path(&prepend, &cft->misc.current_dir, &cft->misc.homedir));
     for(;;) {
         str_get_line(str, &line.first, &line.last);
         Str filename = {0};
@@ -240,7 +243,7 @@ ErrDecl cft_parse(Cft *cft, const Str *input, const Str *str) { //{{{
                     if(cft->options.expand_paths && !cft->options.modify) {
                         str_clear(&filename_real);
                         TRYC(str_fmt(&filename_real, "%.*s", STR_F(&filename)));
-                        TRYC(str_expand_path(&filename_real, input, &cft->misc.current_dir, &cft->misc.homedir));
+                        TRYC(str_expand_path(&filename_real, &prepend, &cft->misc.homedir));
                         //printff("HELLO");
                     } else {
                         filename_real = filename;
@@ -257,6 +260,7 @@ ErrDecl cft_parse(Cft *cft, const Str *input, const Str *str) { //{{{
     }
     info_check(INFO_parsing, true);
 clean:
+    str_free(&prepend);
     if(cft->options.expand_paths && !cft->options.modify) {
         str_free(&filename_real);
     }

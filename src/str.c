@@ -272,7 +272,7 @@ void str_remove_trailing_ch(Str *str, char ch, char ch_escape) //{{{
     }
 } //}}}
 
-ErrDecl str_expand_path(Str *path, const Str *base, const Str *current, const Str *home) // TODO: move into platform.c ... {{{
+ErrDecl str_expand_path(Str *path, const Str *base, const Str *home) // TODO: move into platform.c ... {{{
 {
     ASSERT_ARG(path);
     ASSERT_ARG(base);
@@ -293,16 +293,15 @@ ErrDecl str_expand_path(Str *path, const Str *base, const Str *current, const St
         temp = *path;
         *path = result;
         result = temp;
-        //printff("PATH [%.*s]", STR_F(path));
     } else if(str_get_front(path) != PLATFORM_CH_SUBDIR) {
         if(!file_is_dir(&base2)) {
             platform_path_up(&base2);
         }
-        //printff("%.*s .. %.*s .. %.*s", STR_F(current), STR_F(&base2), STR_F(path));
+        //printff("%.*s .. %.*s", STR_F(&base2), STR_F(path));
         if(str_length(&base2)) {
-            TRYC(str_fmt(&result, "%.*s%c%.*s%c%.*s", STR_F(current), PLATFORM_CH_SUBDIR, STR_F(&base2), PLATFORM_CH_SUBDIR, STR_F(path)));
+            TRYC(str_fmt(&result, "%.*s%c%.*s", STR_F(&base2), PLATFORM_CH_SUBDIR, STR_F(path)));
         } else {
-            TRYC(str_fmt(&result, "%.*s%c%.*s", STR_F(current), PLATFORM_CH_SUBDIR, STR_F(path)));
+            result = *path;
         }
         /* assign result */
         str_clear(path);
