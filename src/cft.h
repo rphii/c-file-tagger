@@ -17,6 +17,7 @@ typedef struct Cft {
         bool modify;
         bool merge;
         bool expand_paths;
+        bool compact;
         int list_tags;
         int list_files;
         //Str *find_and;

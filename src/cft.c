@@ -30,6 +30,7 @@ ErrDecl cft_arg(Cft *cft, Arg *arg) { //{{{
     cft->options.list_tags = arg->parsed.list_tags;
     cft->options.list_files = arg->parsed.list_files;
     cft->options.expand_paths = arg->parsed.expand_paths;
+    cft->options.compact = arg->parsed.compact;
     /* error checking */
     return 0;
 error:
@@ -556,15 +557,20 @@ ErrDecl cft_tags_fmt(Cft *cft, Str *out, VrStr *files) { //{{{
     if(vrstr_length(files)) {
         for(size_t i = 0; i < vrstr_length(files); ++i) {
             Str *file = vrstr_get_at(files, i);
-            Tag search = { .filename = *file };
-            size_t ii, jj;
-            if(trtag_find(&cft->tags, &search, &ii, &jj)) continue;
-            Tag *found = cft->tags.buckets[ii].items[jj];
-            for(size_t j = 0; j < vrstr_length(&found->tags); ++j) {
-                Str *tag = vrstr_get_at(&found->tags, j);
-                TagRef add = { .tag = *tag };
-                TRY(trrtagref_add(&filteredr, &add), ERR_LUTD_ADD);
-            //printff("FOUND %.*s", STR_F(file));
+            Str splice = {0};
+            for(;;) {
+                splice = str_splice(file, &splice, ',');
+                if(splice.first >= file->last) { break;}
+                Tag search = { .filename = splice };
+                size_t ii, jj;
+                if(trtag_find(&cft->tags, &search, &ii, &jj)) continue;
+                Tag *found = cft->tags.buckets[ii].items[jj];
+                for(size_t j = 0; j < vrstr_length(&found->tags); ++j) {
+                    Str *tag = vrstr_get_at(&found->tags, j);
+                    TagRef add = { .tag = *tag };
+                    TRY(trrtagref_add(&filteredr, &add), ERR_LUTD_ADD);
+                    //printff("FOUND %.*s", STR_F(file));
+                }
             }
         }
         //TRY(trrtag_dump(&filtered, &all.items, &counts, &all.last), ERR_LUTD_DUMP);
@@ -592,7 +598,11 @@ ErrDecl cft_tags_fmt(Cft *cft, Str *out, VrStr *files) { //{{{
         TagRef *tag = vrtagref_get_at(&all, i);
         //printf("  [%zu] %.*s (%zu)\n", i, STR_F(&tag->tag), counts[i]);
         if(cft->options.decorate) {
-            TRYC(str_fmt(out, "  [%zu] ", i));
+            if(cft->options.compact) {
+                TRYC(str_fmt(out, "%s[%zu] ", i ? " " : "", i));
+            } else {
+                TRYC(str_fmt(out, "  [%zu] ", i));
+            }
         }
         TRYC(str_fmt(out, "%.*s", STR_F(&tag->tag)));
         if(cft->options.decorate) {
@@ -607,7 +617,11 @@ ErrDecl cft_tags_fmt(Cft *cft, Str *out, VrStr *files) { //{{{
                 TRYC(str_fmt(out, "%s%.*s", cft->options.decorate && !j ? " " : "," , STR_F(file)));
             }
         }
-        TRYC(str_fmt(out, "\n"));
+        if(cft->options.compact) {
+            TRYC(str_fmt(out, "%c", i + 1 < vrtagref_length(&all) ? ',' : '\n'));
+        } else {
+            TRYC(str_fmt(out, "\n"));
+        }
     }
 clean:
     trrtagref_free(&filteredr);
@@ -630,11 +644,16 @@ ErrDecl cft_files_fmt(Cft *cft, Str *out, VrStr *files) { //{{{
         TRY(trrtag_init(&filtered, cft->tags.width), ERR_LUTD_INIT);
         for(size_t i = 0; i < vrstr_length(files); ++i) {
             Str *file = vrstr_get_at(files, i);
-            Tag search = { .filename = *file };
-            size_t ii, jj;
-            if(trtag_find(&cft->tags, &search, &ii, &jj)) continue;
-            Tag *found = cft->tags.buckets[ii].items[jj];
-            TRY(trrtag_add(&filtered, found), ERR_LUTD_ADD);
+            Str splice = {0};
+            for(;;) {
+                splice = str_splice(file, &splice, ',');
+                if(splice.first >= file->last) { break;}
+                Tag search = { .filename = splice };
+                size_t ii, jj;
+                if(trtag_find(&cft->tags, &search, &ii, &jj)) continue;
+                Tag *found = cft->tags.buckets[ii].items[jj];
+                TRY(trrtag_add(&filtered, found), ERR_LUTD_ADD);
+            }
         }
         TRY(trrtag_dump(&filtered, &all.items, 0, &all.last), ERR_LUTD_DUMP);
     } else {
@@ -651,7 +670,11 @@ ErrDecl cft_files_fmt(Cft *cft, Str *out, VrStr *files) { //{{{
         vrstr_sort(&tag->tags);
         //printf("  [%zu] %.*s (%zu)\n", i, STR_F(&tag->tag), counts[i]);
         if(cft->options.decorate) {
-            TRYC(str_fmt(out, "  [%zu] ", i));
+            if(cft->options.compact) {
+                TRYC(str_fmt(out, "%s[%zu] ", i ? " " : "", i));
+            } else {
+                TRYC(str_fmt(out, "  [%zu] ", i));
+            }
         }
         TRYC(str_fmt(out, "%.*s", STR_F(&tag->filename)));
         if(cft->options.decorate) {
@@ -663,7 +686,11 @@ ErrDecl cft_files_fmt(Cft *cft, Str *out, VrStr *files) { //{{{
                 TRYC(str_fmt(out, "%s%.*s", cft->options.decorate && !j ? " " : ",",  STR_F(tagg)));
             }
         }
-        TRYC(str_fmt(out, "\n"));
+        if(cft->options.compact) {
+            TRYC(str_fmt(out, "%c", i + 1 < vrtag_length(&all) ? ',' : '\n'));
+        } else {
+            TRYC(str_fmt(out, "\n"));
+        }
     }
 clean:
     vrtag_free(&all);
@@ -700,7 +727,11 @@ ErrDecl cft_find_fmt(Cft *cft, Str *out, Str *find_any, Str *find_and, Str *find
     for(size_t i = 0; i < vrtag_length(&results); ++i) {
         Tag *file = vrtag_get_at(&results, i);
         if(cft->options.decorate) {
-            TRYC(str_fmt(out, "  [%zu] ", i));
+            if(cft->options.compact) {
+                TRYC(str_fmt(out, "%s[%zu] ", i ? " " : "", i));
+            } else {
+                TRYC(str_fmt(out, "  [%zu] ", i));
+            }
         }
         TRYC(str_fmt(out, "%.*s", STR_F(&file->filename)));
         size_t ii, jj;
@@ -718,7 +749,11 @@ ErrDecl cft_find_fmt(Cft *cft, Str *out, Str *find_any, Str *find_and, Str *find
         if(cft->options.decorate) {
             TRYC(str_fmt(out, " (%zu)", vrstr_length(&found->tags)));
         }
-        TRYC(str_fmt(out, "\n"));
+        if(cft->options.compact) {
+            TRYC(str_fmt(out, "%c", i + 1 < vrtag_length(&results) ? ',' : '\n'));
+        } else {
+            TRYC(str_fmt(out, "\n"));
+        }
         //printf("%.*s\n", STR_F(&file->filename));
     }
 clean:

@@ -106,6 +106,7 @@ typedef struct Arg {
         int list_files;
         bool merge;
         bool expand_paths;
+        bool compact;
         SpecifyList decorate;
         Str tags_add;
         Str tags_re;

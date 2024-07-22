@@ -16,7 +16,7 @@ static const char *static_arg[][2] = {
     [ARG_TAG] = {"t", "--tag"},
     [ARG_RETAG] = {"r", "--retag"},
     [ARG_UNTAG] = {"u", "--untag"},
-    [ARG_COPY] = {"c", "--copy"},
+    [ARG_COPY] = {"y", "--copy"},
     //[ARG_LINK] = {"-l", "--link"},
     [ARG_REMOVE] = {0, "--remove"},
     [ARG_MOVE] = {"m", "--move"},
@@ -30,7 +30,7 @@ static const char *static_arg[][2] = {
     [ARG_DECORATE] = {"d", "--decorate"},
     [ARG_INPUT] = {"i", "--input"},
     [ARG_MERGE] = {0, "--merge"},
-    [ARG_COMPACT] = {0, "--compact"},
+    [ARG_COMPACT] = {"c", "--compact"},
     [ARG_EXPAND_PATHS] = {"e", "--expand"},
 };
 
@@ -191,6 +191,9 @@ ErrDeclStatic arg_static_execute(Arg *arg, ArgList id, Str *argY)
         } break;
         case ARG_EXPAND_PATHS: {
             arg->parsed.expand_paths = true;
+        } break;
+        case ARG_COMPACT: {
+            arg->parsed.compact = true;
         } break;
         case ARG_LIST_TAGS: {
             if(arg->parsed.list_files) ++arg->parsed.list_files;
