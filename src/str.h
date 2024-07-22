@@ -77,7 +77,8 @@ ErrDecl str_fmt_fgbg(Str *out, const Str *text, const V3u8 fg, const V3u8 bg, bo
 ErrDecl str_get_str(Str *str);
 
 #define ERR_str_expand_path(path, base, home, ...) "failed expanding path"
-ErrDecl str_expand_path(Str *path, const Str *base, const Str *current, const Str *home);
+//ErrDecl str_expand_path(Str *path, const Str *base, const Str *current, const Str *home);
+ErrDecl str_expand_path(Str *path, const Str *base, const Str *home);
 
 int str_cmp(const Str *a, const Str *b);
 int str_cmp_ci(const Str *a, const Str *b);
