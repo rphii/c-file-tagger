@@ -2,13 +2,25 @@
 #include <stdlib.h>
 
 #include "platform.h"
-#include "colorprint.h"
+//#include "colorprint.h"
 #include "err.h"
+#include "str.h"
+
+#if defined(PLATFORM_WINDOWS)
+#include <conio.h>
+#else
+#include <unistd.h>
+#include <sys/types.h>
+#include <pwd.h>
+#include <unistd.h>
+#include <termios.h>
+#include <linux/limits.h>
+#endif
 
 #define S(x)        #x
 #define S_(x)       S(X)
 
-int platform_colorprint_init(void)
+ErrDecl platform_colorprint_init(void)
 {
     int err = 0;
 #if defined(PLATFORM_WINDOWS) && !defined(COLORPRINT_DISABLE)
@@ -25,16 +37,72 @@ error:
 #endif
 }
 
+ErrDecl platform_fmt_home(Str *str)
+{
+    ASSERT_ARG(str);
+#if defined(PLATFORM_WINDOWS)
+    THROW("not yet implemented for windows");
+#else
+    struct passwd *pw = getpwuid(getuid());
+    const char *homedir = pw->pw_dir;
+    TRYC(str_fmt(str, "%s", homedir));
+    str_remove_trailing_ch(str, PLATFORM_CH_SUBDIR, '\\'); // juuuust to be sure
+#endif
+    return 0;
+error:
+    return -1;
+}
+
+ErrDecl platform_fmt_cwd(Str *str)
+{
+    ASSERT_ARG(str);
+#if defined(PLATFORM_WINDOWS)
+    THROW("not yet implemented for windows");
+#else
+    char cwd[PATH_MAX];
+    if(getcwd(cwd, sizeof(cwd)) != NULL) {
+        TRYC(str_fmt(str, "%s", cwd));
+    } else {
+        THROW("getcwd() error");
+    }
+    str_remove_trailing_ch(str, PLATFORM_CH_SUBDIR, '\\'); // juuuust to be sure
+#endif
+   return 0;
+error:
+   return -1;
+}
+
+void platform_path_up(Str *path) //{{{
+{
+    ASSERT_ARG(path);
+    Str path2 = *path;
+#if defined(PLATFORM_WINDOWS)
+    ABORT("not yet implemented for windows");
+#else
+    size_t n = 0;
+    for(;;) {
+        n = str_rch(&path2, PLATFORM_CH_SUBDIR, 0);
+        if(n == 0 || n >= str_length(&path2)) {
+            path2.last = path2.first;
+            break;
+        }
+        path2.last = path2.first + n - 1;
+        str_remove_trailing_ch(&path2, PLATFORM_CH_SUBDIR, '\\');
+        if(str_length(&path2) && str_get_back(&path2) == PLATFORM_CH_SUBDIR) {
+            --path2.last;
+        } else {
+            path2.last = path2.first + n;
+            break;
+        }
+    }
+#endif
+    *path = path2;
+    //printff("PATH2=[%.*s]", STR_F(&path2));
+} //}}}
+
 /******************************************************************************/
 /* getch **********************************************************************/
 /******************************************************************************/
-
-#if defined(PLATFORM_WINDOWS)
-#include <conio.h>
-#else
-#include <unistd.h>
-#include <termios.h>
-#endif
 
 int platform_getch(void)
 {
@@ -103,5 +171,4 @@ void platform_clear(void)
 {
     printf("\033[H\033[J""\033[H\033[J");
 }
-
 

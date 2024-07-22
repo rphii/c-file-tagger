@@ -1,12 +1,18 @@
 #include "cft.h"
 #include "str.h"
 #include "info.h"
+#include "vector.h"
+#include "platform.h"
 
 ErrDecl cft_init(Cft *cft) { //{{{
     ASSERT_ARG(cft);
     // TODO: make the table sizes some switches
     TRY(trtag_init(&cft->tags, 10), ERR_LUTD_INIT);
     TRY(trtagref_init(&cft->reverse, 10), ERR_LUTD_INIT);
+    if(cft->options.expand_paths) {
+        TRYC(platform_fmt_home(&cft->misc.homedir));
+        TRYC(platform_fmt_cwd(&cft->misc.current_dir));
+    }
     //TRY(trrtagref_init(&cft->all, 10), ERR_LUTD_INIT); // TODO: skip if not needed
     return 0;
 error:
@@ -19,10 +25,11 @@ ErrDecl cft_arg(Cft *cft, Arg *arg) { //{{{
     /* bools */
     cft->options.decorate = (arg->parsed.decorate == SPECIFY_OPTION_YES || arg->parsed.decorate == SPECIFY_OPTION_TRUE || arg->parsed.decorate == SPECIFY_OPTION_Y);
     cft->options.query = (str_length(&arg->parsed.find_and) || str_length(&arg->parsed.find_any) || str_length(&arg->parsed.find_not));
-    cft->options.modify = (str_length(&arg->parsed.tags_add) || str_length(&arg->parsed.tags_del));
+    cft->options.modify = (str_length(&arg->parsed.tags_add) || str_length(&arg->parsed.tags_del) || str_length(&arg->parsed.tags_re));
     cft->options.merge = arg->parsed.merge;
     cft->options.list_tags = arg->parsed.list_tags;
     cft->options.list_files = arg->parsed.list_files;
+    cft->options.expand_paths = arg->parsed.expand_paths;
     /* error checking */
     return 0;
 error:
@@ -131,6 +138,21 @@ error:
     return -1;
 } //}}}
 
+ErrDecl cft_retag(Cft *cft, const Str *filename, const Str *from, const Str *to) { //{{{
+    ASSERT_ARG(cft);
+    ASSERT_ARG(from);
+    ASSERT_ARG(to);
+
+    //if(filename) {
+    //    Tag *found = 0;
+    //    TRYC(cft_find_by_filename(cft, &found, filename, true));
+    //}
+
+    return 0;
+error:
+    return -1;
+} //}}}
+
 #if 0
 ErrDecl cft_del(Cft *cft, const Str *filename, const Str *tag) { //{{{
     ASSERT_ARG(cft);
@@ -186,12 +208,14 @@ error:
 } //}}}
 #endif
 
-ErrDecl cft_parse(Cft *cft, const Str *str) { //{{{
+ErrDecl cft_parse(Cft *cft, const Str *input, const Str *str) { //{{{
     ASSERT_ARG(cft);
     ASSERT_ARG(str);
+    int err = 0;
     info(parsing, "Parsing");
     Str line = *str;
     //printff("str_length %zu", str_length(str));
+    Str filename_real = {0};
     for(;;) {
         str_get_line(str, &line.first, &line.last);
         Str filename = {0};
@@ -212,10 +236,19 @@ ErrDecl cft_parse(Cft *cft, const Str *str) { //{{{
                         TRYC(str_fmt(&cft->comments, "%.*s\n", STR_F(&line)));
                         break;
                     }
+                    /* if we expand, fix filename */
+                    if(cft->options.expand_paths && !cft->options.modify) {
+                        str_clear(&filename_real);
+                        TRYC(str_fmt(&filename_real, "%.*s", STR_F(&filename)));
+                        TRYC(str_expand_path(&filename_real, input, &cft->misc.current_dir, &cft->misc.homedir));
+                        //printff("HELLO");
+                    } else {
+                        filename_real = filename;
+                    }
                 }
             } else {
                 //printff("add %.*s to %.*s", STR_F(&tag), STR_F(&filename));
-                TRYC(cft_add(cft, &filename, &tag));
+                TRYC(cft_add(cft, &filename_real, &tag));
             }
             if(tag.first >= line.last) { break;}
         }
@@ -223,9 +256,13 @@ ErrDecl cft_parse(Cft *cft, const Str *str) { //{{{
         if(line.first >= str_length(str)) break;
     }
     info_check(INFO_parsing, true);
-    return 0;
+clean:
+    if(cft->options.expand_paths && !cft->options.modify) {
+        str_free(&filename_real);
+    }
+    return err;
 error:
-    return -1;
+    ERR_CLEAN;
 } //}}}
 
 ErrDecl cft_del_duplicate_folders(Cft *cft) { //{{{
@@ -319,6 +356,8 @@ void cft_free(Cft *cft) { //{{{
     trtag_free(&cft->tags);
     trtagref_free(&cft->reverse);
     str_free(&cft->comments);
+    str_free(&cft->misc.homedir);
+    str_free(&cft->misc.current_dir);
     //trrtagref_free(&cft->all);
 } //}}}
 
@@ -441,6 +480,7 @@ ErrDecl cft_tags_add(Cft *cft, VrStr *files, Str *tags) { //{{{
     ASSERT_ARG(cft);
     ASSERT_ARG(files);
     ASSERT_ARG(tags);
+    if(!str_length(tags)) return 0;
     for(size_t i = 0; i < vrstr_length(files); ++i) {
         Str *file = vrstr_get_at(files, i);
         Str tag = {0};
@@ -449,6 +489,51 @@ ErrDecl cft_tags_add(Cft *cft, VrStr *files, Str *tags) { //{{{
             tag = str_splice(tags, &tag, ',');
             TRYC(cft_add(cft, file, &tag));
             //printff("tag [%.*s] with [%.*s]", STR_F(file), STR_F(&tag));
+        }
+    }
+    return 0;
+error:
+    return -1;
+} //}}}
+
+ErrDecl cft_tags_re(Cft *cft, VrStr *files, Str *tags) { //{{{
+    ASSERT_ARG(cft);
+    ASSERT_ARG(files);
+    ASSERT_ARG(tags);
+    //printff("HELLO");
+    /* prepare retagging */
+    if(!str_length(tags)) return 0;
+    size_t iE = str_rch(tags, ',', 0);
+    if(iE >= str_length(tags)) {
+        /* TODO maybe add info here, informing that we got nothing to rename! */
+        return 0;
+    }
+    Str tag_from = {0};
+    Str tag_to = STR_I0(*tags, iE + 1);
+    str_trim(&tag_to);
+    if(!str_length(&tag_to)) {
+        /* TODO maybe add info here, nothing gets changed */
+        return 0;
+    }
+    /* specific files only or globally */
+    if(vrstr_length(files)) {
+        for(size_t i = 0; i < vrstr_length(files); ++i) {
+            Str *file = vrstr_get_at(files, i);
+            for(;;) {
+                if(str_iter_end(&tag_from) >= str_iter_at(tags, iE)) break;
+                tag_from = str_splice(tags, &tag_from, ',');
+                printff("retag [%.*s] -> [%.*s]", STR_F(&tag_from), STR_F(&tag_to));
+                TRYC(cft_retag(cft, file, &tag_from, &tag_to));
+                //TRYC(cft_add(cft, file, &tag));
+                //printff("tag [%.*s] with [%.*s]", STR_F(file), STR_F(&tag));
+            }
+        }
+    } else {
+        for(;;) {
+            if(str_iter_end(&tag_from) >= str_iter_at(tags, iE)) break;
+            tag_from = str_splice(tags, &tag_from, ',');
+            printff("retag [%.*s] -> [%.*s]", STR_F(&tag_from), STR_F(&tag_to));
+            TRYC(cft_retag(cft, 0, &tag_from, &tag_to));
         }
     }
     return 0;

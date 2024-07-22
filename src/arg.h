@@ -67,6 +67,7 @@ typedef enum {
     ARG_HELP,
     ARG_VERSION,
     ARG_TAG,
+    ARG_RETAG,
     ARG_UNTAG,
     ARG_COPY,
     //ARG_LINK,
@@ -82,6 +83,7 @@ typedef enum {
     ARG_INPUT,
     ARG_MERGE,
     ARG_COMPACT,
+    ARG_EXPAND_PATHS,
     // ARG_DEPTSH // folder depth
     // ARG_TAGS_RENAME
     ARG_EXISTS, // show either ONLY existing files, or NOT EXISTING files, if specified! -> nah, make like find. --type ?!
@@ -103,8 +105,10 @@ typedef struct Arg {
         int list_tags;
         int list_files;
         bool merge;
+        bool expand_paths;
         SpecifyList decorate;
         Str tags_add;
+        Str tags_re;
         Str tags_del;
         Str find_any;
         Str find_and;

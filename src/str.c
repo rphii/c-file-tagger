@@ -8,6 +8,7 @@
 
 /* inclusion and configuration of vector */
 #include "str.h"
+#include "file.h"
 #include "platform.h"
 
 #define VEC_SETTINGS_DEFAULT_SIZE STR_DEFAULT_SIZE
@@ -82,7 +83,7 @@ void str_trim(Str *str) //{{{
 
 // pseudo directory {{{
 
-void str_cstr(Str *str, char *cstr, size_t len) {
+void str_cstr(const Str *str, char *cstr, size_t len) {
     ASSERT_ARG(str);
     ASSERT_ARG(cstr);
     cstr[0] = 0;
@@ -104,12 +105,12 @@ inline int str_fmt_va(Str *str, const char *format, va_list argp) //{{{
     va_end(argp2);
 
     if((int)len_app < 0) {
-        return -1;
+        THROW("len_app is < 0!");
     }
     // calculate required memory
     size_t len_new = str->last + len_app;
     if(str_reserve(str, len_new)) {
-        return -1;
+        THROW("failed reserving %zu bytes!", len_new);
     }
     // actual append
     int len_chng = vsnprintf(&(str->s)[str->last], len_app + 1, format, argp);
@@ -117,9 +118,12 @@ inline int str_fmt_va(Str *str, const char *format, va_list argp) //{{{
     if(len_chng >= 0 && (size_t)len_chng <= len_app) {
         str->last += (size_t)len_chng; // successful, change length
     } else {
-        return -1;
+        THROW("len_chng is < 0!");
     }
     return 0;
+error:
+    ERR_PRINTF("failed formatting string: [%.*s] with format [%s]\n", STR_F(str), format);
+    return -1;
 } //}}}
 
 int str_fmt(Str *str, const char *format, ...) //{{{
@@ -253,6 +257,81 @@ clean:
     fflush(stdin);
     return err;
 error: ERR_CLEAN;
+} //}}}
+
+void str_remove_trailing_ch(Str *str, char ch, char ch_escape) //{{{
+{
+    ASSERT_ARG(str);
+    while(str_length(str) && str_get_back(str) == ch) {
+        if(str_length(str) >= 2) {
+            if(str_get_at(str, str_length(str) - 2) == ch_escape) {
+                break;
+            }
+        }
+        --str->last;
+    }
+} //}}}
+
+ErrDecl str_expand_path(Str *path, const Str *base, const Str *current, const Str *home) // TODO: move into platform.c ... {{{
+{
+    ASSERT_ARG(path);
+    ASSERT_ARG(base);
+    ASSERT_ARG(home);
+    int err = 0;
+    Str result = {0};
+    Str temp = {0};
+    Str base2 = *base;
+    str_trim(path);
+#if defined(PLATFORM_WINDOWS)
+    ABORT("not yet implemented in windows");
+#else
+    if(!str_length(path)) return 0;
+    if(str_length(path) >= 2 && !str_cmp(&STR_IE(*path, 2), &STR("~/"))) {
+        TRYC(str_fmt(&result, "%.*s%.*s", STR_F(home), STR_F(&STR_I0(*path, 1))));
+        /* assign result */
+        str_clear(path);
+        temp = *path;
+        *path = result;
+        result = temp;
+        //printff("PATH [%.*s]", STR_F(path));
+    } else if(str_get_front(path) != PLATFORM_CH_SUBDIR) {
+        if(!file_is_dir(&base2)) {
+            platform_path_up(&base2);
+        }
+        //printff("%.*s .. %.*s .. %.*s", STR_F(current), STR_F(&base2), STR_F(path));
+        if(str_length(&base2)) {
+            TRYC(str_fmt(&result, "%.*s%c%.*s%c%.*s", STR_F(current), PLATFORM_CH_SUBDIR, STR_F(&base2), PLATFORM_CH_SUBDIR, STR_F(path)));
+        } else {
+            TRYC(str_fmt(&result, "%.*s%c%.*s", STR_F(current), PLATFORM_CH_SUBDIR, STR_F(path)));
+        }
+        /* assign result */
+        str_clear(path);
+        temp = *path;
+        *path = result;
+        result = temp;
+    }
+    /* remove any and all dot-dot's -> '..' */
+    for(;;) {
+        size_t n = str_find_substring(path, &STR(".."));
+        if(n >= str_length(path)) break;
+        Str prepend = *path;
+        Str append = *path;
+        prepend.last = prepend.first + n;
+        append.first = append.first + n + str_length(&STR(".."));
+        str_remove_trailing_ch(&prepend, PLATFORM_CH_SUBDIR, '\\');
+        platform_path_up(&prepend);
+        str_clear(&result);
+        TRYC(str_fmt(&result, "%.*s%.*s", STR_F(&prepend), STR_F(&append)));
+        temp = *path;
+        *path = result;
+        result = temp;
+    }
+#endif
+clean:
+    str_free(&temp);
+    return err;
+error:
+    ERR_CLEAN;
 } //}}}
 
 ErrDecl str_fmt_line(Str *line, const Str *str, size_t i0, size_t *iE) { //{{{
@@ -475,7 +554,7 @@ inline size_t str_find_substring(const Str *restrict str, const Str *restrict su
     /* basic checks */
     if(!str_length(sub)) return 0;
     if(str_length(sub) > str_length(str)) {
-        return 0;
+        return str_length(str);
     }
     /* store original indices */
     Str ref = *str;
@@ -484,14 +563,14 @@ inline size_t str_find_substring(const Str *restrict str, const Str *restrict su
     while(str_length(sub) <= str_length(&ref)) {
         size_t overlap = str_count_overlap(&ref, sub, true);
         if(overlap == str_length(sub)) {
-            return i + 1;
+            return i;
         } else {
             i += overlap + 1;
             ref.first += overlap + 1;
         }
     }
     /* restore original */
-    return 0;
+    return str_length(str);
 } //}}}
 
 size_t str_find_any(const Str *str, const Str *any) { //{{{

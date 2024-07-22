@@ -23,7 +23,7 @@ int main(int argc, const char **argv)
     int err = 0;
     info_disable_all(INFO_LEVEL_ALL);
     //info_enable_all(INFO_LEVEL_ID | INFO_LEVEL_TEXT);
-    TRY(platform_colorprint_init(), ERR_PLATFORM_COLORPRINT_INIT);
+    TRYC(platform_colorprint_init());
 
     Arg arg = {0};
     Cft cft = {0};
@@ -35,12 +35,12 @@ int main(int argc, const char **argv)
     //screen_enter();
 
     /* program start */
-    TRYC(cft_init(&cft));
     TRYC(cft_arg(&cft, &arg));
+    TRYC(cft_init(&cft));
 
     /* read specified file */
     TRYC(file_str_read(&arg.parsed.file, &content));
-    TRYC(cft_parse(&cft, &content));
+    TRYC(cft_parse(&cft, &arg.parsed.file, &content));
 
     /* read all other specified files */
     if(!cft.options.modify || cft.options.merge) {
@@ -55,13 +55,15 @@ int main(int argc, const char **argv)
             }
             str_clear(&content);
             TRYC(file_str_read(input, &content));
-            TRYC(cft_parse(&cft, &content));
+            TRYC(cft_parse(&cft, input, &content));
         }
     }
 
     /* reformat */
     if(cft.options.modify || cft.options.merge) {
         TRYC(cft_tags_add(&cft, &arg.parsed.remains, &arg.parsed.tags_add));
+        //printff("RE [%.*s]", STR_F(&arg.parsed.tags_re));
+        TRYC(cft_tags_re(&cft, &arg.parsed.remains, &arg.parsed.tags_re));
         str_clear(&content);
         TRYC(cft_fmt(&cft, &content));
         TRYC(file_str_write(&arg.parsed.file, &content));
@@ -70,14 +72,13 @@ int main(int argc, const char **argv)
 
     /* query files */
     if(cft.options.query) {
+        //printff("any [%.*s]", STR_F(&arg.parsed.find_any));
+        //printff("and [%.*s]", STR_F(&arg.parsed.find_and));
+        //printff("not [%.*s]", STR_F(&arg.parsed.find_not));
         TRYC(cft_find_fmt(&cft, &ostream, &arg.parsed.find_any, &arg.parsed.find_and, &arg.parsed.find_not));
         printf("%.*s", STR_F(&ostream));
         goto clean;
     }
-
-    //printff("list-tags %i", cft.options.list_tags);
-    //printff("list-files %i", cft.options.list_files);
-    //return 0;
 
     /* print files */
     if(cft.options.list_files && cft.options.list_files > cft.options.list_tags) {

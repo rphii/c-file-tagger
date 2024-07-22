@@ -35,7 +35,7 @@ SOFTWARE. */
 #define VEC_PLATFORM    1
 
 #if VEC_PLATFORM
-#include "platform.h"
+#include "platform_detect.h"
 #define VEC_TRACE   platform_trace()
 #else
 #define VEC_TRACE   do {} while(0)

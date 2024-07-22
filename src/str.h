@@ -46,7 +46,9 @@ void str_triml(Str *str);
 void str_trimr(Str *str);
 void str_trim(Str *str);
 
-void str_cstr(Str *str, char *cstr, size_t len);
+void str_remove_trailing_ch(Str *str, char ch, char ch_escape);
+
+void str_cstr(const Str *str, char *cstr, size_t len);
 void str_clear_to_last(Str *str);
 
 #define ERR_str_fmt_va(str, format, argp) "failed formatting string"
@@ -73,6 +75,9 @@ ErrDecl str_fmt_fgbg(Str *out, const Str *text, const V3u8 fg, const V3u8 bg, bo
 
 #define ERR_STR_GET_STR     "failed getting string from user"
 ErrDecl str_get_str(Str *str);
+
+#define ERR_str_expand_path(path, base, home, ...) "failed expanding path"
+ErrDecl str_expand_path(Str *path, const Str *base, const Str *current, const Str *home);
 
 int str_cmp(const Str *a, const Str *b);
 int str_cmp_ci(const Str *a, const Str *b);

@@ -1,6 +1,6 @@
 #ifndef ATTR_H
 
-#include "platform.h"
+#include "platform_detect.h"
 
 /* https://stackoverflow.com/questions/28166565/detect-gcc-as-opposed-to-msvc-clang-with-macro */
 #if defined(PLATFORM_LINUX) && defined(__GNUC__) && !defined(__clang__)
@@ -23,7 +23,7 @@
 
 /* just don't use those and you're good */
 #define ATTR_EXPECT_TRUE(x)     __builtin_expect((x), 1)
-#define ATTR_EXPECT_FALSE(x)    __builtin_expect((x), 0) 
+#define ATTR_EXPECT_FALSE(x)    __builtin_expect((x), 0)
 
 #else
 #define ATTR_FALLTHROUGH
@@ -38,7 +38,7 @@
 #define ATTR_COLD
 #define ATTR_HOT
 
-#define ATTR_FORMAT(s,c)        
+#define ATTR_FORMAT(s,c)
 
 #define ATTR_EXPECT_TRUE(x)     (x)
 #define ATTR_EXPECT_FALSE(x)    (x)

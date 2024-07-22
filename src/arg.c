@@ -14,6 +14,7 @@ static const char *static_arg[][2] = {
     [ARG_HELP] = {"h", "--help"},
     [ARG_VERSION] = {0, "--version"},
     [ARG_TAG] = {"t", "--tag"},
+    [ARG_RETAG] = {"r", "--retag"},
     [ARG_UNTAG] = {"u", "--untag"},
     [ARG_COPY] = {"c", "--copy"},
     //[ARG_LINK] = {"-l", "--link"},
@@ -30,6 +31,7 @@ static const char *static_arg[][2] = {
     [ARG_INPUT] = {"i", "--input"},
     [ARG_MERGE] = {0, "--merge"},
     [ARG_COMPACT] = {0, "--compact"},
+    [ARG_EXPAND_PATHS] = {"e", "--expand"},
 };
 
 const char *arg_str(ArgList id)
@@ -42,6 +44,7 @@ static const char *static_desc[] = {
     [ARG_HELP] = "print this help",
     [ARG_VERSION] = "display the version",
     [ARG_TAG] = "tag files",
+    [ARG_RETAG] = "TBD rename tags",
     [ARG_UNTAG] = "TBD untag files",
     [ARG_COPY] = "TBD copy tags",
     //[ARG_LINK] = "TBD link tags",
@@ -57,7 +60,8 @@ static const char *static_desc[] = {
     [ARG_DECORATE] = "specify decoration",
     [ARG_INPUT] = "specify additional input files",
     [ARG_MERGE] = "merge all input files into the main file",
-    [ARG_COMPACT] = "TBD compact output"
+    [ARG_COMPACT] = "TBD compact output",
+    [ARG_EXPAND_PATHS] = "treat tags as actual files and expand the paths properly",
 };
 
 static const char static_version[] = ""
@@ -68,6 +72,7 @@ static const char static_version[] = ""
 
 static const Specify static_specify[ARG__COUNT] = {
     [ARG_TAG] = SPECIFY(SPECIFY_LIST),
+    [ARG_RETAG] = SPECIFY(SPECIFY_LIST),
     [ARG_UNTAG] = SPECIFY(SPECIFY_LIST),
     [ARG_COPY] = SPECIFY(SPECIFY_LIST),
     //[ARG_LINK] = SPECIFY(SPECIFY_LIST),
@@ -82,6 +87,7 @@ static const Specify static_specify[ARG__COUNT] = {
     [ARG_DECORATE] = SPECIFY(SPECIFY_OPTION, SPECIFY_OPTION_NO, SPECIFY_OPTION_N, SPECIFY_OPTION_FALSE, SPECIFY_OPTION_YES, SPECIFY_OPTION_TRUE, SPECIFY_OPTION_Y),
     [ARG_INPUT] = SPECIFY(SPECIFY_STRINGS),
     [ARG_MERGE] = {0},
+    [ARG_EXPAND_PATHS] = {0},
 };
 
 static const char *static_specify_str[] = {
@@ -173,7 +179,6 @@ ErrDeclStatic arg_static_execute(Arg *arg, ArgList id, Str *argY)
     ASSERT_ARG(arg);
     ASSERT_ARG(argY);
     if(id >= ARG__COUNT) THROW("incorrect id (%u)", id);
-    //SpecifyList spec = 0;
     void *to_verify = 0;
     switch(id) {
         case ARG_HELP: {
@@ -184,6 +189,9 @@ ErrDeclStatic arg_static_execute(Arg *arg, ArgList id, Str *argY)
             arg_static_print_version(arg);
             arg->exit_early = true;
         } break;
+        case ARG_EXPAND_PATHS: {
+            arg->parsed.expand_paths = true;
+        } break;
         case ARG_LIST_TAGS: {
             if(arg->parsed.list_files) ++arg->parsed.list_files;
             arg->parsed.list_tags = 1;
@@ -192,33 +200,16 @@ ErrDeclStatic arg_static_execute(Arg *arg, ArgList id, Str *argY)
             if(arg->parsed.list_tags) ++arg->parsed.list_tags;
             arg->parsed.list_files = 1;
         } break;
-        case ARG_DECORATE: {
-            to_verify = &arg->parsed.decorate;
-        } break;
-        case ARG_MERGE: {
-            arg->parsed.merge = true;
-        } break;
-        case ARG_ANY: {
-            to_verify = &arg->parsed.find_any;
-        } break;
-        case ARG_AND: {
-            to_verify = &arg->parsed.find_and;
-        } break;
-        case ARG_NOT: {
-            to_verify = &arg->parsed.find_not;
-        } break;
-        case ARG_FILE: {
-            to_verify = &arg->parsed.file;
-        } break;
-        case ARG_TAG: {
-            to_verify = &arg->parsed.tags_add;
-        } break;
-        case ARG_UNTAG: {
-            to_verify = &arg->parsed.tags_del;
-        } break;
-        case ARG_INPUT: {
-            to_verify = &arg->parsed.inputs;
-        } break;
+        case ARG_MERGE: { arg->parsed.merge = true; } break;
+        case ARG_DECORATE: { to_verify = &arg->parsed.decorate; } break;
+        case ARG_ANY: { to_verify = &arg->parsed.find_any; } break;
+        case ARG_AND: { to_verify = &arg->parsed.find_and; } break;
+        case ARG_NOT: { to_verify = &arg->parsed.find_not; } break;
+        case ARG_FILE: { to_verify = &arg->parsed.file; } break;
+        case ARG_TAG: { to_verify = &arg->parsed.tags_add; } break;
+        case ARG_UNTAG: { to_verify = &arg->parsed.tags_del; } break;
+        case ARG_RETAG: { to_verify = &arg->parsed.tags_re; } break;
+        case ARG_INPUT: { to_verify = &arg->parsed.inputs; } break;
         default: THROW(ERR_UNHANDLED_ID" (%d)", id);
     }
     if(to_verify) {
@@ -273,36 +264,6 @@ ErrDeclStatic arg_static_execute(Arg *arg, ArgList id, Str *argY)
             }
         }
     }
-#if 0
-    //if(spec) {
-        switch(spec) {
-            case SPECIFY_OPTION: {
-                arg->exit_early = true;
-                /* list options available */
-                const Specify *spec2 = &static_specify[id];
-                size_t n = 0;
-                for(size_t i = 1; i < spec2->len; ++i) {
-                    if(spec2->ids[i]) ++n;
-                }
-                printf("%*s" F("%s", BOLD) " (one of %zu below)\n", arg->tabs.tiny, "", static_arg[id][1], n);
-                //bool first = true;
-                for(size_t i = 1; i < spec2->len; i++) {
-                    SpecifyList h = spec2->ids[i];
-                    if(!h) continue;
-                    //first = false;
-                    printf("%*s %s%s\n", arg->tabs.main, "", static_specify_str[h], i == 1 ? F(" (default)", IT) : "");
-                }
-            } break;
-            case SPECIFY_STRING: {
-                arg->exit_early = true;
-                printf("%*s" F("%s", BOLD) " STRING is missing\n", arg->tabs.tiny, "", static_arg[id][1]);
-            } break;
-            case SPECIFY_BOOL: {
-            } break;
-            default: break;
-        }
-    //}
-#endif
     return 0;
 error:
     return -1;
@@ -335,6 +296,7 @@ ErrDeclStatic static_arg_parse_spec(Arg *args, ArgList arg, Str *argY, Specify s
         case ARG_DECORATE: { to_set = &args->parsed.decorate; } break;
         case ARG_TAG: { to_set = &args->parsed.tags_add; } break;
         case ARG_UNTAG: { to_set = &args->parsed.tags_del; } break;
+        case ARG_RETAG: { to_set = &args->parsed.tags_re; } break;
         case ARG_FILE: { to_set = &args->parsed.file; } break;
         case ARG_INPUT: { to_set = &args->parsed.inputs; } break;
         default: THROW("unhandled arg id (%u)", arg);
@@ -494,6 +456,11 @@ int arg_parse(Arg *args, size_t argc, const char **argv) /* {{{ */
                     TRY(arg_static_add_to_unknown(args, &argX), ERR_ARG_ADD_TO_UNKNOWN);
                 }
             }
+            /* is argYY used up? */
+            if(argYY_available) {
+                //TRY(arg_static_add_to_unknown(args, &argX), ERR_ARG_ADD_TO_UNKNOWN);
+                THROW("argument does not take anything additional");
+            }
             /* done, next */
             if(arg_opt) break;
             ++arg_many;
@@ -524,7 +491,6 @@ int arg_parse(Arg *args, size_t argc, const char **argv) /* {{{ */
         THROW("no input files specified (" F("%s", BOLD) "), nothing to merge", arg_str(ARG_INPUT));
     }
 #endif
-    //vrstr_free(&many_cmp);
     return 0;
 error:
     if(str_length(&args->unknown)) {
@@ -615,6 +581,7 @@ void arg_help(Arg *arg) /* {{{ */
             }
         }
         switch(i) {
+            /* extra info on specific default arguments */
             case ARG_FILE: {
                 str_clear(&ts);
                 TRYC(str_fmt(&ts, "\n%.*s" F(" (default)", IT), STR_F(&arg->defaults.file)));
@@ -639,7 +606,6 @@ error: ERR_CLEAN;
 
 void arg_free(Arg *arg)
 {
-    //str_free(&arg->entry);
     str_free(&arg->unknown);
     str_free(&arg->parsed.extensions);
     str_free(&arg->parsed.file);
