@@ -60,7 +60,7 @@ static const char *static_desc[] = {
     [ARG_DECORATE] = "specify decoration",
     [ARG_INPUT] = "specify additional input files",
     [ARG_MERGE] = "merge all input files into the main file",
-    [ARG_COMPACT] = "TBD compact output",
+    [ARG_COMPACT] = "more compact output",
     [ARG_EXPAND_PATHS] = "treat tags as actual files and expand the paths properly",
 };
 
