@@ -301,7 +301,7 @@ ErrDecl str_expand_path(Str *path, const Str *base, const Str *home) // TODO: mo
         if(str_length(&base2)) {
             TRYC(str_fmt(&result, "%.*s%c%.*s", STR_F(&base2), PLATFORM_CH_SUBDIR, STR_F(path)));
         } else {
-            result = *path;
+            TRYC(str_fmt(&result, "%.*s", STR_F(path)));
         }
         /* assign result */
         str_clear(path);
