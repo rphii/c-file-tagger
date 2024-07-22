@@ -60,7 +60,7 @@ void vrtagref_sort(VrTagRef *vec, size_t *counts)
 void vrstr_sort(VrStr *vec)
 {
     /* shell sort, https://rosettacode.org/wiki/Sorting_algorithms/Shell_sort#C */
-#if 0
+#if 1
     size_t h, i, j, n = vrstr_length(vec);
     Str temp;
     for (h = n; h /= 2;) {
