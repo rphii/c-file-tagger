@@ -53,6 +53,7 @@
 void screen_leave(void);    /* implementation is in "screen.h" */
 
 void info_handle_abort(void);
+void platform_trace(void);  /* implementation in platform.c */
 
 /* macros */
 

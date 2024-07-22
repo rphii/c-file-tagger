@@ -27,7 +27,7 @@ ErrDecl file_exec(Str *dirname, VStr *subdirs, FileFunc exec, void *args);
 
 FileTypeList file_get_type(Str *filename);
 
-int file_is_dir(Str *filename);
+int file_is_dir(const Str *filename);
 size_t file_size(Str *filename);
 
 #define ERR_FILE_STR_READ "failed to read file"

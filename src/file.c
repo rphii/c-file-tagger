@@ -28,7 +28,7 @@ FileTypeList file_get_type(Str *filename) {
     return 0;
 }
 
-int file_is_dir(Str *filename)
+int file_is_dir(const Str *filename)
 {
 #if defined(PLATFORM_WINDOWS)
     ASSERT("not implemented");
