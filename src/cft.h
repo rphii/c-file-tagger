@@ -65,10 +65,10 @@ ErrDecl cft_fmt(Cft *cft, Str *str);
 ErrDecl cft_find_any(Cft *cft, TrrTag *found, Str *find);
 
 #define ERR_cft_find_and(x, y, find, ...) "failed finding 'and' for tags '%.*s'", STR_F(find)
-ErrDecl cft_find_and(Cft *cft, TrrTag *found, Str *find);
+ErrDecl cft_find_and(Cft *cft, TrrTag *found, Str *find, bool first_query);
 
 #define ERR_cft_find_not(x, y, find, ...) "failed finding 'not' for tags '%.*s'", STR_F(find)
-ErrDecl cft_find_not(Cft *cft, TrrTag *found, Str *find);
+ErrDecl cft_find_not(Cft *cft, TrrTag *found, Str *find, bool first_query);
 
 #define ERR_cft_tags_add(...) "failed adding tags"
 ErrDecl cft_tags_add(Cft *cft, VrStr *files, Str *tags);
