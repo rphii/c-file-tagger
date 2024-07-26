@@ -184,7 +184,7 @@ error: ERR_CLEAN;
 #include <sys/types.h>
 #endif
 
-ErrDecl file_exec(Str *dirname, VStr *subdirs, FileFunc exec, void *args) {
+ErrDecl file_exec(Str *dirname, VStr *subdirs, bool recursive, FileFunc exec, void *args) {
     ASSERT_ARG(dirname);
     ASSERT_ARG(subdirs);
     ASSERT_ARG(exec);
@@ -194,6 +194,9 @@ ErrDecl file_exec(Str *dirname, VStr *subdirs, FileFunc exec, void *args) {
     //printf("FILENAME: %.*s\n", STR_F(dirname));
     FileTypeList type = file_get_type(dirname);
     if(type == FILE_TYPE_DIR) {
+        if(!recursive) {
+            THROW("will not go over '%.*s' (enable recursion to do so)", STR_F(dirname));
+        }
         size_t len = str_rnch(dirname, PLATFORM_CH_SUBDIR, 0);
         if(len < str_length(dirname) && str_get_at(dirname, len) != PLATFORM_CH_SUBDIR) ++len;
         struct dirent *dp = 0;

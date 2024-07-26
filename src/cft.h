@@ -19,6 +19,7 @@ typedef struct Cft {
         bool expand_paths;
         bool compact;
         bool title;
+        bool recursive;
         int list_tags;
         int list_files;
         //Str *find_and;

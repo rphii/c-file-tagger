@@ -14,11 +14,12 @@ static const char *static_arg[][2] = {
     [ARG_HELP] = {"h", "--help"},
     [ARG_VERSION] = {0, "--version"},
     [ARG_TAG] = {"t", "--tag"},
-    [ARG_RETAG] = {"r", "--retag"},
+    [ARG_RETAG] = {0, "--retag"},
     [ARG_UNTAG] = {"u", "--untag"},
     [ARG_COPY] = {"y", "--copy"},
     //[ARG_LINK] = {"-l", "--link"},
     [ARG_REMOVE] = {0, "--remove"},
+    [ARG_RECURSIVE] = {"r", "--recursive"},
     [ARG_MOVE] = {"m", "--move"},
     [ARG_ANY] = {"O", "--any"},
     [ARG_AND] = {"A", "--and"},
@@ -27,7 +28,7 @@ static const char *static_arg[][2] = {
     [ARG_LIST_TAGS] = {"l", "--list-tags"},
     [ARG_LIST_FILES] = {"L", "--list-files"},
     [ARG_EXISTS] = {0, "--exists"},
-    [ARG_FILE] = {"f", "--file"},
+    [ARG_OUTPUT] = {"o", "--output"},
     [ARG_TITLE] = {"T", "--title"},
     [ARG_DECORATE] = {"d", "--decorate"},
     [ARG_INPUT] = {"i", "--input"},
@@ -51,6 +52,7 @@ static const char *static_desc[] = {
     [ARG_COPY] = "TBD copy tags",
     //[ARG_LINK] = "TBD link tags",
     [ARG_REMOVE] = "TBD remove tags",
+    [ARG_RECURSIVE] = "recursively search subdirectories",
     [ARG_MOVE] = "TBD move tags",
     [ARG_ANY] = "list files with any tags",
     [ARG_AND] = "list files having multiple tags",
@@ -59,7 +61,7 @@ static const char *static_desc[] = {
     [ARG_LIST_TAGS] = "list all tags",
     [ARG_LIST_FILES] = "list all files",
     [ARG_EXISTS] = "TBD show either only existing or not existing files, if specified",
-    [ARG_FILE] = "specify main file to be parsed",
+    [ARG_OUTPUT] = "specify main file to be parsed",
     [ARG_TITLE] = "show title in output",
     [ARG_DECORATE] = "specify decoration",
     [ARG_INPUT] = "specify additional input files",
@@ -88,7 +90,7 @@ static const Specify static_specify[ARG__COUNT] = {
     [ARG_SUBSTRING_TAGS] = SPECIFY(SPECIFY_LIST),
     [ARG_LIST_TAGS] = {0},
     [ARG_LIST_FILES] = {0},
-    [ARG_FILE] = SPECIFY(SPECIFY_STRING),
+    [ARG_OUTPUT] = SPECIFY(SPECIFY_STRING),
     [ARG_DECORATE] = SPECIFY(SPECIFY_OPTION, SPECIFY_OPTION_NO, SPECIFY_OPTION_N, SPECIFY_OPTION_FALSE, SPECIFY_OPTION_YES, SPECIFY_OPTION_TRUE, SPECIFY_OPTION_Y),
     [ARG_INPUT] = SPECIFY(SPECIFY_STRINGS),
     [ARG_MERGE] = {0},
@@ -203,6 +205,9 @@ ErrDeclStatic arg_static_execute(Arg *arg, ArgList id, Str *argY)
         case ARG_TITLE: {
             arg->parsed.title = true;
         } break;
+        case ARG_RECURSIVE: {
+            arg->parsed.recursive = true;
+        } break;
         case ARG_LIST_TAGS: {
             if(arg->parsed.list_files) ++arg->parsed.list_files;
             arg->parsed.list_tags = 1;
@@ -216,7 +221,7 @@ ErrDeclStatic arg_static_execute(Arg *arg, ArgList id, Str *argY)
         case ARG_ANY: { to_verify = &arg->parsed.find_any; } break;
         case ARG_AND: { to_verify = &arg->parsed.find_and; } break;
         case ARG_NOT: { to_verify = &arg->parsed.find_not; } break;
-        case ARG_FILE: { to_verify = &arg->parsed.file; } break;
+        case ARG_OUTPUT: { to_verify = &arg->parsed.file; } break;
         case ARG_TAG: { to_verify = &arg->parsed.tags_add; } break;
         case ARG_UNTAG: { to_verify = &arg->parsed.tags_del; } break;
         case ARG_RETAG: { to_verify = &arg->parsed.tags_re; } break;
@@ -309,7 +314,7 @@ ErrDeclStatic static_arg_parse_spec(Arg *args, ArgList arg, Str *argY, Specify s
         case ARG_TAG: { to_set = &args->parsed.tags_add; } break;
         case ARG_UNTAG: { to_set = &args->parsed.tags_del; } break;
         case ARG_RETAG: { to_set = &args->parsed.tags_re; } break;
-        case ARG_FILE: { to_set = &args->parsed.file; } break;
+        case ARG_OUTPUT: { to_set = &args->parsed.file; } break;
         case ARG_INPUT: { to_set = &args->parsed.inputs; } break;
         case ARG_SUBSTRING_TAGS: { to_set = &args->parsed.substring_tags; } break;
         default: THROW("unhandled arg id (%u)", arg);
@@ -398,8 +403,6 @@ int arg_parse(Arg *args, size_t argc, const char **argv) /* {{{ */
     args->tabs.max = 100;
     //VrStr many_cmp = {0};
     /* TODO add this into a function */
-    struct passwd *pw = getpwuid(getuid());
-    TRYC(str_fmt(&args->defaults.file, "%s/.config/cft/tags.cft", pw->pw_dir));
     //arg_help(args);
     /* actually parse */
     for(size_t i = 1; i < argc; ++i) {
@@ -497,9 +500,6 @@ int arg_parse(Arg *args, size_t argc, const char **argv) /* {{{ */
     if(!str_length(&args->parsed.extensions)) {
         TRYC(str_fmt(&args->parsed.extensions, "%s", static_specify_str[SPECIFY_EXTENSION]));
     }
-    if(!str_length(&args->parsed.file)) {
-        TRYC(str_fmt(&args->parsed.file, "%.*s", STR_F(&args->defaults.file)));
-    }
     if(args->parsed.merge && !vrstr_length(&args->parsed.inputs)) { /* TODO: ... do I want this in arg.c or in cft.c ??? */
         THROW("no input files specified (" F("%s", BOLD) "), nothing to merge", arg_str(ARG_INPUT));
     }
@@ -595,11 +595,6 @@ void arg_help(Arg *arg) /* {{{ */
         }
         switch(i) {
             /* extra info on specific default arguments */
-            case ARG_FILE: {
-                str_clear(&ts);
-                TRYC(str_fmt(&ts, "\n%.*s" F(" (default)", IT), STR_F(&arg->defaults.file)));
-                tp = print_line(arg->tabs.max, 0, arg->tabs.spec, &ts);
-            } break;
             case ARG_DECORATE: {
                 str_clear(&ts);
                 TRYC(str_fmt(&ts, "\n" F("(if only %s or %s, default to %s)", IT), arg_str(ARG_LIST_TAGS), arg_str(ARG_LIST_FILES), specify_str(SPECIFY_OPTION_YES)));
@@ -622,7 +617,6 @@ void arg_free(Arg *arg)
     str_free(&arg->unknown);
     str_free(&arg->parsed.extensions);
     str_free(&arg->parsed.file);
-    str_free(&arg->defaults.file);
     vrstr_free(&arg->parsed.remains);
     vrstr_free(&arg->parsed.inputs);
 }

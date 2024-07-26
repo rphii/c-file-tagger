@@ -42,7 +42,7 @@ int main(int argc, const char **argv)
     /* read specified file */
     //TRYC(file_str_read(&arg.parsed.file, &cft.parse.content));
     if(file_size(&arg.parsed.file) != SIZE_MAX) {
-        TRYC(file_exec(&arg.parsed.file, &cft.parse.dirfiles, cft_parse_file, &cft));
+        TRYC(file_exec(&arg.parsed.file, &cft.parse.dirfiles, cft.options.recursive, cft_parse_file, &cft));
     }
 
     /* read all other specified files */
@@ -57,11 +57,11 @@ int main(int argc, const char **argv)
                  * by it) besides, expanding paths (.. / ~ / . etc) exists, sooo... */
                 continue;
             }
-            TRYC(file_exec(input, &cft.parse.dirfiles, cft_parse_file, &cft));
+            TRYC(file_exec(input, &cft.parse.dirfiles, cft.options.recursive, cft_parse_file, &cft));
             while(vstr_length(&cft.parse.dirfiles)) {
                 vstr_pop_back(&cft.parse.dirfiles, input);
                 memset(cft.parse.dirfiles.items[vstr_length(&cft.parse.dirfiles)], 0, sizeof(Str)); // TODO: this should probably happen in my vector!
-                TRYC(file_exec(input, &cft.parse.dirfiles, cft_parse_file, &cft));
+                TRYC(file_exec(input, &cft.parse.dirfiles, cft.options.recursive, cft_parse_file, &cft));
                 str_free(input);
             }
         }
@@ -69,6 +69,9 @@ int main(int argc, const char **argv)
 
     /* reformat */
     if(cft.options.modify || cft.options.merge) {
+        if(!str_length(&arg.parsed.file)) {
+            THROW("no %s provieded", arg_str(ARG_OUTPUT));
+        }
         TRYC(cft_tags_add(&cft, &arg.parsed.remains, &arg.parsed.tags_add));
         //printff("RE [%.*s]", STR_F(&arg.parsed.tags_re));
         TRYC(cft_tags_re(&cft, &arg.parsed.remains, &arg.parsed.tags_re));
