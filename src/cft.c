@@ -113,7 +113,6 @@ ErrDecl cft_add(Cft *cft, const Str *filename, const Str *tag) { //{{{
     for(;;) {
         str_trim(&tag_search); // TODO: is this and the line below actually correct + needed ?
         if(!str_length(&tag_search)) break;
-
         TagRef *foundr = 0;
         TRYC(cft_find_by_tag(cft, &foundr, &tag_search, true));
 
@@ -123,38 +122,8 @@ ErrDecl cft_add(Cft *cft, const Str *filename, const Str *tag) { //{{{
         if(!found->tags.width) {
             TRY(trstr_init(&found->tags, CFT_LUT_2), ERR_LUTD_INIT);
         }
-
         TRY(trstr_add(&foundr->filenames, &found->filename), ERR_LUTD_ADD);
         TRY(trstr_add(&found->tags, &foundr->tag), ERR_LUTD_ADD);
-#if 0
-        /* check if the tag is present */
-        bool present = false;
-        for(size_t i = 0; i < vrstr_length(&found->tags); ++i) {
-            Str *cmp = vrstr_get_at(&found->tags, i);
-            if(str_cmp(cmp, &tag_search)) continue;
-            present = true;
-            break;
-        }
-        /* search for a file tagged with such tag */
-        if(!foundr) return 0;
-        /* check if the file is present */
-        bool presentr = false;
-        for(size_t i = 0; i < vrstr_length(&foundr->filenames); ++i) {
-            Str *cmp = vrstr_get_at(&foundr->filenames, i);
-            if(str_cmp(cmp, filename)) continue;
-            presentr = true;
-            break;
-        }
-        /* add if necessary */
-        if(!presentr) {
-            TRY(vrstr_push_back(&foundr->filenames, &found->filename), ERR_VEC_PUSH_BACK);
-            //printff("added filename '%.*s' to tag '%.*s'", STR_F(&found->filename), STR_F(&foundr->tag));
-        }
-        if(!present) {
-            TRY(vrstr_push_back(&found->tags, &foundr->tag), ERR_VEC_PUSH_BACK);
-            //printff("added tag '%.*s' to filename '%.*s'", STR_F(&foundr->tag), STR_F(&found->filename));
-        }
-#endif
         info(INFO_tag_done, "Tagged '%.*s' with '%.*s'", STR_F(&found->filename), STR_F(&foundr->tag));
         /* check next : */
         size_t iE = str_rch(&tag_search, ':', 0);
@@ -170,12 +139,7 @@ ErrDecl cft_retag(Cft *cft, const Str *filename, const Str *from, const Str *to)
     ASSERT_ARG(cft);
     ASSERT_ARG(from);
     ASSERT_ARG(to);
-
-    //if(filename) {
-    //    Tag *found = 0;
-    //    TRYC(cft_find_by_filename(cft, &found, filename, true));
-    //}
-
+    THROW("TODO");
     return 0;
 error:
     return -1;

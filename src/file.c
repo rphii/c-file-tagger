@@ -21,7 +21,7 @@ FileTypeList file_get_type(Str *filename) {
     char path[FILE_PATH_MAX];
     str_cstr(filename, path, FILE_PATH_MAX);
     int r = lstat(path, &s);
-    if(r) return 0;
+    if(r) return FILE_TYPE_ERROR;
     if(S_ISREG(s.st_mode)) return FILE_TYPE_FILE;
     if(S_ISDIR(s.st_mode)) return FILE_TYPE_DIR;
 #endif
@@ -224,6 +224,8 @@ ErrDecl file_exec(Str *dirname, VStr *subdirs, FileFunc exec, void *args) {
         }
     } else if(type == FILE_TYPE_FILE) {
         TRY(exec(dirname, args), "an error occured while executing the function");
+    } else if(type == FILE_TYPE_ERROR) {
+        THROW("failed checking type of '%.*s' (maybe it doesn't exist?)", STR_F(dirname));
     } else {
         info(INFO_skipping_nofile_nodir, "skipping '%.*s' since no regular file nor directory", STR_F(dirname));
     }

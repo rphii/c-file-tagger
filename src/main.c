@@ -40,8 +40,10 @@ int main(int argc, const char **argv)
     TRYC(cft_init(&cft));
 
     /* read specified file */
-    TRYC(file_str_read(&arg.parsed.file, &cft.parse.content));
-    TRYC(cft_parse(&cft, &arg.parsed.file, &cft.parse.content));
+    //TRYC(file_str_read(&arg.parsed.file, &cft.parse.content));
+    if(file_size(&arg.parsed.file) != SIZE_MAX) {
+        TRYC(file_exec(&arg.parsed.file, &cft.parse.dirfiles, cft_parse_file, &cft));
+    }
 
     /* read all other specified files */
     if(!cft.options.modify || cft.options.merge) {
