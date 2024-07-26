@@ -1,6 +1,7 @@
 #### Start of system configuration section. ####
 
-OPTIMIZE := -march=native -O3 -fdevirtualize-at-ltrans -fipa-pta -fno-semantic-interposition -flto=auto -pipe
+#OPTIMIZE := -DNDEBUG -march=native -Os -fdevirtualize-at-ltrans -fipa-pta -fno-semantic-interposition -flto=auto -pipe
+OPTIMIZE := -DNDEBUG -march=native -O3 -fdevirtualize-at-ltrans -fipa-pta -fno-semantic-interposition -flto=auto -pipe
 
 			#\
 			-fmerge-all-constants -fgcse-lm -fgcse-sm -fgcse-las -fgcse-after-reload -flive-range-shrinkage -fsched-pressure \
@@ -11,18 +12,35 @@ OPTIMIZE := -march=native -O3 -fdevirtualize-at-ltrans -fipa-pta -fno-semantic-i
 		   -fvpt -ftracer -fpeel-loops -fsplit-loops -funswitch-loops -fversion-loops-for-strides -fstdarg-opt -ffunction-sections -fdata-sections -ftoplevel-reorder \
 		   #-fprofile-partial-training -fauto-profile -fbranch-probabilities \
 
+JEMALLOC_LIB := jemalloc.so
+JEMALLOC_EXISTS := $(shell if [[ -n $(ldconfig -p | grep jemalloc ) ]]; then echo "EXIST"; else echo "NOT FOUND"; fi)
+
+
+
+ifeq ($(JEMALLOC_EXISTS),0)
+	#echo "Did not foun jemalloc -> will not use"
+JEMALLOC :=
+text = Not found $(JEMALLOC_LIB) [$(JEMALLOC_EXISTS)]
+$(info $(text))
+else
+#echo "Found jemalloc -> will use"
+JEMALLOC := -I`jemalloc-config --includedir` \
+			-L`jemalloc-config --libdir` -Wl,-rpath,`jemalloc-config --libdir` \
+			-ljemalloc `jemalloc-config --libs`
+text = Found $(JEMALLOC_LIB) [$(JEMALLOC_EXISTS)]
+$(info $(text))
+endif
 
 GIT_VERSION := "$(shell git describe --abbrev=6 --always --tags 2>/dev/null)"
 CC      := gcc
-CFLAGS  := -Wall -Wextra -Wimplicit -Wfatal-errors -std=gnu99 \
+CFLAGS  := -Wall -Wextra -Wimplicit -Wfatal-errors -std=gnu2x \
 		   -Wno-unused-parameter \
 		   -DPROC_COUNT=$(shell nproc --all) \
-		   -O2 -march=native -DNDEBUG \
+		   ${OPTIMIZE} $(JEMALLOC) \
 		   ##############\
-		   ${OPTIMIZE} \
-		   -rdynamic -Og -ggdb3 \
 		   -O3 -march=native -DNDEBUG \
-		   -pg -rdynamic \
+		   -pg -O2 -rdynamic \
+		   -rdynamic -Og -ggdb3 \
 		   -rdynamic -O3 -march=native -DNDEBUG \
 		   -DCOLORPRINT_DISABLE \
 		   -fsanitize=address -rdynamic \
@@ -41,11 +59,12 @@ CFLAGS  := -Wall -Wextra -Wimplicit -Wfatal-errors -std=gnu99 \
 		   ###############
 LDFLAGS := \
 		   -lm \
+		   ${OPTIMIZE} $(JEMALLOC) \
 		   ##############\
-		   ${OPTIMIZE} \
-		   -fsanitize=address -rdynamic \
 		   -pg -rdynamic \
+		   -fsanitize=address -rdynamic \
 		   -rdynamic -ggdb3 \
+		   -pg -rdynamic \
 		   -rdynamic -Og -ggdb3 \
 		   -fsanitize=address \
 		   -pg \
@@ -102,8 +121,8 @@ endif
 
 # compile all .c Files
 $(OBJ_DIR)/%.o: $(SRC_DIR)/%$(CSUFFIX) Makefile | $(OBJ_DIR) $(VERSION_FILE)
-	@echo compile : $<
-	@$(CC) $(CFLAGS) -c -MMD -o $@ $<
+#@echo compile : $< $(CFLAGS) -c -MMD -
+	$(CC) $(CFLAGS) -c -MMD -o $@ $<
 
 # create directories if they don't exist
 # .o dir

@@ -18,6 +18,7 @@ typedef struct Cft {
         bool merge;
         bool expand_paths;
         bool compact;
+        bool title;
         int list_tags;
         int list_files;
         //Str *find_and;
@@ -26,6 +27,11 @@ typedef struct Cft {
         //Str *tags_add;
         //Str *tags_del;
     } options;
+    struct {
+        VStr dirfiles;
+        Str extension;
+        Str content;
+    } parse;
     struct {
         Str homedir;
         Str current_dir;
@@ -56,6 +62,9 @@ ErrDecl cft_find_by_filename(Cft *cft, Tag **found, const Str *filename, bool cr
 #define ERR_cft_parse(...) "failed parsing"
 ErrDecl cft_parse(Cft *cft, const Str *input, const Str *str);
 
+#define ERR_cft_parse_file(filename, ...) "failed parsing '%.*s'", STR_F(filename)
+ErrDecl cft_parse_file(Str *filename, void *cft_void);
+
 #define ERR_cft_del_duplicate_folders(...) "failed removing duplicate folders (for export)"
 ErrDecl cft_del_duplicate_folders(Cft *cft);
 
@@ -76,6 +85,9 @@ ErrDecl cft_tags_add(Cft *cft, VrStr *files, Str *tags);
 
 #define ERR_cft_tags_re(...) "failed renaming tags"
 ErrDecl cft_tags_re(Cft *cft, VrStr *files, Str *tags);
+
+#define ERR_cft_fmt_substring_tags(...) "failed formatting substring tags"
+ErrDecl cft_fmt_substring_tags(Cft *cft, Str *ostream, Str *tags);
 
 #define ERR_cft_tags_fmt(...) "failed formatting tags"
 ErrDecl cft_tags_fmt(Cft *cft, Str *out, VrStr *files);

@@ -80,6 +80,8 @@ void platform_trace(void);  /* implementation in platform.c */
 
 #define TRY(stmt, fmt, ...)  if (stmt) { THROW(fmt, ##__VA_ARGS__); }
 #define ASSERT_ERROR(x)      assert(0 && (x))
+
+#ifndef NDEBUG
 #define ASSERT(stmt, fmt, ...)   do { \
     if (!(stmt)) { \
         (void)screen_leave(); \
@@ -87,6 +89,10 @@ void platform_trace(void);  /* implementation in platform.c */
         /*platform_trace();*/ \
         ABORT("assertion of '" ERR_STRINGIFY(stmt) "' failed... " fmt, ##__VA_ARGS__); } \
     } while(0)
+#else
+#define ASSERT(stmt, fmt, ...)   do { } while(0)
+#endif
+
 #define ASSERT_ARG(arg)     ASSERT(arg, ERR_NULL_ARG)
 
 #include <sys/ioctl.h>

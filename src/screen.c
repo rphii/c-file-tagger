@@ -30,7 +30,7 @@ void screen_enter(void)
 #if defined(PLATFORM_LINUX)
     printf("\033[?25l"); // hide cursor
     int result = system("tput smcup");
-    if(result) info(syscmd_failed, "failed system command: 'tput smcup' (enter alternate screen)");
+    if(result) info(INFO_syscmd_failed, "failed system command: 'tput smcup' (enter alternate screen)");
 #endif
 }
 
@@ -39,7 +39,7 @@ void screen_leave(void)
 #if defined(PLATFORM_LINUX)
     printf("\033[?25h"); // show cursor
     int result = system("tput rmcup");
-    if(result) info(syscmd_failed, "failed system command: 'tput smcup' (exit alternate screen)");
+    if(result) info(INFO_syscmd_failed, "failed system command: 'tput smcup' (exit alternate screen)");
 #endif
 }
 

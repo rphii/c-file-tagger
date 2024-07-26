@@ -219,13 +219,13 @@ ErrDecl file_exec(Str *dirname, VStr *subdirs, FileFunc exec, void *args) {
             } else if(type2 == FILE_TYPE_FILE) {
                 TRY(exec(&filename2, args), "an error occured while executing the function");
             } else {
-                info(skipping_nofile_nodir, "skipping '%.*s' since no regular file nor directory", STR_F(dirname));
+                info(INFO_skipping_nofile_nodir, "skipping '%.*s' since no regular file nor directory", STR_F(dirname));
             }
         }
     } else if(type == FILE_TYPE_FILE) {
         TRY(exec(dirname, args), "an error occured while executing the function");
     } else {
-        info(skipping_nofile_nodir, "skipping '%.*s' since no regular file nor directory", STR_F(dirname));
+        info(INFO_skipping_nofile_nodir, "skipping '%.*s' since no regular file nor directory", STR_F(dirname));
     }
 clean:
     str_free(&subdir);

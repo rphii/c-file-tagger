@@ -23,10 +23,12 @@ static const char *static_arg[][2] = {
     [ARG_ANY] = {"O", "--any"},
     [ARG_AND] = {"A", "--and"},
     [ARG_NOT] = {"N", "--not"},
+    [ARG_SUBSTRING_TAGS] = {"s", "--substring-tags"},
     [ARG_LIST_TAGS] = {"l", "--list-tags"},
     [ARG_LIST_FILES] = {"L", "--list-files"},
     [ARG_EXISTS] = {0, "--exists"},
     [ARG_FILE] = {"f", "--file"},
+    [ARG_TITLE] = {"T", "--title"},
     [ARG_DECORATE] = {"d", "--decorate"},
     [ARG_INPUT] = {"i", "--input"},
     [ARG_MERGE] = {0, "--merge"},
@@ -53,10 +55,12 @@ static const char *static_desc[] = {
     [ARG_ANY] = "list files with any tags",
     [ARG_AND] = "list files having multiple tags",
     [ARG_NOT] = "list files not having tags",
+    [ARG_SUBSTRING_TAGS] = "list tags where substrings match",
     [ARG_LIST_TAGS] = "list all tags",
     [ARG_LIST_FILES] = "list all files",
     [ARG_EXISTS] = "TBD show either only existing or not existing files, if specified",
     [ARG_FILE] = "specify main file to be parsed",
+    [ARG_TITLE] = "show title in output",
     [ARG_DECORATE] = "specify decoration",
     [ARG_INPUT] = "specify additional input files",
     [ARG_MERGE] = "merge all input files into the main file",
@@ -81,6 +85,7 @@ static const Specify static_specify[ARG__COUNT] = {
     [ARG_ANY] = SPECIFY(SPECIFY_LIST),
     [ARG_AND] = SPECIFY(SPECIFY_LIST),
     [ARG_NOT] = SPECIFY(SPECIFY_LIST),
+    [ARG_SUBSTRING_TAGS] = SPECIFY(SPECIFY_LIST),
     [ARG_LIST_TAGS] = {0},
     [ARG_LIST_FILES] = {0},
     [ARG_FILE] = SPECIFY(SPECIFY_STRING),
@@ -195,6 +200,9 @@ ErrDeclStatic arg_static_execute(Arg *arg, ArgList id, Str *argY)
         case ARG_COMPACT: {
             arg->parsed.compact = true;
         } break;
+        case ARG_TITLE: {
+            arg->parsed.title = true;
+        } break;
         case ARG_LIST_TAGS: {
             if(arg->parsed.list_files) ++arg->parsed.list_files;
             arg->parsed.list_tags = 1;
@@ -213,6 +221,7 @@ ErrDeclStatic arg_static_execute(Arg *arg, ArgList id, Str *argY)
         case ARG_UNTAG: { to_verify = &arg->parsed.tags_del; } break;
         case ARG_RETAG: { to_verify = &arg->parsed.tags_re; } break;
         case ARG_INPUT: { to_verify = &arg->parsed.inputs; } break;
+        case ARG_SUBSTRING_TAGS: { to_verify = &arg->parsed.substring_tags; } break;
         default: THROW(ERR_UNHANDLED_ID" (%d)", id);
     }
     if(to_verify) {
@@ -302,6 +311,7 @@ ErrDeclStatic static_arg_parse_spec(Arg *args, ArgList arg, Str *argY, Specify s
         case ARG_RETAG: { to_set = &args->parsed.tags_re; } break;
         case ARG_FILE: { to_set = &args->parsed.file; } break;
         case ARG_INPUT: { to_set = &args->parsed.inputs; } break;
+        case ARG_SUBSTRING_TAGS: { to_set = &args->parsed.substring_tags; } break;
         default: THROW("unhandled arg id (%u)", arg);
     }
     switch(id0) {

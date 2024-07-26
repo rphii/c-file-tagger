@@ -9,6 +9,7 @@ InfoTypeList info_query_type(InfoList id) {
     switch(id) {
         case INFO_formatting: return INFO_TYPE_CHECK;
         case INFO_parsing: return INFO_TYPE_CHECK;
+        case INFO_parsing_file: return INFO_TYPE_CHECK;
         default: return INFO_TYPE_TEXT;
     }
 }

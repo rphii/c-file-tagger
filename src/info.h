@@ -19,6 +19,10 @@ typedef enum {
     INFO_tag_done,
     INFO_tag_found_count,
     INFO_formatting,
+    INFO_parsing_directory,
+    INFO_parsing_file,
+    INFO_parsing_skip_too_large,
+    INFO_parsing_skip_incorrect_extension,
 
     INFO__COUNT /* ids above */
 } InfoList;
@@ -63,10 +67,10 @@ Str *info_query_last(InfoList id);
 #define STRINGIFY(v) STRINGIFY0(v)
 
 #define info(id, str, ...)  do {\
-        InfoLevelField disabled = info_query_disabled(INFO_##id); \
+        InfoLevelField disabled = info_query_disabled(id); \
         if(disabled & INFO_LEVEL_TEXT) break; /* like.. if no text -> break entirely */ \
-        info_handle_prev(INFO_##id); \
-        Str *last = info_query_last(INFO_##id); \
+        info_handle_prev(id); \
+        Str *last = info_query_last(id); \
         str_clear(last); \
         bool decorators = false; \
         if(~disabled & INFO_LEVEL_IS_INFO) { \
@@ -87,7 +91,7 @@ Str *info_query_last(InfoList id);
         decorators = false; \
         (void)(str_fmt(last, str, ##__VA_ARGS__)); \
         ERR_PRINTF("%.*s", STR_F(last)); \
-        info_handle_end(INFO_##id); \
+        info_handle_end(id); \
     } while(0)
 
 InfoLevelField info_query_disabled(InfoList id);
