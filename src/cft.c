@@ -37,6 +37,7 @@ ErrDecl cft_arg(Cft *cft, Arg *arg) { //{{{
     cft->options.title = arg->parsed.title;
     cft->options.expand_paths = arg->parsed.expand_paths;
     cft->options.compact = arg->parsed.compact;
+    cft->options.recursive = arg->parsed.recursive;
     /* TODO ::: THIS IS SO RETARDED MAKE THIS BETTER */
     /* error checking */
     return 0;
@@ -675,71 +676,8 @@ ErrDecl cft_fmt_substring_tags(Cft *cft, Str *out, Str *tags) { //{{{
     ASSERT_ARG(out);
     ASSERT_ARG(tags);
     int err = 0;
-    TrrTagRef filteredr = {0};
-    VrTagRef resultr = {0};
-    size_t *counts = 0;
-    TRY(trrtagref_init(&filteredr, cft->tags.width), ERR_LUTD_INIT);
-    Str tag = {0};
-    /* find any matching substrings */
-    for(;;) {
-        tag = str_splice(tags, &tag, ',');
-        if(tag.first >= tags->last) { break;}
-        for(size_t ii = 0; ii < (1ULL << (cft->reverse.width - 1)); ++ii) {
-            for(size_t jj = 0; jj < cft->reverse.buckets[ii].len; ++jj) {
-                TagRef *cmp = cft->reverse.buckets[ii].items[jj];
-                if(str_find_substring(&cmp->tag, &tag) >= str_length(&cmp->tag)) continue;
-                TRY(trrtagref_add(&filteredr, cmp), ERR_LUTD_ADD);
-                //printff("ADD: [%.*s]", STR_F(&cmp->tag));
-            }
-        }
-    }
-    TRY(trrtagref_dump(&filteredr, &resultr.items, &counts, &resultr.last), ERR_LUTD_DUMP);
-    vrtagref_sort(&resultr, counts);
-    if(cft->options.title) {
-        TRYC(str_fmt(out, "Total Tags: %zu\n", vrtagref_length(&resultr)));
-    }
-    // TODO:DRY [exactly matches in tags_fmt and fmt_substring]
-    for(size_t i = 0; i < vrtagref_length(&resultr); ++i) {
-        TagRef *tag = vrtagref_get_at(&resultr, i);
-        if(cft->options.decorate) {
-            if(cft->options.compact) {
-                TRYC(str_fmt(out, "%s[%zu] ", i ? " " : "", i));
-            } else {
-                TRYC(str_fmt(out, "[%zu] ", i));
-            }
-        }
-        TRYC(str_fmt(out, "%.*s", STR_F(&tag->tag)));
-        if(cft->options.decorate) {
-            TRYC(str_fmt(out, " (%zu)", counts[i]));
-        }
-        if(cft->options.list_files) {
-            size_t ii, jj;
-            TRY(trtagref_find(&cft->reverse, tag, &ii, &jj), ERR_UNREACHABLE " / " ERR_LUTD_FIND);
-            TagRef *tag_actual = cft->reverse.buckets[ii].items[jj];
-            for(size_t j = 0; j < vrstr_length(&tag_actual->filenames); ++j) {
-                Str *file = vrstr_get_at(&tag_actual->filenames, j);
-                TRYC(str_fmt(out, "%s%.*s", cft->options.decorate && !j ? " " : "," , STR_F(file)));
-            }
-        }
-        if(cft->options.compact) {
-            TRYC(str_fmt(out, "%c", i + 1 < vrtagref_length(&resultr) ? ',' : '\n'));
-        } else {
-            TRYC(str_fmt(out, "\n"));
-        }
-        //printff("%.*s: %zu", STR_F(&ref->tag), vrstr_length(&ref->filenames));
-    }
-#if 0
-    /* reverse search once again */
-    for(size_t ii = 0; ii < (1ULL << (filteredr.width - 1)); ++ii) {
-        for(size_t jj= 0; jj < filteredr.buckets[ii].len; ++jj) {
-            TagRef *ref = filteredr.buckets[ii].items[jj];
-        }
-    }
-#endif
+    THROW("implementation missing");
 clean:
-    trrtagref_free(&filteredr);
-    vrtagref_free(&resultr);
-    free(counts);
     return err;
 error:
     ERR_CLEAN;

@@ -72,6 +72,7 @@ typedef enum {
     ARG_COPY,
     //ARG_LINK,
     ARG_REMOVE,
+    ARG_RECURSIVE,
     ARG_MOVE,
     ARG_ANY,
     ARG_AND,
@@ -79,9 +80,9 @@ typedef enum {
     ARG_SUBSTRING_TAGS,
     ARG_LIST_TAGS,
     ARG_LIST_FILES,
-    ARG_FILE,
     ARG_TITLE,
     ARG_DECORATE,
+    ARG_OUTPUT,
     ARG_INPUT,
     ARG_MERGE,
     ARG_COMPACT,
@@ -110,6 +111,7 @@ typedef struct Arg {
         bool expand_paths;
         bool compact;
         bool title;
+        bool recursive;
         SpecifyList decorate;
         Str tags_add;
         Str tags_re;
@@ -119,9 +121,6 @@ typedef struct Arg {
         Str find_not;
         Str substring_tags;
     } parsed;
-    struct {
-        Str file;
-    } defaults;
     struct {
         int tiny; /* tiny, because short is reserved */
         int main;
