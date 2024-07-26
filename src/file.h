@@ -16,6 +16,7 @@ typedef enum {
     FILE_TYPE_NONE,
     FILE_TYPE_FILE,
     FILE_TYPE_DIR,
+    FILE_TYPE_ERROR,
 } FileTypeList;
 
 typedef int (*FileFunc)(Str *filename, void *);
