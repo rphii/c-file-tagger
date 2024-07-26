@@ -3,14 +3,15 @@
 #include "slice.h"
 #include "vector.h"
 #include "str.h"
+#include "lookup.h"
 
 typedef struct Tag {
     Str filename;
-    VrStr tags;
+    TrStr tags;
 } Tag;
 
 typedef struct TagRef {
-    VrStr filenames;
+    TrStr filenames;
     Str tag;
 } TagRef;
 

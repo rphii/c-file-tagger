@@ -81,6 +81,7 @@ ErrDecl str_get_str(Str *str);
 ErrDecl str_expand_path(Str *path, const Str *base, const Str *home);
 
 int str_cmp(const Str *a, const Str *b);
+int str_cmp_sortable(const Str *a, const Str *b);
 int str_cmp_ci(const Str *a, const Str *b);
 int str_cmp_esci(const Str *a, const Str *b);
 int str_cmp_ci_any(const Str *a, const Str **b, size_t len);

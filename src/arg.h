@@ -76,9 +76,11 @@ typedef enum {
     ARG_ANY,
     ARG_AND,
     ARG_NOT,
+    ARG_SUBSTRING_TAGS,
     ARG_LIST_TAGS,
     ARG_LIST_FILES,
     ARG_FILE,
+    ARG_TITLE,
     ARG_DECORATE,
     ARG_INPUT,
     ARG_MERGE,
@@ -107,6 +109,7 @@ typedef struct Arg {
         bool merge;
         bool expand_paths;
         bool compact;
+        bool title;
         SpecifyList decorate;
         Str tags_add;
         Str tags_re;
@@ -114,6 +117,7 @@ typedef struct Arg {
         Str find_any;
         Str find_and;
         Str find_not;
+        Str substring_tags;
     } parsed;
     struct {
         Str file;

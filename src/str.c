@@ -396,6 +396,17 @@ int str_cmp(const Str *a, const Str *b) //{{{
 {
     ASSERT_ARG(a);
     ASSERT_ARG(b);
+    size_t la = str_length(a);
+    size_t lb = str_length(b);
+    if(la != lb) return -1;
+    int result = memcmp(str_iter_begin(a), str_iter_begin(b), la);
+    return result;
+} //}}}
+
+int str_cmp_sortable(const Str *a, const Str *b) //{{{
+{
+    ASSERT_ARG(a);
+    ASSERT_ARG(b);
     //return strcmp(a->s, b->s);
     size_t la = str_length(a);
     size_t lb = str_length(b);
