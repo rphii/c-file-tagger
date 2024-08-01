@@ -526,7 +526,9 @@ void arg_help(Arg *arg) /* {{{ */
     ASSERT(arg, ERR_NULL_ARG);
     int err = 0;
     Str ts = {0};
-    print_line(arg->tabs.max, 0, 0, &STR(F("c-nexus:", BOLD)" terminal note browsing application."));
+    TRYC(str_fmt(&ts, F("%s:", BOLD) " tag managing application.", arg->name));
+    print_line(arg->tabs.max, 0, 0, &ts);
+    str_clear(&ts);
     printf("\n\n");
     print_line(arg->tabs.max, 0, 0, &STR("Usage:\n"));
     TRY(str_fmt(&ts, "%s [options]\n", arg->name), ERR_STR_FMT);

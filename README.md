@@ -16,28 +16,28 @@
 
 List all tags:
 
-    cft --list-tags
-    cft -l
+    cft --input tags.cft --list-tags
+    cft -il tags.cft
 
     # list only tags of filename-A & filename-B
-    cft --list-tags filename-A filename-B
+    cft --input tags.cft --list-tags filename-A filename-B
 
 List all files:
 
-    cft --list-files
-    cft -L
+    cft --input tags.cft --list-files
+    cft -iL tags.cft
 
     # list only files filename-A & filename-B
-    cft --list-files filename-A filename-B
+    cft --input tags.cft --list-files filename-A filename-B
 
 List all tags with files associated
 
-    cft --list-tags --list-files
-    cft -lL
+    cft --input tags.cft --list-tags --list-files
+    cft -ilL tags.cft
 
     # to disable decoration
-    cft --list-tags --list-files --decoration no
-    cft -lLd no
+    cft --input tags.cft --list-tags --list-files --decoration no
+    cft -ilLd tags.cft no
 
 List all files with tags associated
 
@@ -45,8 +45,8 @@ List all files with tags associated
     cft -Ll
 
     # to disable decoration
-    cft --list-files --list-tags --decoration no
-    cft -Lld no     # should in theory give the same output as your file(s) (combined)
+    cft --input tags.cft --list-files --list-tags --decoration no
+    cft -iLld tags.cft no     # should in theory give the same output as your file(s) (combined)
 
 Tags have to be matched exactly (yes, case sensitive). (...reminder that this is an early version,
 but I want the program to be quite flexible later on, so I'm thinking of adding an option, or
@@ -54,29 +54,30 @@ something...)
 
 List files associated with either `sky` or `cloud`:
 
-    cft --any sky,cloud
-    cft -O sky,cloud
+    cft --input tags.cft --any sky,cloud
+    cft -i tags.cft -O sky,cloud
 
 List files associated with `sky` and `cloud`:
 
-    cft --and sky,cloud
-    cft -A sky,cloud
+    cft --input tags.cft --and sky,cloud
+    cft -i tags.cft -A sky,cloud
 
 List files associated with neither `sky` nor `cloud`:
 
-    cft --not sky,cloud
-    cft -N sky,cloud
+    cft --input tags.cft --not sky,cloud
+    cft -i tags.cft -N sky,cloud
 
 If one were to combine `--any` `--and` and `--not`, the current order is fixed and as written in the
 current sentence. Later on I want to allow more complex expressions. One can for example search for
 any file with tags `sky` or `cloud`, of which include `girl` and `blue`, but is not `nfsw` nor
 `sketchy`:
 
-    cft --any sky,cloud --and girl,blue --not nsfw,sketchy
+    cft --input tags.cft --any sky,cloud --and girl,blue --not nsfw,sketchy
 
-Fuzzy search might be built in one day, but it is already possible with the help of other CLI tools:
+Searching files for substrings is also possible with the help of other CLI tools:
 
-    cft --any $(cft -ld no | grep FUZZY-SEARCH | tr '\n' ',')
+    cft --input tags.cft --any $(cft --list-tags --decorate no | grep SUBSTRING-TO-SEARCH | tr '\n' ',')
+    cft -i tags.cft -O $(cft -ld no | grep FUZZY-SEARCH | tr '\n' ',')
 
 Almost none of the other options work and are more of a sketched out plan or route I might take. All
 the other options can be listed with:
@@ -85,25 +86,38 @@ the other options can be listed with:
 
 ## Adding Tags
 
-By default it looks for a file in `$HOME/.config/cft/tags.cft`.
+By default no input nor output file is provided. Tag files have to end in `.cft`.
 
-The file format is basically a `.csv`. The first entry is a file name (or anything you
+The file format is similar to that of a `.csv`. The first entry is a file name (or anything you
 want, basically, doesn't have to be a file) and the rest are all tags associated with said file.
 
-It is possible to specify the use of **one** different **main file**:
+It is possible to specify the use of **one output file**:
 
-    cft --file some/other/file
-    cft -f some/other/file
+    cft --output some/output/file.cft
+    cft -o some/output/file.cft
 
 One can also specify **multiple** additional input files alongside the main file:
 
-    cft --input path/file-A --input path/file-B
-    cft -ii path/file-A path/file-B
+    cft --input path/file-A.cft --input path/file-B.cft
+    cft -ii path/file-A.cft path/file-B.cft
+    cft --input ~/some/directory --recursive      # searches all files ending in *.cft recursively
+    cft -ir ~/some/directory
 
-It is also possible to merge tag files. The sources are `--input` and it will merge into `--file`.
+It is also possible to merge tag files. The sources are `--input` and it will merge into `--output`.
 
-    cft --merge -ii path/file-A path/file-B     # merge into default file
-    cft --merge -fii path/output path/file-A path/file-B
+    cft --merge -ii path/file-A.cft path/file-B.cft     # merge into default file
+    cft --merge -oii path/output.cft path/file-A.cft path/file-B.cft
+
+If one has filenames in their tags file, one can let **cft** expand the paths using `--expand`.
+
+    cft --input tags.cft --expand --list-files
+    cft -ieL tags.cft
+
+    # this will expand based on the following rules
+    filename    -> prepend directory of tags file, starting from root
+    ~/filename  -> replace ~ with home directory
+    ../filename -> prepend directory of tags file, starting from root. any '..' will also get replaced
+    /filename   -> since already at root, do nothing (will still treat '..')
 
 ## About Tags
 
@@ -127,12 +141,14 @@ When searching for files with `anime`, one will find all three files regardless 
 To only find the Bleach-Wallpaper, you would do `cft --any anime:bleach`, which will respect your
 choice of tag and only list those tagged accordingly.
 
-To add tags with the cli to the **main file**, one can do:
+To add tags with the cli to **one output file**, one can do:
 
-    cft string-to-tag --tag list,of,tags
-    cft string-to-tag -t list,of,tags
-    cft -f path/output string-to-tag -t list,of,tags
+    cft -o path/output.cft string-to-tag --tag list,of,tags
+    cft -o path/output.cft string-to-tag -t list,of,tags
 
 ### TODO so I won't forget
 - undo? hmm
+- -lL filename = wrong count of files in description!
+- don't add -t tag: (empty subfolder) as tag
+- clean up the code since it's messy -> especially since I switched from array of tags to lookup tables ...
 
