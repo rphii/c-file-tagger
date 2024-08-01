@@ -34,8 +34,8 @@ input=$1
 
 histfile_auto=$HOME/.config/cft/tofi-bg-history-auto
 histfile_custom=$HOME/.config/cft/tofi-bg-history-custom
-cft_input_path=$HOME/Images         # adjust if you have a different directory
-wallpaper_changer=wp                # install/link wp.sh to some place like /usr/bin/wp
+cft_input_path=$HOME/Images/Wallhaven       # adjust if you have a different directory
+wallpaper_changer=wp                        # install/link wp.sh to some place like /usr/bin/wp
 histsearch=false
 tofi_settings="--require-match=false --height=978 --width=682 --anchor=left --margin-left=8"
 
