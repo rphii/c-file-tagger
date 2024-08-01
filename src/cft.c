@@ -240,7 +240,6 @@ ErrDecl cft_parse(Cft *cft, const Str *input, const Str *str) { //{{{
                         str_clear(&filename_real);
                         TRYC(str_fmt(&filename_real, "%.*s", STR_F(&filename)));
                         TRYC(str_expand_path(&filename_real, &prepend, &cft->misc.homedir));
-                        //printff("HELLO");
                     } else {
                         filename_real = filename;
                     }
@@ -355,8 +354,6 @@ ErrDecl cft_parse_exec(Str *filename, void *args) {/*{{{*/
 error:
     return -1;
 }/*}}}*/
-
-
 
 ErrDecl cft_del_duplicate_folders(Cft *cft) { //{{{
     ASSERT_ARG(cft);
