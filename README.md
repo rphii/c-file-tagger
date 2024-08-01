@@ -1,10 +1,16 @@
-# EARLY VERSION - somwhat usable???
-
+# EARLY VERSION
 # c-file-tagger
+
+         __ _   
+     __ / _| |_ 
+    / _|  _|  _|
+    \__|_|  \__|
+
 
 [](https://github.com/rphii/c-file-tagger/assets/46871963/a05e7a42-4153-417c-8d75-81342cbb66dd)
 
-*\*The command `wp` is just a bash script that sets my background from a list of files.*
+- *\*The command `wp` is just a bash script that sets my background from a list of files.*
+- *\*The video is from an older date and the arguments have changed slighly*
 
 ## Install
 
@@ -89,14 +95,15 @@ the other options can be listed with:
 By default no input nor output file is provided. Tag files have to end in `.cft`.
 
 The file format is similar to that of a `.csv`. The first entry is a file name (or anything you
-want, basically, doesn't have to be a file) and the rest are all tags associated with said file.
+want, basically, doesn't have to be a file) and the rest are all tags associated with said file
+(delimiter is a comma).
 
 It is possible to specify the use of **one output file**:
 
     cft --output some/output/file.cft
     cft -o some/output/file.cft
 
-One can also specify **multiple** additional input files alongside the main file:
+One can also specify **multiple** additional input files:
 
     cft --input path/file-A.cft --input path/file-B.cft
     cft -ii path/file-A.cft path/file-B.cft
