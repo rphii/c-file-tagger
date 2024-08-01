@@ -1,12 +1,6 @@
 # EARLY VERSION
 # c-file-tagger
 
-         __ _   
-     __ / _| |_ 
-    / _|  _|  _|
-    \__|_|  \__|
-
-
 [](https://github.com/rphii/c-file-tagger/assets/46871963/a05e7a42-4153-417c-8d75-81342cbb66dd)
 
 - *\*The command `wp` is just a bash script that sets my background from a list of files.*
