@@ -87,6 +87,7 @@ typedef enum {
     ARG_MERGE,
     ARG_COMPACT,
     ARG_EXPAND_PATHS,
+    ARG_EXTENSIONS,
     // ARG_DEPTSH // folder depth
     // ARG_TAGS_RENAME
     ARG_EXISTS, // show either ONLY existing files, or NOT EXISTING files, if specified! -> nah, make like find. --type ?!
@@ -102,7 +103,7 @@ typedef struct Arg {
     struct {
         VrStr remains;
         VrStr inputs;
-        Str extensions; // TODO: move into sub-struct
+        Str extensions;
         SpecifyList tag;
         Str file;
         int list_tags;

@@ -35,6 +35,7 @@ static const char *static_arg[][2] = {
     [ARG_MERGE] = {0, "--merge"},
     [ARG_COMPACT] = {"c", "--compact"},
     [ARG_EXPAND_PATHS] = {"e", "--expand"},
+    [ARG_EXTENSIONS] = {"x", "--extensions"},
 };
 
 const char *arg_str(ArgList id)
@@ -68,6 +69,7 @@ static const char *static_desc[] = {
     [ARG_MERGE] = "merge all input files into the main file",
     [ARG_COMPACT] = "more compact output",
     [ARG_EXPAND_PATHS] = "treat tags as actual files and expand the paths properly",
+    [ARG_EXTENSIONS] = "specify extension(s), comma separated list",
 };
 
 static const char static_version[] = ""
@@ -95,6 +97,7 @@ static const Specify static_specify[ARG__COUNT] = {
     [ARG_INPUT] = SPECIFY(SPECIFY_STRINGS),
     [ARG_MERGE] = {0},
     [ARG_EXPAND_PATHS] = {0},
+    [ARG_EXTENSIONS] = SPECIFY(SPECIFY_LIST),
 };
 
 static const char *static_specify_str[] = {
@@ -122,7 +125,7 @@ static const char *static_specify_str[] = {
     [SPECIFY_LIST] = "LIST",
     [SPECIFY_BOOL] = "< y | n >",
     /* certain default values */
-    [SPECIFY_EXTENSION] = ".txt",
+    [SPECIFY_EXTENSION] = ".cft",
     [SPECIFY_MAX_FILE_SIZE] = "65536",
 };
 
@@ -227,6 +230,7 @@ ErrDeclStatic arg_static_execute(Arg *arg, ArgList id, Str *argY)
         case ARG_RETAG: { to_verify = &arg->parsed.tags_re; } break;
         case ARG_INPUT: { to_verify = &arg->parsed.inputs; } break;
         case ARG_SUBSTRING_TAGS: { to_verify = &arg->parsed.substring_tags; } break;
+        case ARG_EXTENSIONS: { to_verify = &arg->parsed.extensions; } break;
         default: THROW(ERR_UNHANDLED_ID" (%d)", id);
     }
     if(to_verify) {
@@ -317,6 +321,7 @@ ErrDeclStatic static_arg_parse_spec(Arg *args, ArgList arg, Str *argY, Specify s
         case ARG_OUTPUT: { to_set = &args->parsed.file; } break;
         case ARG_INPUT: { to_set = &args->parsed.inputs; } break;
         case ARG_SUBSTRING_TAGS: { to_set = &args->parsed.substring_tags; } break;
+        case ARG_EXTENSIONS: { to_set = &args->parsed.extensions; } break;
         default: THROW("unhandled arg id (%u)", arg);
     }
     switch(id0) {
@@ -498,7 +503,7 @@ int arg_parse(Arg *args, size_t argc, const char **argv) /* {{{ */
     /* TODO add this into a function */
     /* default arguments */
     if(!str_length(&args->parsed.extensions)) {
-        TRYC(str_fmt(&args->parsed.extensions, "%s", static_specify_str[SPECIFY_EXTENSION]));
+        args->parsed.extensions = STR_L(static_specify_str[SPECIFY_EXTENSION]);
     }
     if(args->parsed.merge && !vrstr_length(&args->parsed.inputs)) { /* TODO: ... do I want this in arg.c or in cft.c ??? */
         THROW("no input files specified (" F("%s", BOLD) "), nothing to merge", arg_str(ARG_INPUT));
@@ -602,6 +607,11 @@ void arg_help(Arg *arg) /* {{{ */
                 TRYC(str_fmt(&ts, "\n" F("(if only %s or %s, default to %s)", IT), arg_str(ARG_LIST_TAGS), arg_str(ARG_LIST_FILES), specify_str(SPECIFY_OPTION_YES)));
                 tp = print_line(arg->tabs.max, 0, arg->tabs.spec, &ts);
             } break;
+            case ARG_EXTENSIONS: {
+                str_clear(&ts);
+                TRYC(str_fmt(&ts, "\n%s " F("(default)", IT), static_specify_str[ARG_EXTENSIONS]));
+                tp = print_line(arg->tabs.max, 0, arg->tabs.spec, &ts);
+            } break;
             default: break;
         }
         printf("\n");
@@ -617,7 +627,7 @@ error: ERR_CLEAN;
 void arg_free(Arg *arg)
 {
     str_free(&arg->unknown);
-    str_free(&arg->parsed.extensions);
+    //str_free(&arg->parsed.extensions);
     str_free(&arg->parsed.file);
     vrstr_free(&arg->parsed.remains);
     vrstr_free(&arg->parsed.inputs);
