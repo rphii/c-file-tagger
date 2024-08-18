@@ -609,7 +609,7 @@ void arg_help(Arg *arg) /* {{{ */
             } break;
             case ARG_EXTENSIONS: {
                 str_clear(&ts);
-                TRYC(str_fmt(&ts, "\n%s " F("(default)", IT), static_specify_str[ARG_EXTENSIONS]));
+                TRYC(str_fmt(&ts, "\n%s " F("(default)", IT), static_specify_str[SPECIFY_EXTENSION]));
                 tp = print_line(arg->tabs.max, 0, arg->tabs.spec, &ts);
             } break;
             default: break;
