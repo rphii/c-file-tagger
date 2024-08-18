@@ -23,9 +23,9 @@ VEC_INCLUDE(Str, str, char, BY_VAL);
 #undef VEC_SETTINGS_KEEP_ZERO_END
 #undef VEC_SETTINGS_DEFAULT_SIZE
 
-#define STR(string)             (Str){.s = string, .last = sizeof(string)/sizeof(*string)-1}
-#define STR_L(string)           (Str){.s = string, .last = strlen(string ? string : "")}
-#define STR_LL(string, length)  (Str){.s = string, .last = length}
+#define STR(string)             (Str){.s = (char *)string, .last = sizeof(string)/sizeof(*string)-1}
+#define STR_L(string)           (Str){.s = (char *)string, .last = strlen(string ? string : "")}
+#define STR_LL(string, length)  (Str){.s = (char *)string, .last = length}
 
 #define STR_F(s)                (int)str_length(s), str_iter_begin(s)
 

@@ -38,6 +38,7 @@ ErrDecl cft_arg(Cft *cft, Arg *arg) { //{{{
     cft->options.expand_paths = arg->parsed.expand_paths;
     cft->options.compact = arg->parsed.compact;
     cft->options.recursive = arg->parsed.recursive;
+    cft->options.extensions = arg->parsed.extensions;
     /* TODO ::: THIS IS SO RETARDED MAKE THIS BETTER */
     /* error checking */
     return 0;
@@ -288,13 +289,12 @@ ErrDecl cft_file_prepare(Cft *cft, Str *filename) //{{{
 
     if(file_is_dir(filename)) {
         THROW("don't expect dir!");
-        int recursive = 0; // TODO make a flag for this
         TRYC(file_dir_read(filename, &cft->parse.dirfiles));
         info(INFO_parsing_directory, "Entering directory '%.*s'", STR_F(filename));
     } else {
         bool parse = false;
         Str split = {0};
-        Str extensions = STR(".cft");
+        Str extensions = cft->options.extensions;
         while(split = str_splice(&extensions, &split, ','), str_iter_begin(&split) < str_iter_end(&extensions)) {
             if(!str_cmp_ci(&cft->parse.extension, &split)) {
                 // TODO make a flag for this?

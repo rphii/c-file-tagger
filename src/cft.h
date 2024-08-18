@@ -22,6 +22,7 @@ typedef struct Cft {
         bool recursive;
         int list_tags;
         int list_files;
+        Str extensions;
         //Str *find_and;
         //Str *find_any;
         //Str *find_not;
