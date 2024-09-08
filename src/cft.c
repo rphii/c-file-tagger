@@ -42,95 +42,61 @@ error:
     return -1;
 } //}}}
 
-#if 0
-ErrDecl cft_find_by_tag(Cft *cft, TrStr **foundr, const Str *tag, bool create_if_nonexist) { //{{{
+#define ERR_cft_find_by_str(...)    "failed adding string to table"
+ErrDecl cft_find_by_str(Cft *cft, TTrStr *base, TTrStrItem **table, const Str *tag, bool create_if_nonexist) { //{{{
     ASSERT_ARG(cft);
     ASSERT_ARG(tag);
-    TrStr *item = trtag_get(&cft->base.reverse, tag);
-    *foundr = item;
-#if 0
-    TagRef searchr = {.tag = *tag};
-    str_trim(&searchr.tag);
-    if(!str_length(&searchr.tag)) return 0;
-    info(INFO_tag_search, "Searching tag '%.*s'", STR_F(&searchr.tag));
+    ASSERT_ARG(base);
+    ASSERT_ARG(table);
+    /* prepare to search */
+    Str find = *tag;
+    str_trim(&find);
+    /* now search */
+    info(INFO_tag_search, "Searching '%.*s'", STR_F(&find));
+    *table = ttrstr_get_kv(base, &find);
+    Str temp = {0};
     /* first add the tag to the file-specific table */
-    if(missing) {
+    if(!*table) {
         if(!create_if_nonexist) return 0;
-        str_zero(&searchr.tag);
-        TRYC(str_fmt(&searchr.tag, "%.*s", STR_F(tag)));
-        TRY(trtagref_add(&cft->base.reverse, &searchr), ERR_LUTD_ADD);
-        info(INFO_tag_created, "Created tag '%.*s'", STR_F(&searchr.tag));
-        /* re-search */
-        TRY(trtagref_find(&cft->base.reverse, &searchr, &iir, &jjr), ERR_LUTD_FIND);
-        *foundr = cft->base.reverse.buckets[iir].items[jjr];
+        info(INFO_tag_create, "Creating '%.*s'", STR_F(&find));
+        str_zero(&temp);
+        TRYC(str_copy(&temp, &find));
+        TRYG(ttrstr_set(base, &temp, 0));
+        *table = ttrstr_get_kv(base, &temp);
+        ASSERT(*table, ERR_UNREACHABLE);
+        info_check(INFO_tag_create, true);
     }
-    *foundr = cft->base.reverse.buckets[iir].items[jjr];
-#endif
-                                                           // entries, don't count...
     return 0;
 error:
     return -1;
 } //}}}
-#endif
-
-#if 0
-ErrDecl cft_find_by_filename(Cft *cft, TrStr **found, const Str *filename, bool create_if_nonexist) { //{{{
-#if 0
-    size_t ii, jj;
-    Tag search = {.filename = *filename};
-    str_trim(&search.filename);
-    info(INFO_filename_search, "Searching filename '%.*s'", STR_F(&search.filename));
-    if(!str_length(&search.filename)) return 0;
-    if(str_get_front(&search.filename) == '#') return 0;
-    TrStr *item = trtag_get(&cft->base.tags, filename);
-    *found = item;
-    int missing = trtag_find(&cft->base.tags, &search, &ii, &jj);
-    if(missing) {
-        if(!create_if_nonexist) return 0;
-        str_zero(&search.filename);
-        //TRYC(str_copy(&search.filename, filename));
-        TRYC(str_fmt(&search.filename, "%.*s", STR_F(filename)));
-        TRY(trtag_add(&cft->base.tags, &search), ERR_LUTD_ADD);
-        info(INFO_filename_created, "Created filename '%.*s'", STR_F(&search.filename));
-        /* re-search */
-        TRY(trtag_find(&cft->base.tags, &search, &ii, &jj), ERR_LUTD_FIND);
-        *found = cft->base.tags.buckets[ii].items[jj];
-    }
-    *found = cft->base.tags.buckets[ii].items[jj];
-#endif
-    return 0;
-error:
-    return -1;
-} //}}}
-#endif
 
 ErrDecl cft_add(Cft *cft, const Str *filename, const Str *tag) { //{{{
     ASSERT_ARG(cft);
     ASSERT_ARG(filename);
     ASSERT_ARG(tag);
-#if 0
+    /* prepare to search */
+    Str find = *tag;
     /* search if we have a matching file ... */
-    Str tag_search = *tag;
-    TrStr *found = 0;
-    TRYC(cft_find_by_filename(cft, &found, filename, true));
-    if(!found) return 0;
-    //printff("filename retrieved '%.*s'", STR_F(&found->filename));
+    TTrStrItem *file_tags = 0;
+    TRYC(cft_find_by_str(cft, &cft->base.file_tags, &file_tags, filename, true));
+    if(!file_tags) THROW(ERR_UNREACHABLE "; should have created/found a table");
     for(;;) {
-        str_trim(&tag_search); // TODO: is this and the line below actually correct + needed ?
-        if(!str_length(&tag_search)) break;
-        TrStr *foundr = 0;
-        TRYC(cft_find_by_tag(cft, &foundr, &tag_search, true));
-        TRYC(cft_find_by_filename(cft, &found, &tag_search, true));
-        ERR_trstr_set();
-        TRYC(trstr_set(foundr, filename, 0));
-        TRYC(trstr_set(found, tag, 0));
-        info(INFO_tag_done, "Tagged '%.*s' with '%.*s'", STR_F(filename), STR_F(tag));
+        /* prepare string */
+        str_trim(&find);
+        if(!str_length(&find)) break;
+        /* find entry */
+        TTrStrItem *tag_files = 0;
+        TRYC(cft_find_by_str(cft, &cft->base.tag_files, &tag_files, &find, true));
+        if(!tag_files) THROW(ERR_UNREACHABLE "; should have created/found a table");
+        /* cross-reference */
+        trstr_set(file_tags->val, tag_files->key, 0);
+        trstr_set(tag_files->val, file_tags->key, 0);
         /* check next : */
-        size_t iE = str_rch(&tag_search, ':', 0);
-        if(iE >= str_length(&tag_search)) break;
-        tag_search.last = tag_search.first + iE;
+        size_t iE = str_rch(&find, ':', 0);
+        if(iE >= str_length(&find)) break;
+        find.last = find.first + iE;
     }
-#endif
     return 0;
 error:
     return -1;
@@ -207,7 +173,7 @@ ErrDecl cft_parse(Cft *cft, const Str *input, const Str *str) { //{{{
     ASSERT_ARG(cft);
     ASSERT_ARG(str);
     int err = 0;
-#if 0
+#if 1
     size_t line_number = 0;
     info(INFO_parsing, "Parsing");
     Str line = *str;
@@ -259,10 +225,10 @@ ErrDecl cft_parse(Cft *cft, const Str *input, const Str *str) { //{{{
     info_check(INFO_parsing, true);
 #endif
 clean:
-    ///////str_free(&prepend);
-    ///////if(cft->options.expand_paths && !cft->options.modify) {
-    ///////    str_free(&filename_real);
-    ///////}
+    str_free(&prepend);
+    if(cft->options.expand_paths && !cft->options.modify) {
+        str_free(&filename_real);
+    }
     return err;
 error:
     ERR_CLEAN;
@@ -286,7 +252,6 @@ ErrDecl cft_file_prepare(Cft *cft, Str *filename) //{{{
     TRYC(str_fmt_basename(&btw->basename, filename));
 #endif
 
-#if 0
     str_clear(&cft->parse.content);
     str_clear(&cft->parse.extension);
     TRYC(str_fmt_ext(&cft->parse.extension, filename));
@@ -321,7 +286,6 @@ ErrDecl cft_file_prepare(Cft *cft, Str *filename) //{{{
             info(INFO_parsing_skip_incorrect_extension, "incorrect extension '%.*s', not parsing '%.*s'", STR_F(&cft->parse.extension), STR_F(filename));
         }
     }
-#endif
 
     return 0;
 error:
@@ -336,15 +300,12 @@ ErrDecl cft_parse_file(Str *filename, void *cft_void) //{{{
     int err = 0;
     Cft *cft = cft_void;
 
-#if 0
     TRYC(cft_file_prepare(cft, filename));
     if(str_length(&cft->parse.content)) {
         TRYC(cft_parse(cft, filename, &cft->parse.content));
         info_check(INFO_parsing_file, true);
         //++btw->stats.success;
     }
-#endif
-    //return 0;
 clean:
     //btw_free(btw); // TODO: do I need to free here or not??? (asking myself in case I process multiple files in a row -> parse_exec )
     return err;
@@ -356,10 +317,8 @@ error:
 ErrDecl cft_parse_exec(Str *filename, void *args) {/*{{{*/
     ASSERT_ARG(filename);
     ASSERT_ARG(args);
-#if 0
     Cft *cft = (Cft *)args;
     TRYC(cft_parse_file(filename, filename));
-#endif
     return 0;
 error:
     return -1;
@@ -486,8 +445,8 @@ error: ERR_CLEAN;
 
 void cft_free(Cft *cft) { //{{{
     ASSERT_ARG(cft);
-    //trtag_free(&cft->base.tags);
-    //trtagref_free(&cft->base.reverse);
+    ttrstr_free(&cft->base.file_tags);
+    ttrstr_free(&cft->base.tag_files);
     str_free(&cft->comments);
     str_free(&cft->misc.homedir);
     str_free(&cft->misc.current_dir);

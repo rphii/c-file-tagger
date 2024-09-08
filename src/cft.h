@@ -7,9 +7,8 @@
 #include "arg.h"
 
 typedef struct CftBase {
-    //TrTag tags;
-    //TrTag reverse;
-    int xyz;
+    TTrStr file_tags;
+    TTrStr tag_files;
 } CftBase;
 
 typedef struct Cft {

@@ -127,7 +127,10 @@ typedef enum
  * M = mode - either BY_VAL or BY_REF
  */
 
-#define VEC_INCLUDE(N, A, T, M) \
+#define VEC_INCLUDE(N, A, T, M, MODULE, ...) \
+    VEC_INCLUDE_##MODULE(N, A, T, M, ##__VA_ARGS__)
+
+#define VEC_INCLUDE_BASE(N, A, T, M) \
     typedef struct N { \
         size_t cap; \
         size_t last; \
@@ -182,6 +185,8 @@ typedef enum
     int A##_reserve(N *vec, size_t cap); \
     int A##_copy(N *dst, const N *src); \
 
+#define VEC_INCLUDE_SORT(N, A, T, M)                void A##_sort(N *vec);
+
 /*
  * int A##_cmp(N *a, N *b) -> compare vec
  * ssize_t A##_find(N *vec, ssize_t index) -> find item
@@ -192,7 +197,10 @@ typedef enum
 /* IMPLEMENTATION *****************************************/
 /**********************************************************/
 
-#define VEC_IMPLEMENT(N, A, T, M, F) \
+#define VEC_IMPLEMENT(N, A, T, M, MODULE, ...) \
+    VEC_IMPLEMENT_##MODULE(N, A, T, M, ##__VA_ARGS__) \
+
+#define VEC_IMPLEMENT_BASE(N, A, T, M, F) \
     /* private */ \
     /*VEC_IMPLEMENT_COMMON_STATIC_F(N, A, T, F);              */\
     VEC_IMPLEMENT_COMMON_STATIC_ZERO(N, A, T, F);           \
@@ -401,6 +409,26 @@ typedef enum
 /**********************************************************/
 
 /* implementation for both */
+
+#define VEC_IMPLEMENT_SORT(N, A, T, M, CMP) \
+    void A##_sort(N *vec) { \
+        /* shell sort, https://rosettacode.org/wiki/Sorting_algorithms/Shell_sort#C */ \
+        size_t h, i, j, n = A##_length(vec); \
+        T temp; \
+        for (h = n; h /= 2;) { \
+            for (i = h; i < n; i++) { \
+                /*t = a[i]; */\
+                temp = *A##_get_at(vec, i); \
+                /*for (j = i; j >= h && t < a[j - h]; j -= h) { */\
+                for (j = i; j >= h && CMP(&temp, A##_get_at(vec, j-h)) < 0; j -= h) { \
+                    A##_set_at(vec, j, A##_get_at(vec, j-h)); \
+                    /*a[j] = a[j - h]; */\
+                } \
+                /*a[j] = t; */\
+                A##_set_at(vec, j, &temp); \
+            } \
+        } \
+    }
 
 /**
  * @brief A##_static_zero [COMMON] - set the vector struct without freeing to zero
@@ -755,8 +783,11 @@ typedef enum
     inline void A##_free(N *vec) \
     { \
         VEC_ASSERT_REAL(vec); \
+        if(!vec->VEC_STRUCT_ITEMS) return; \
+        /*printff(ERR_STRINGIFY(A) " freeing : %p", vec->VEC_STRUCT_ITEMS);*/\
         if(F != 0) { \
             for(size_t i = 0; i < vec->cap; i++) { \
+                /*printff("  freeing : %p", &vec->VEC_STRUCT_ITEMS[i]);*/\
                 VEC_TYPE_FREE(F, &vec->VEC_STRUCT_ITEMS[i], T); \
             } \
         } \
