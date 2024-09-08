@@ -117,7 +117,8 @@ void platform_trace(void);  /* implementation in platform.c */
     } while(0);
 
 //#define TRYF(function, ...)  TRY(function(__VA_ARGS__), function##_ERR(__VA_ARGS__))
-#define TRYC(function)      TRY(function, ERR_##function)
+#define TRYC(function)      TRY(function, ERR_##function)           // try; err is const-defined-string
+#define TRYG(function)      TRY(function, "%s", ERR_##function)     // try; err is generic-string
 
 
 #define ERR_H

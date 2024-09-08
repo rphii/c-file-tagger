@@ -1,24 +1,26 @@
 #include "cft.h"
 #include "file.h"
-#include "lutd.h"
+#include "lut.h"
 #include "str.h"
 #include "info.h"
 #include "vector.h"
 #include "platform.h"
 
-#define CFT_LUT_1   12 //18
+#define CFT_LUT_1   18
 #define CFT_LUT_2   6
 
 ErrDecl cft_init(Cft *cft) { //{{{
+#if 0
     ASSERT_ARG(cft);
     // TODO: make the table sizes some switches
-    TRY(trtag_init(&cft->base.tags, CFT_LUT_1), ERR_LUTD_INIT);
-    TRY(trtagref_init(&cft->base.reverse, CFT_LUT_1), ERR_LUTD_INIT);
+    //TRY(trtag_init(&cft->base.tags, CFT_LUT_1), ERR_LUTD_INIT);
+    //TRY(trtagref_init(&cft->base.reverse, CFT_LUT_1), ERR_LUTD_INIT);
     if(cft->options.expand_paths) {
         TRYC(platform_fmt_home(&cft->misc.homedir));
         TRYC(platform_fmt_cwd(&cft->misc.current_dir));
     }
     //TRY(trrtagref_init(&cft->all, 10), ERR_LUTD_INIT); // TODO: skip if not needed
+#endif
     return 0;
 error:
     return -1;
@@ -46,16 +48,18 @@ error:
     return -1;
 } //}}}
 
-ErrDecl cft_find_by_tag(Cft *cft, TagRef **foundr, const Str *tag, bool create_if_nonexist) { //{{{
+#if 0
+ErrDecl cft_find_by_tag(Cft *cft, TrStr **foundr, const Str *tag, bool create_if_nonexist) { //{{{
     ASSERT_ARG(cft);
     ASSERT_ARG(tag);
+    TrStr *item = trtag_get(&cft->base.reverse, tag);
+    *foundr = item;
+#if 0
     TagRef searchr = {.tag = *tag};
     str_trim(&searchr.tag);
     if(!str_length(&searchr.tag)) return 0;
     info(INFO_tag_search, "Searching tag '%.*s'", STR_F(&searchr.tag));
     /* first add the tag to the file-specific table */
-    size_t iir, jjr;
-    int missing = trtagref_find(&cft->base.reverse, &searchr, &iir, &jjr);
     if(missing) {
         if(!create_if_nonexist) return 0;
         str_zero(&searchr.tag);
@@ -66,24 +70,26 @@ ErrDecl cft_find_by_tag(Cft *cft, TagRef **foundr, const Str *tag, bool create_i
         TRY(trtagref_find(&cft->base.reverse, &searchr, &iir, &jjr), ERR_LUTD_FIND);
         *foundr = cft->base.reverse.buckets[iir].items[jjr];
     }
-    //TRY(trtagref_find(&cft->reverse, &searchr, &iir, &jjr), ERR_LUTD_ADD);
     *foundr = cft->base.reverse.buckets[iir].items[jjr];
-    /* then add the tag to the global table ... TODO: make it an optional flag! increase
-     * performance! */
-    //TRY(trrtagref_add(&cft->all, &searchr), ERR_LUTD_ADD); // TODO: if some file has 1000 equal
+#endif
                                                            // entries, don't count...
     return 0;
 error:
     return -1;
 } //}}}
+#endif
 
-ErrDecl cft_find_by_filename(Cft *cft, Tag **found, const Str *filename, bool create_if_nonexist) { //{{{
+#if 0
+ErrDecl cft_find_by_filename(Cft *cft, TrStr **found, const Str *filename, bool create_if_nonexist) { //{{{
+#if 0
     size_t ii, jj;
     Tag search = {.filename = *filename};
     str_trim(&search.filename);
     info(INFO_filename_search, "Searching filename '%.*s'", STR_F(&search.filename));
     if(!str_length(&search.filename)) return 0;
     if(str_get_front(&search.filename) == '#') return 0;
+    TrStr *item = trtag_get(&cft->base.tags, filename);
+    *found = item;
     int missing = trtag_find(&cft->base.tags, &search, &ii, &jj);
     if(missing) {
         if(!create_if_nonexist) return 0;
@@ -97,41 +103,40 @@ ErrDecl cft_find_by_filename(Cft *cft, Tag **found, const Str *filename, bool cr
         *found = cft->base.tags.buckets[ii].items[jj];
     }
     *found = cft->base.tags.buckets[ii].items[jj];
+#endif
     return 0;
 error:
     return -1;
 } //}}}
+#endif
 
 ErrDecl cft_add(Cft *cft, const Str *filename, const Str *tag) { //{{{
     ASSERT_ARG(cft);
     ASSERT_ARG(filename);
     ASSERT_ARG(tag);
+#if 0
     /* search if we have a matching file ... */
     Str tag_search = *tag;
-    Tag *found = 0;
+    TrStr *found = 0;
     TRYC(cft_find_by_filename(cft, &found, filename, true));
     if(!found) return 0;
     //printff("filename retrieved '%.*s'", STR_F(&found->filename));
     for(;;) {
         str_trim(&tag_search); // TODO: is this and the line below actually correct + needed ?
         if(!str_length(&tag_search)) break;
-        TagRef *foundr = 0;
+        TrStr *foundr = 0;
         TRYC(cft_find_by_tag(cft, &foundr, &tag_search, true));
-
-        if(!foundr->filenames.width) {
-            TRY(trstr_init(&foundr->filenames, CFT_LUT_2), ERR_LUTD_INIT);
-        }
-        if(!found->tags.width) {
-            TRY(trstr_init(&found->tags, CFT_LUT_2), ERR_LUTD_INIT);
-        }
-        TRY(trstr_add(&foundr->filenames, &found->filename), ERR_LUTD_ADD);
-        TRY(trstr_add(&found->tags, &foundr->tag), ERR_LUTD_ADD);
-        info(INFO_tag_done, "Tagged '%.*s' with '%.*s'", STR_F(&found->filename), STR_F(&foundr->tag));
+        TRYC(cft_find_by_filename(cft, &found, &tag_search, true));
+        ERR_trstr_set();
+        TRYC(trstr_set(foundr, filename, 0));
+        TRYC(trstr_set(found, tag, 0));
+        info(INFO_tag_done, "Tagged '%.*s' with '%.*s'", STR_F(filename), STR_F(tag));
         /* check next : */
         size_t iE = str_rch(&tag_search, ':', 0);
         if(iE >= str_length(&tag_search)) break;
         tag_search.last = tag_search.first + iE;
     }
+#endif
     return 0;
 error:
     return -1;
@@ -152,6 +157,7 @@ ErrDecl cft_del(Cft *cft, const Str *filename, const Str *tag) { //{{{
     ASSERT_ARG(cft);
     ASSERT_ARG(filename);
     ASSERT_ARG(tag);
+#if 0
     /* search if we have a matching file ... */
     Str tag_search = *tag;
     Tag *found = 0;
@@ -196,6 +202,7 @@ ErrDecl cft_del(Cft *cft, const Str *filename, const Str *tag) { //{{{
         //// if(iE >= str_length(&tag_search)) break;
         //// tag_search.last = tag_search.first + iE;
     }
+#endif
     return 0;
 error:
     return -1;
@@ -206,6 +213,7 @@ ErrDecl cft_parse(Cft *cft, const Str *input, const Str *str) { //{{{
     ASSERT_ARG(cft);
     ASSERT_ARG(str);
     int err = 0;
+#if 0
     size_t line_number = 0;
     info(INFO_parsing, "Parsing");
     Str line = *str;
@@ -255,11 +263,12 @@ ErrDecl cft_parse(Cft *cft, const Str *input, const Str *str) { //{{{
         if(line.first >= str_length(str)) break;
     }
     info_check(INFO_parsing, true);
+#endif
 clean:
-    str_free(&prepend);
-    if(cft->options.expand_paths && !cft->options.modify) {
-        str_free(&filename_real);
-    }
+    ///////str_free(&prepend);
+    ///////if(cft->options.expand_paths && !cft->options.modify) {
+    ///////    str_free(&filename_real);
+    ///////}
     return err;
 error:
     ERR_CLEAN;
@@ -283,6 +292,7 @@ ErrDecl cft_file_prepare(Cft *cft, Str *filename) //{{{
     TRYC(str_fmt_basename(&btw->basename, filename));
 #endif
 
+#if 0
     str_clear(&cft->parse.content);
     str_clear(&cft->parse.extension);
     TRYC(str_fmt_ext(&cft->parse.extension, filename));
@@ -305,7 +315,8 @@ ErrDecl cft_file_prepare(Cft *cft, Str *filename) //{{{
         if(parse) {
             size_t size = 0;
             size_t max_file_size = 1ULL << 20;
-            if(max_file_size && (size = file_size(filename)) <= max_file_size) {
+            //size_t max_file_size = 0; // TODO:make this an argument
+            if(!max_file_size || (size = file_size(filename)) <= max_file_size) {
                 info(INFO_parsing_file, "parsing '%.*s'", STR_F(filename));
                 TRYC(file_str_read(filename, &cft->parse.content));
                 //str_trim(&btw->content);
@@ -316,6 +327,7 @@ ErrDecl cft_file_prepare(Cft *cft, Str *filename) //{{{
             info(INFO_parsing_skip_incorrect_extension, "incorrect extension '%.*s', not parsing '%.*s'", STR_F(&cft->parse.extension), STR_F(filename));
         }
     }
+#endif
 
     return 0;
 error:
@@ -330,12 +342,14 @@ ErrDecl cft_parse_file(Str *filename, void *cft_void) //{{{
     int err = 0;
     Cft *cft = cft_void;
 
+#if 0
     TRYC(cft_file_prepare(cft, filename));
     if(str_length(&cft->parse.content)) {
         TRYC(cft_parse(cft, filename, &cft->parse.content));
         info_check(INFO_parsing_file, true);
         //++btw->stats.success;
     }
+#endif
     //return 0;
 clean:
     //btw_free(btw); // TODO: do I need to free here or not??? (asking myself in case I process multiple files in a row -> parse_exec )
@@ -348,8 +362,10 @@ error:
 ErrDecl cft_parse_exec(Str *filename, void *args) {/*{{{*/
     ASSERT_ARG(filename);
     ASSERT_ARG(args);
+#if 0
     Cft *cft = (Cft *)args;
     TRYC(cft_parse_file(filename, filename));
+#endif
     return 0;
 error:
     return -1;
@@ -359,17 +375,19 @@ ErrDecl cft_del_duplicate_folders(Cft *cft) { //{{{
     ASSERT_ARG(cft);
     int err = 0;
     /* .. this might sound stupid, but I'll just make a NEW lookup table, just for this! */
-    TrrTagRef duplicates = {0};
+#if 0
+    TrrTag duplicates = {0};
+    //TrrTagRef duplicates = {0};
     // TODO maybe add options for all lookup table sizes ?!? I don't think the table for THIS has to
     // be SO LARGE ??? -> edit... magic number for now
     // or just use lut.h ??? pepethink
     bool clear = false;
-    TRY(trrtagref_init(&duplicates, CFT_LUT_2), ERR_LUTD_INIT);
+    //TRY(trrtagref_init(&duplicates, CFT_LUT_2), ERR_LUTD_INIT);
     for(size_t ii = 0; ii < (1ULL << (cft->base.tags.width - 1)); ++ii) {
         for(size_t jj = 0; jj < cft->base.tags.buckets[ii].len; ++jj) {
             /* clear if we previously used the table */
             if(clear) {
-                trrtagref_clear(&duplicates);
+                trrtag_clear(&duplicates);
                 clear = false;
             }
             /* add tags to lookup table */
@@ -412,8 +430,9 @@ ErrDecl cft_del_duplicate_folders(Cft *cft) { //{{{
 #endif
         }
     }
+#endif
 clean:
-    trrtagref_free(&duplicates);
+    //trrtag_free(&duplicates);
     return err;
 error:
     ERR_CLEAN;
@@ -424,18 +443,19 @@ error:
 ErrDecl cft_fmt(Cft *cft, Str *str) { //{{{
     ASSERT_ARG(cft);
     ASSERT_ARG(str);
+#if 0
     info(INFO_formatting, "Formatting");
     int err = 0;
     VrStr tags = {0};
     VrTag filenames = {0};
     //size_t *tags_counts = 0;
     TRYC(cft_del_duplicate_folders(cft));
-    trtag_dump(&cft->base.tags, &filenames.items, 0, &filenames.last);
+    trtag_dump(&cft->base.tags, &filenames.items, &filenames.last);
     vrtag_sort(&filenames); // TODO add switch
     for(size_t i = 0; i < vrtag_length(&filenames); ++i) {
         Tag *tag = vrtag_get_at(&filenames, i);
 #if 1
-        TRY(trstr_dump(&tag->tags, &tags.items, 0, &tags.last), ERR_LUTD_DUMP);
+        TRY(trstr_dump(&tag->tags, &tags.items, &tags.last), ERR_LUTD_DUMP);
         vrstr_sort(&tags, 0);
         TRYC(str_fmt(str, "%.*s", STR_F(&tag->filename)));
         for(size_t j = 0; j < vrstr_length(&tags); ++j) {
@@ -466,12 +486,14 @@ clean:
     vrtag_free(&filenames);
     return err;
 error: ERR_CLEAN;
+#endif
+    return 0;
 } //}}}
 
 void cft_free(Cft *cft) { //{{{
     ASSERT_ARG(cft);
-    trtag_free(&cft->base.tags);
-    trtagref_free(&cft->base.reverse);
+    //trtag_free(&cft->base.tags);
+    //trtagref_free(&cft->base.reverse);
     str_free(&cft->comments);
     str_free(&cft->misc.homedir);
     str_free(&cft->misc.current_dir);
@@ -481,17 +503,20 @@ void cft_free(Cft *cft) { //{{{
     //trrtagref_free(&cft->all);
 } //}}}
 
+#if 0
 ErrDecl cft_find_any(Cft *cft, TrrTag *found, Str *find) { //{{{
     ASSERT_ARG(cft);
     ASSERT_ARG(found);
     ASSERT_ARG(find);
     /* search... */
+#if 0
     Str tag = {0};
     for(;;) {
         if(str_iter_end(&tag) >= str_iter_end(find)) break;
         tag = str_splice(find, &tag, ',');
         /* search */
         TagRef *foundr = {0};
+#if 0
         TRYC(cft_find_by_tag(cft, &foundr, &tag, false));
         if(foundr) {
             if(!foundr->filenames.width) continue;
@@ -504,20 +529,25 @@ ErrDecl cft_find_any(Cft *cft, TrrTag *found, Str *find) { //{{{
                 }
             }
         }
+#endif
     }
+#endif
     return 0;
 error:
     return -1;
 } //}}}
+#endif
 
+#if 0
 ErrDecl cft_find_and(Cft *cft, TrrTag *found, Str *find, bool first_query) { //{{{
     ASSERT_ARG(cft);
     ASSERT_ARG(found);
     ASSERT_ARG(find);
     int err = 0;
+#if 0
     TrrTag temp = {0};
     TrrTag temp_swap = {0};
-    TRY(trrtag_init(&temp, found->width), ERR_LUTD_INIT);
+    /////TRY(trrtag_init(&temp, found->width), ERR_LUTD_INIT);
     /* search... */
     Str tag = {0};
     size_t iteration = (size_t)(!first_query);
@@ -530,6 +560,7 @@ ErrDecl cft_find_and(Cft *cft, TrrTag *found, Str *find, bool first_query) { //{
         TRYC(cft_find_by_tag(cft, &foundr, &tag, false));
         if(foundr) {
             if(!foundr->filenames.width) continue;
+#if 0
             for(size_t ii = 0; ii < (1ULL << (foundr->filenames.width - 1)); ++ii) {
                 for(size_t jj = 0; jj < foundr->filenames.buckets[ii].len; ++jj) {
                     Str *filename = foundr->filenames.buckets[ii].items[jj];
@@ -546,10 +577,11 @@ ErrDecl cft_find_and(Cft *cft, TrrTag *found, Str *find, bool first_query) { //{
                     //printf("added:%.*s\n", STR_F(filename));
                 }
             }
+#endif
         }
         if(iteration) {
             temp_swap = *found;
-            trrtag_clear(found);
+            ///////trrtag_clear(found);
             *found = temp;
             temp = temp_swap;
         } else {
@@ -557,27 +589,33 @@ ErrDecl cft_find_and(Cft *cft, TrrTag *found, Str *find, bool first_query) { //{
         }
         ++iteration;
     }
+#endif
 clean:
-    trrtag_free(&temp_swap);
+    //////trrtag_free(&temp_swap);
     return err;
 error:
     ERR_CLEAN;
 } //}}}
+#endif
 
+#if 0
 ErrDecl cft_find_not(Cft *cft, TrrTag *found, Str *find, bool first_query) { //{{{
     ASSERT_ARG(cft);
     ASSERT_ARG(found);
     ASSERT_ARG(find);
+#if 0
     /* search... */
     Str tag = {0};
     if(first_query) {
         /* add all tags! */
+#if 0
         for(size_t ii = 0; ii < (1ULL << (cft->base.tags.width - 1)); ++ii) {
             for(size_t jj = 0; jj < cft->base.tags.buckets[ii].len; ++jj) {
                 Tag *hit = cft->base.tags.buckets[ii].items[jj];
                 TRY(trrtag_add(found, hit), ERR_LUTD_ADD);
             }
         }
+#endif
     }
     for(;;) {
         if(str_iter_end(&tag) >= str_iter_end(find)) break;
@@ -587,6 +625,7 @@ ErrDecl cft_find_not(Cft *cft, TrrTag *found, Str *find, bool first_query) { //{
         TRYC(cft_find_by_tag(cft, &foundr, &tag, false));
         if(foundr) {
             //for(size_t i = 0; i < vrstr_length(&foundr->filenames); ++i) {
+#if 0
             if(!foundr->filenames.width) continue;
             for(size_t ii = 0; ii < (1ULL << (foundr->filenames.width - 1)); ++ii) {
                 for(size_t jj = 0; jj < foundr->filenames.buckets[ii].len; ++jj) {
@@ -596,17 +635,21 @@ ErrDecl cft_find_not(Cft *cft, TrrTag *found, Str *find, bool first_query) { //{
                     //printf("removed:%.*s\n", STR_F(filename));
                 }
             }
+#endif
         }
     }
+#endif
     return 0;
 error:
     return -1;
 } //}}}
+#endif
 
 ErrDecl cft_tags_add(Cft *cft, VrStr *files, Str *tags) { //{{{
     ASSERT_ARG(cft);
     ASSERT_ARG(files);
     ASSERT_ARG(tags);
+#if 0
     if(!str_length(tags)) return 0;
     for(size_t i = 0; i < vrstr_length(files); ++i) {
         Str *file = vrstr_get_at(files, i);
@@ -618,6 +661,7 @@ ErrDecl cft_tags_add(Cft *cft, VrStr *files, Str *tags) { //{{{
             //printff("tag [%.*s] with [%.*s]", STR_F(file), STR_F(&tag));
         }
     }
+#endif
     return 0;
 error:
     return -1;
@@ -627,6 +671,7 @@ ErrDecl cft_tags_re(Cft *cft, VrStr *files, Str *tags) { //{{{
     ASSERT_ARG(cft);
     ASSERT_ARG(files);
     ASSERT_ARG(tags);
+#if 0
     //printff("HELLO");
     /* prepare retagging */
     if(!str_length(tags)) return 0;
@@ -663,6 +708,7 @@ ErrDecl cft_tags_re(Cft *cft, VrStr *files, Str *tags) { //{{{
             TRYC(cft_retag(cft, 0, &tag_from, &tag_to));
         }
     }
+#endif
     return 0;
 error:
     return -1;
@@ -684,15 +730,16 @@ ErrDecl cft_tags_fmt(Cft *cft, Str *out, VrStr *files) { //{{{
     ASSERT_ARG(cft);
     ASSERT_ARG(out);
     ASSERT_ARG(files);
+#if 0
     int err = 0;
     VrTagRef all = {0};
     VrStr tags = {0};
     size_t *tags_counts = 0;
     //TrrTag filtered = {0};
-    TrrTagRef filteredr = {0};
+    ////TrrTagRef filteredr = {0};
     size_t *counts = 0;
     /* search */
-    TRY(trrtagref_init(&filteredr, cft->base.tags.width), ERR_LUTD_INIT);
+    /////TRY(trrtagref_init(&filteredr, cft->base.tags.width), ERR_LUTD_INIT);
     if(vrstr_length(files)) {
         for(size_t i = 0; i < vrstr_length(files); ++i) {
             Str *file = vrstr_get_at(files, i);
@@ -702,6 +749,7 @@ ErrDecl cft_tags_fmt(Cft *cft, Str *out, VrStr *files) { //{{{
                 if(splice.first >= file->last) { break;}
                 Tag search = { .filename = splice };
                 size_t ii, jj;
+#if 0
                 if(trtag_find(&cft->base.tags, &search, &ii, &jj)) continue;
                 Tag *found = cft->base.tags.buckets[ii].items[jj];
                 //printff("LENGTH %zu", trstr_length(&found->tags));
@@ -722,10 +770,12 @@ ErrDecl cft_tags_fmt(Cft *cft, Str *out, VrStr *files) { //{{{
                     //printff("FOUND %.*s", STR_F(file));
                 }
 #endif
+#endif
             }
         }
         //TRY(trrtag_dump(&filtered, &all.items, &counts, &all.last), ERR_LUTD_DUMP);
     } else {
+#if 0
         for(size_t ii = 0; ii < (1ULL << (cft->base.tags.width - 1)); ++ii) {
             for(size_t jj = 0; jj < cft->base.tags.buckets[ii].len; ++jj) {
                 Tag *found = cft->base.tags.buckets[ii].items[jj];
@@ -748,8 +798,10 @@ ErrDecl cft_tags_fmt(Cft *cft, Str *out, VrStr *files) { //{{{
 #endif
             }
         }
+#endif
     }
     /* generate output */
+#if 0
     TRY(trrtagref_dump(&filteredr, &all.items, &counts, &all.last), ERR_LUTD_DUMP);
     vrtagref_sort(&all, counts);
     if(cft->options.title) {
@@ -805,19 +857,23 @@ ErrDecl cft_tags_fmt(Cft *cft, Str *out, VrStr *files) { //{{{
             TRYC(str_fmt(out, "\n"));
         }
     }
+#endif
 clean:
-    trrtagref_free(&filteredr);
+    ////////trrtagref_free(&filteredr);
     vrtagref_free(&all);
     free(counts);
     return err;
 error:
     ERR_CLEAN;
+#endif
+    return 0;
 } //}}}
 
 ErrDecl cft_files_fmt(Cft *cft, Str *out, VrStr *files) { //{{{
     ASSERT_ARG(cft);
     ASSERT_ARG(out);
     ASSERT_ARG(files);
+#if 0
     int err = 0;
     VrTag all = {0};
     VrStr tags = {0};
@@ -825,7 +881,7 @@ ErrDecl cft_files_fmt(Cft *cft, Str *out, VrStr *files) { //{{{
     TrrTag filtered = {0};
     TRYC(cft_del_duplicate_folders(cft));
     if(vrstr_length(files)) {
-        TRY(trrtag_init(&filtered, cft->base.tags.width), ERR_LUTD_INIT);
+        //////7TRY(trrtag_init(&filtered, cft->base.tags.width), ERR_LUTD_INIT);
         for(size_t i = 0; i < vrstr_length(files); ++i) {
             Str *file = vrstr_get_at(files, i);
             Str splice = {0};
@@ -834,14 +890,14 @@ ErrDecl cft_files_fmt(Cft *cft, Str *out, VrStr *files) { //{{{
                 if(splice.first >= file->last) { break;}
                 Tag search = { .filename = splice };
                 size_t ii, jj;
-                if(trtag_find(&cft->base.tags, &search, &ii, &jj)) continue;
-                Tag *found = cft->base.tags.buckets[ii].items[jj];
-                TRY(trrtag_add(&filtered, found), ERR_LUTD_ADD);
+                //////7if(trtag_find(&cft->base.tags, &search, &ii, &jj)) continue;
+                //////7Tag *found = cft->base.tags.buckets[ii].items[jj];
+                //////7TRY(trrtag_add(&filtered, found), ERR_LUTD_ADD);
             }
         }
-        TRY(trrtag_dump(&filtered, &all.items, 0, &all.last), ERR_LUTD_DUMP);
+        //////7TRY(trrtag_dump(&filtered, &all.items, 0, &all.last), ERR_LUTD_DUMP);
     } else {
-        TRY(trtag_dump(&cft->base.tags, &all.items, 0, &all.last), ERR_LUTD_DUMP);
+        //////7TRY(trtag_dump(&cft->base.tags, &all.items, 0, &all.last), ERR_LUTD_DUMP);
     }
     /* generate output */
     vrtag_sort(&all);
@@ -861,11 +917,11 @@ ErrDecl cft_files_fmt(Cft *cft, Str *out, VrStr *files) { //{{{
         }
         TRYC(str_fmt(out, "%.*s", STR_F(&tag->filename)));
         if(cft->options.decorate) {
-            TRYC(str_fmt(out, " (%zu)", trstr_length(&tag->tags)));
+            //////7TRYC(str_fmt(out, " (%zu)", trstr_length(&tag->tags)));
         }
         /* format all associated tags */
         if(cft->options.list_tags) {
-            TRY(trstr_dump(&tag->tags, &tags.items, &tags_counts, &tags.last), ERR_LUTD_DUMP);
+            //////7TRY(trstr_dump(&tag->tags, &tags.items, &tags_counts, &tags.last), ERR_LUTD_DUMP);
             vrstr_sort(&tags, tags_counts);
             for(size_t j = 0; j < vrstr_length(&tags); ++j) {
                 Str *tagg = vrstr_get_at(&tags, j);
@@ -901,6 +957,7 @@ clean:
     return err;
 error:
     ERR_CLEAN;
+#endif
 } //}}}
 
 ErrDecl cft_find_fmt(Cft *cft, Str *out, Str *find_any, Str *find_and, Str *find_not) { //{{{
@@ -909,10 +966,11 @@ ErrDecl cft_find_fmt(Cft *cft, Str *out, Str *find_any, Str *find_and, Str *find
     ASSERT_ARG(find_any);
     ASSERT_ARG(find_and);
     ASSERT_ARG(find_not);
+#if 0
     int err = 0;
     TrrTag found = {0};
     VrTag results = {0};
-    TRY(trrtag_init(&found, 10), ERR_LUTD_INIT); // TODO switch
+    //////7TRY(trrtag_init(&found, 10), ERR_LUTD_INIT); // TODO switch
     bool first = true;
     if(str_length(find_any)) {
         TRYC(cft_find_any(cft, &found, find_any));
@@ -926,7 +984,7 @@ ErrDecl cft_find_fmt(Cft *cft, Str *out, Str *find_any, Str *find_and, Str *find
         TRYC(cft_find_not(cft, &found, find_not, first));
         first = false;
     }
-    TRY(trrtag_dump(&found, &results.items, 0, &results.last), ERR_LUTD_DUMP);
+    //////7TRY(trrtag_dump(&found, &results.items, 0, &results.last), ERR_LUTD_DUMP);
     vrtag_sort(&results);
     for(size_t i = 0; i < vrtag_length(&results); ++i) {
         Tag *file = vrtag_get_at(&results, i);
@@ -940,8 +998,9 @@ ErrDecl cft_find_fmt(Cft *cft, Str *out, Str *find_any, Str *find_and, Str *find
         TRYC(str_fmt(out, "%.*s", STR_F(&file->filename)));
         size_t ii, jj;
         Tag *found = 0;
+#if 0
         if(cft->options.list_tags || cft->options.decorate) {
-            TRY(trtag_find(&cft->base.tags, file, &ii, &jj), ERR_LUTD_FIND);
+            //////7TRY(trtag_find(&cft->base.tags, file, &ii, &jj), ERR_LUTD_FIND);
             found = cft->base.tags.buckets[ii].items[jj];
         }
         if(cft->options.list_tags) {
@@ -953,8 +1012,9 @@ ErrDecl cft_find_fmt(Cft *cft, Str *out, Str *find_any, Str *find_and, Str *find
                 }
             }
         }
+#endif
         if(cft->options.decorate) {
-            TRYC(str_fmt(out, " (%zu)", trstr_length(&found->tags)));
+            //////7TRYC(str_fmt(out, " (%zu)", trstr_length(&found->tags)));
         }
         if(cft->options.compact) {
             TRYC(str_fmt(out, "%c", i + 1 < vrtag_length(&results) ? ',' : '\n'));
@@ -969,6 +1029,7 @@ clean:
     return err;
 error:
     ERR_CLEAN;
+#endif
 
 } //}}}
 

@@ -7,11 +7,11 @@
 
 typedef struct Tag {
     Str filename;
-    TrStr tags;
+    VrStr tags;
 } Tag;
 
 typedef struct TagRef {
-    TrStr filenames;
+    VrStr filenames;
     Str tag;
 } TagRef;
 
