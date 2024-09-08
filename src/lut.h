@@ -43,12 +43,13 @@
 
 #define ERR_LUT_SET                 "failed adding to lookup table"
 #define ERR_LUT_GROW                "failed growing lookup table"
+#define ERR_LUT_DUMP                "failed dumping lookup table"
 
 #define LUT_INCLUDE(N, A, TK, MK, TV, MV) \
     typedef struct N##Item { \
         LUT_ITEM(TK, MK) key; \
         LUT_ITEM(TV, MV) val; \
-        size_t hash; \
+        size_t hash; /* !!! IMPORTANT !!! do NOT edit externally */ \
     } N##Item; \
     typedef struct N { \
         N##Item **buckets; \
@@ -60,11 +61,13 @@
     int A##_grow(N *lut, size_t width); \
     int A##_set(N *lut, const LUT_ITEM(TK, MK) key, LUT_ITEM(TV, MV) val); \
     TV *A##_get(N *lut, const LUT_ITEM(TK, MK) key); \
+    N##Item *A##_get_kv(N *lut, const LUT_ITEM(TK, MK) key); \
     void A##_del(N *lut, const LUT_ITEM(TK, MK) key); \
-    int A##_dump(N *lut, N##Item *items, size_t *len); \
+    int A##_dump(N *lut, N##Item ***items, size_t *len); \
     /* error strings for certain fail cases */ \
     char *ERR_##A##_set(void *x, ...); \
     char *ERR_##A##_grow(void *x, ...); \
+    char *ERR_##A##_dump(void *x, ...); \
     /****************************************/
 
 #define LUT_IMPLEMENT(N, A, TK, MK, TV, MV, H, C, FK, FV)   \
@@ -73,10 +76,13 @@
     LUT_IMPLEMENT_COMMON_GROW(N, A, TK, MK, TV, MV, H, C, FK, FV) \
     LUT_IMPLEMENT_COMMON_SET(N, A, TK, MK, TV, MV, H, C, FK, FV) \
     LUT_IMPLEMENT_COMMON_GET(N, A, TK, MK, TV, MV, H, C, FK, FV) \
+    LUT_IMPLEMENT_COMMON_GET_KV(N, A, TK, MK, TV, MV, H, C, FK, FV) \
+    LUT_IMPLEMENT_COMMON_DEL(N, A, TK, MK, TV, MV, H, C, FK, FV) \
     LUT_IMPLEMENT_COMMON_DUMP(N, A, TK, MK, TV, MV, H, C, FK, FV) \
     /* error strings for certain fail cases */ \
     char *ERR_##A##_set(void *x, ...) { return ERR_LUT_SET; } \
     char *ERR_##A##_grow(void *x, ...) { return ERR_LUT_GROW; } \
+    char *ERR_##A##_dump(void *x, ...) { return ERR_LUT_DUMP; } \
     /****************************************/
 
 #define LUT_IMPLEMENT_COMMON_STATIC_GET_ITEM(N, A, TK, MK, TV, MV, H, C, FK, FV) \
@@ -104,7 +110,21 @@
     }
 
 #define LUT_IMPLEMENT_COMMON_DUMP(N, A, TK, MK, TV, MV, H, C, FK, FV) \
-    int A##_dump(N *lut, N##Item *items, size_t *len) { \
+    int A##_dump(N *lut, N##Item ***items, size_t *len) { \
+        ASSERT_ARG(lut); \
+        ASSERT_ARG(items); \
+        if(!lut->used) return 0; \
+        if(*items) return -1; \
+        *items = malloc(sizeof(N##Item *) * lut->used); \
+        if(!items) return -1; \
+        *len = 0; \
+        for(size_t i = 0; i < LUT_CAP(lut->width); i++) { \
+            N##Item *item = lut->buckets[i]; \
+            if(!item) continue; \
+            if(item->hash == LUT_EMPTY) continue; \
+            if(*len + 1 > lut->used) return -1; \
+            (*items)[(*len)++] = item; \
+        } \
         return 0; \
     }
 
@@ -113,8 +133,15 @@
         ASSERT_ARG(lut); \
         for(size_t i = 0; i < LUT_CAP(lut->width); ++i) { \
             N##Item *item = lut->buckets[i]; \
-            if(FK != 0) LUT_TYPE_FREE(FK, item->key, TK, MK); \
-            if(FV != 0) LUT_TYPE_FREE(FV, item->val, TV, MV); \
+            if(!item) continue; \
+            /*printff(ERR_STRINGIFY(A) " freeing : %p", item);*/\
+            if(FK != 0) { /*printff("  free key %p", item->key);*/ LUT_TYPE_FREE(FK, item->key, TK, MK); } \
+            if(FV != 0) { /*printff("  free val %p", item->val);*/ LUT_TYPE_FREE(FV, item->val, TV, MV); } \
+            /*free(item);*/ \
+        } \
+        for(size_t i = 0; i < LUT_CAP(lut->width); ++i) { \
+            N##Item *item = lut->buckets[i]; \
+            if(!item) continue; \
             free(item); \
         } \
         free(lut->buckets); \
@@ -179,7 +206,7 @@
                 req += sizeof(*LUT_REF(MV)(*item)->val); \
             } \
             *item = malloc(req); \
-            memset(*item, 0, sizeof(**item)); \
+            memset(*item, 0, req); \
             if(!*item) return -1; \
             if(LUT_IS_BY_REF(MK)) { \
                 void *p = (void *)*item + sizeof(**item) + 0; \
@@ -193,7 +220,13 @@
             } \
         } \
         memcpy(LUT_REF(MK)(*item)->key, LUT_REF(MK)key, sizeof(TK)); \
-        memcpy(LUT_REF(MV)(*item)->val, LUT_REF(MV)val, sizeof(TV)); \
+        if(LUT_IS_BY_REF(MV)) { \
+            if(LUT_REF(MV)val != 0) { \
+                memcpy(LUT_REF(MV)(*item)->val, LUT_REF(MV)val, sizeof(TV)); \
+            } \
+        } else { \
+            memcpy(LUT_REF(MV)(*item)->val, LUT_REF(MV)val, sizeof(TV)); \
+        } \
         (*item)->hash = hash; \
         ++lut->used; \
         return 0; \
@@ -203,15 +236,27 @@
     TV *A##_get(N *lut, const LUT_ITEM(TK, MK) key) { \
         LUT_ASSERT_ARG(lut); \
         LUT_ASSERT_ARG_M(key, MK); \
+        if(!lut->width) return 0; \
         size_t hash = H(key); \
         N##Item *item = *A##_static_get_item(lut, key, hash, false); \
         return item ? LUT_REF(MV)item->val : 0; \
+    }
+
+#define LUT_IMPLEMENT_COMMON_GET_KV(N, A, TK, MK, TV, MV, H, C, FK, FV) \
+    N##Item *A##_get_kv(N *lut, const LUT_ITEM(TK, MK) key) { \
+        LUT_ASSERT_ARG(lut); \
+        LUT_ASSERT_ARG_M(key, MK); \
+        if(!lut->width) return 0; \
+        size_t hash = H(key); \
+        N##Item *item = *A##_static_get_item(lut, key, hash, false); \
+        return item; \
     }
 
 #define LUT_IMPLEMENT_COMMON_DEL(N, A, TK, MK, TV, MV, H, C, FK, FV) \
     void A##_del(N *lut, const LUT_ITEM(TK, MK) key) { \
         LUT_ASSERT_ARG(lut); \
         LUT_ASSERT_ARG_M(key, MK); \
+        if(!lut->width) return; \
         size_t hash = H(key); \
         N##Item *item = *A##_static_get_item(lut, key, hash, true); \
         if(item) { \
