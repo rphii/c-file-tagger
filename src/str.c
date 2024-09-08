@@ -15,7 +15,7 @@
 #define VEC_SETTINGS_KEEP_ZERO_END 1
 #define VEC_SETTINGS_STRUCT_ITEMS s
 
-VEC_IMPLEMENT(Str, str, char, BY_VAL, 0);
+VEC_IMPLEMENT(Str, str, char, BY_VAL, BASE, 0);
 
 /* other functions */
 

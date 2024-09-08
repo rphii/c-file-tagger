@@ -13,6 +13,7 @@ typedef enum {
     INFO_input,
     INFO_output,
     INFO_tag_search,
+    INFO_tag_create,
     INFO_tag_created,
     INFO_filename_search,
     INFO_filename_created,
