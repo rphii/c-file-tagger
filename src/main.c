@@ -20,6 +20,8 @@ int main(int argc, const char **argv)
 {
     int err = 0;
 
+    //setvbuf(stdout, 0, _IOFBF, 0x1000);
+
 #if 0
     TrStr lut = {0};
     Str key = STR("fuckyou");
@@ -31,7 +33,8 @@ int main(int argc, const char **argv)
 #endif
 
     info_disable_all(INFO_LEVEL_ALL);
-    //info_enable(INFO_tag_created, INFO_LEVEL_ALL);
+    //info_enable(INFO_tag_search, INFO_LEVEL_ALL);
+    //info_enable(INFO_tag_create, INFO_LEVEL_ALL);
     //info_enable(INFO_parsing_file, INFO_LEVEL_ALL);
     //info_enable(INFO_parsing_skip_incorrect_extension, INFO_LEVEL_ALL);
     //info_enable(INFO_parsing_skip_too_large, INFO_LEVEL_ALL);
@@ -141,7 +144,7 @@ int main(int argc, const char **argv)
         vrttrstritem_sort(&dumped);
         for(size_t i = 0; i < vrttrstritem_length(&dumped); ++i) {
             TTrStrItem *item = vrttrstritem_get_at(&dumped, i);
-            printff("[%zu] %.*s (%zu)", i, STR_F(item->key), item->val->used);
+            printf("[%zu] %.*s (%zu)\n", i, STR_F(item->key), item->val->used);
         }
         //printff("\n\nLEN: %zu", dumped.last);
         vrttrstritem_free(&dumped);
