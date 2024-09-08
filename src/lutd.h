@@ -146,10 +146,12 @@ typedef enum {
         size_t required = len ? len : LUTD_DEFAULT_SIZE;\
         while(required < cap) required *= 2; \
         if(required > len) { \
+            /* buckets */ \
             void *temp = realloc(l->buckets[hash].items, sizeof(T) * required); \
             if(!temp) return LUTD_ERROR_REALLOC; \
             l->buckets[hash].items = temp; \
             memset(&l->buckets[hash].items[exist_index], 0, sizeof(T) * (required - len)); \
+            /* counts */ \
             temp = realloc(l->buckets[hash].count, sizeof(size_t) * required); \
             if(!temp) return LUTD_ERROR_REALLOC; \
             l->buckets[hash].count = temp; \
@@ -187,6 +189,7 @@ typedef enum {
         size_t required = len ? len : LUTD_DEFAULT_SIZE;\
         while(required < cap) required *= 2; \
         if(required > len) { \
+            /* buckets */ \
             void *temp = realloc(l->buckets[hash].items, sizeof(T) * required); \
             if(!temp) return LUTD_ERROR_REALLOC; \
             l->buckets[hash].items = temp; \
@@ -196,6 +199,7 @@ typedef enum {
                 if(!l->buckets[hash].items[i]) return LUTD_ERROR_MALLOC; \
                 memset(l->buckets[hash].items[i], 0, sizeof(**l->buckets[hash].items)); \
             } \
+            /* counts */ \
             temp = realloc(l->buckets[hash].count, sizeof(size_t) * required); \
             if(!temp) return LUTD_ERROR_REALLOC; \
             l->buckets[hash].count = temp; \

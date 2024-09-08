@@ -20,10 +20,12 @@ int main(int argc, const char **argv)
 {
     int err = 0;
     info_disable_all(INFO_LEVEL_ALL);
+    //info_enable(INFO_tag_created, INFO_LEVEL_ALL);
     //info_enable(INFO_parsing_file, INFO_LEVEL_ALL);
     //info_enable(INFO_parsing_skip_incorrect_extension, INFO_LEVEL_ALL);
     //info_enable(INFO_parsing_skip_too_large, INFO_LEVEL_ALL);
     //info_enable(INFO_parsing_directory, INFO_LEVEL_ALL);
+    //info_enable(INFO_formatting, INFO_LEVEL_ALL);
     //info_enable_all(INFO_LEVEL_ID | INFO_LEVEL_TEXT);
     
     TRYC(platform_colorprint_init());
