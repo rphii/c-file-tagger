@@ -1,6 +1,7 @@
 #### Start of system configuration section. ####
 
-OPTIMIZE := -DNDEBUG -march=native -O3 -fdevirtualize-at-ltrans -fipa-pta -fno-semantic-interposition -flto=auto -pipe
+#OPTIMIZE := -DNDEBUG -march=native -O3 -fdevirtualize-at-ltrans -fipa-pta -fno-semantic-interposition -flto=auto -pipe
+OPTIMIZE := -DNDEBUG -march=native -O3
 
 JEMALLOC_USE := 1
 JEMALLOC_LIB := jemalloc.so
@@ -21,17 +22,17 @@ CFLAGS  := -Wall -Wextra -Wimplicit -Wfatal-errors -std=gnu2x \
 		   -Wno-unused-parameter \
 		   -DPROC_COUNT=$(shell nproc --all) \
 		   ${OPTIMIZE} $(JEMALLOC) \
-		   ##############\
-		   -Og -fsanitize=address -rdynamic -ggdb3 \
-		   -pg -O2 -rdynamic \
 		   -DCOLORPRINT_DISABLE \
+		   ##############\
+		   -pg -rdynamic \
+		   -Og -fsanitize=address -rdynamic -ggdb3 \
 		   ###############
 LDFLAGS := \
 		   -lm \
 		   ${OPTIMIZE} $(JEMALLOC) \
 		   ##############\
-		   -Og -fsanitize=address -rdynamic -ggdb3 \
 		   -pg -rdynamic \
+		   -Og -fsanitize=address -rdynamic -ggdb3 \
 		   ##############
 CSUFFIX	:= .c
 HSUFFIX	:= .h
