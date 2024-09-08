@@ -10,17 +10,11 @@
 #define CFT_LUT_2   6
 
 ErrDecl cft_init(Cft *cft) { //{{{
-#if 0
     ASSERT_ARG(cft);
-    // TODO: make the table sizes some switches
-    //TRY(trtag_init(&cft->base.tags, CFT_LUT_1), ERR_LUTD_INIT);
-    //TRY(trtagref_init(&cft->base.reverse, CFT_LUT_1), ERR_LUTD_INIT);
     if(cft->options.expand_paths) {
         TRYC(platform_fmt_home(&cft->misc.homedir));
         TRYC(platform_fmt_cwd(&cft->misc.current_dir));
     }
-    //TRY(trrtagref_init(&cft->all, 10), ERR_LUTD_INIT); // TODO: skip if not needed
-#endif
     return 0;
 error:
     return -1;
