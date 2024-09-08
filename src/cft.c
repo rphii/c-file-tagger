@@ -51,6 +51,7 @@ ErrDecl cft_find_by_str(Cft *cft, TTrStr *base, TTrStrItem **table, const Str *t
     /* prepare to search */
     Str find = *tag;
     str_trim(&find);
+    if(!str_length(&find)) return 0;
     /* now search */
     info(INFO_tag_search, "Searching '%.*s'", STR_F(&find));
     *table = ttrstr_get_kv(base, &find);
@@ -80,7 +81,7 @@ ErrDecl cft_add(Cft *cft, const Str *filename, const Str *tag) { //{{{
     /* search if we have a matching file ... */
     TTrStrItem *file_tags = 0;
     TRYC(cft_find_by_str(cft, &cft->base.file_tags, &file_tags, filename, true));
-    if(!file_tags) THROW(ERR_UNREACHABLE "; should have created/found a table");
+    if(!file_tags) return 0; //THROW(ERR_UNREACHABLE "; should have created/found a table");
     for(;;) {
         /* prepare string */
         str_trim(&find);
@@ -88,7 +89,7 @@ ErrDecl cft_add(Cft *cft, const Str *filename, const Str *tag) { //{{{
         /* find entry */
         TTrStrItem *tag_files = 0;
         TRYC(cft_find_by_str(cft, &cft->base.tag_files, &tag_files, &find, true));
-        if(!tag_files) THROW(ERR_UNREACHABLE "; should have created/found a table");
+        if(!tag_files) return 0; //THROW(ERR_UNREACHABLE "; should have created/found a table");
         /* cross-reference */
         trstr_set(file_tags->val, tag_files->key, 0);
         trstr_set(tag_files->val, file_tags->key, 0);
@@ -195,8 +196,8 @@ ErrDecl cft_parse(Cft *cft, const Str *input, const Str *str) { //{{{
             if(!filename.s) {
                 /* first entry is the filename */
                 filename = tag;
+                str_trim(&filename);
                 if(str_length(&filename)) {
-                    str_trim(&filename);
                     if(str_get_front(&filename) == '#') {
                         /* TODO: only read comments when we plan to write out to the file again !!! */
                         /* OTHER TODO: the order will get messed up... because we sort the rest
