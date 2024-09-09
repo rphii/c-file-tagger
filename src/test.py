@@ -45,10 +45,11 @@ for root, dirs, osfiles in os.walk('/home/rphii/dev/c'):
 #for i,file in enumerate(sorted(files)):
 #    print(f'[{i}] {file}')
 
-s = ''
+#s = ''
 for i,tag in enumerate(sorted(tags)):
-    s += f'[{i}] {tag}\n'
-    #print(f'[{i}] {tag}')
+    #s += f'[{i}] {tag}\n'
+    print(f'[{i}] {tag}')
     #print(f'{tag}')
-print(s)
+    #pass
+#print(s)
 
