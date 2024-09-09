@@ -87,7 +87,7 @@ int main(int argc, const char **argv)
     /* reformat */
     if(cft.options.modify || cft.options.merge) {
         if(!str_length(&arg.parsed.file)) {
-            THROW("no %s provieded", arg_str(ARG_OUTPUT));
+            THROW("no %s provided", arg_str(ARG_OUTPUT));
         }
         TRYC(cft_tags_add(&cft, &arg.parsed.remains, &arg.parsed.tags_add));
         //printff("RE [%.*s]", STR_F(&arg.parsed.tags_re));
