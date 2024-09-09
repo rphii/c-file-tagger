@@ -328,63 +328,28 @@ error:
 ErrDecl cft_del_duplicate_folders(Cft *cft) { //{{{
     ASSERT_ARG(cft);
     int err = 0;
-    /* .. this might sound stupid, but I'll just make a NEW lookup table, just for this! */
-#if 0
-    TrrTag duplicates = {0};
-    //TrrTagRef duplicates = {0};
-    // TODO maybe add options for all lookup table sizes ?!? I don't think the table for THIS has to
-    // be SO LARGE ??? -> edit... magic number for now
-    // or just use lut.h ??? pepethink
-    bool clear = false;
-    //TRY(trrtagref_init(&duplicates, CFT_LUT_2), ERR_LUTD_INIT);
-    for(size_t ii = 0; ii < (1ULL << (cft->base.tags.width - 1)); ++ii) {
-        for(size_t jj = 0; jj < cft->base.tags.buckets[ii].len; ++jj) {
-            /* clear if we previously used the table */
-            if(clear) {
-                trrtag_clear(&duplicates);
-                clear = false;
-            }
-            /* add tags to lookup table */
-            Tag *tag = cft->base.tags.buckets[ii].items[jj];
-#if 0
-            //if(!tag->tags.width) TRY(trstr_init(&tag->tags, CFT_LUT_1), ERR_LUTD_INIT);
-#else
-            //for(size_t i = 0; i < vrstr_length(&tag->tags); ++i) {
-            //    Str *tagg = vrstr_get_at(&tag->tags, i);
-            if(!tag->tags.width) continue;
-            for(size_t i2 = 0; i2 < (1ULL << (tag->tags.width - 1)); ++i2) {
-                for(size_t j2 = 0; j2 < tag->tags.buckets[i2].len; ++j2) {
-                    Str *tagg = tag->tags.buckets[i2].items[j2];
-                    Str tag_search = *tagg;
-                    for(;;) {
-                        str_trim(&tag_search); // TODO: is this and the line below actually correct + needed ?
-                        if(!str_length(&tag_search)) break;
-                        TagRef ref = { .tag = tag_search };
-                        TRY(trrtagref_add(&duplicates, &ref), ERR_LUTD_ADD);
-                        clear = true;
-                        /* check next : */
-                        size_t iE = str_rch(&tag_search, ':', 0);
-                        if(iE >= str_length(&tag_search)) break;
-                        tag_search.last = tag_search.first + iE;
-                    }
-                }
-            }
-            /* now go over duplicates and add if not one. simple! */
-            trstr_clear(&tag->tags);
-            for(size_t ii = 0; ii < (1ULL << (duplicates.width - 1)); ++ii) {
-                for(size_t jj = 0; jj < duplicates.buckets[ii].len; ++jj) {
-                    TagRef *ref = duplicates.buckets[ii].items[jj];
-                    size_t count = duplicates.buckets[ii].count[jj];
-                    if(count > 1) {
-                        continue;
-                    }
-                    TRY(trstr_add(&tag->tags, &ref->tag), ERR_VEC_PUSH_BACK);
-                }
-            }
-#endif
+    TrTrStr asdf = {0};
+    for(size_t i = 0; i < LUT_CAP(cft->base.tag_files.width); ++i) {
+        TTrStrItem *item = cft->base.tag_files.buckets[i];
+        if(!item) continue;
+        if(item->hash == LUT_EMPTY) continue;
+        Str *tag = item->key;
+        TrStr *sub = item->val;
+        size_t iE = str_rch(tag, ':', 0);
+        if(iE >= str_length(tag)) continue;
+        Str remove = STR_IE(*tag, iE);
+        str_trim(&remove);
+        if(!str_length(&remove)) continue;
+        for(size_t j = 0; j < LUT_CAP(sub->width); ++j) {
+            TrStrItem *item2 = sub->buckets[j];
+            if(!item2) continue;
+            if(item2->hash == LUT_EMPTY) continue;
+            Str *file = item2->key;
+            TrStr *modify = ttrstr_get(&cft->base.file_tags, file);
+            if(!modify) THROW(ERR_UNREACHABLE);
+            trstr_del(modify, &remove);
         }
     }
-#endif
 clean:
     //trrtag_free(&duplicates);
     return err;
@@ -397,38 +362,25 @@ error:
 ErrDecl cft_fmt(Cft *cft, Str *str) { //{{{
     ASSERT_ARG(cft);
     ASSERT_ARG(str);
-#if 0
-    info(INFO_formatting, "Formatting");
     int err = 0;
-    VrStr tags = {0};
-    VrTag filenames = {0};
-    //size_t *tags_counts = 0;
+    info(INFO_formatting, "Formatting");
+    VrTTrStrItem dump_files = {0};
+    VrTrStrItem dump_tags = {0};
     TRYC(cft_del_duplicate_folders(cft));
-    trtag_dump(&cft->base.tags, &filenames.items, &filenames.last);
-    vrtag_sort(&filenames); // TODO add switch
-    for(size_t i = 0; i < vrtag_length(&filenames); ++i) {
-        Tag *tag = vrtag_get_at(&filenames, i);
-#if 1
-        TRY(trstr_dump(&tag->tags, &tags.items, &tags.last), ERR_LUTD_DUMP);
-        vrstr_sort(&tags, 0);
-        TRYC(str_fmt(str, "%.*s", STR_F(&tag->filename)));
-        for(size_t j = 0; j < vrstr_length(&tags); ++j) {
-            Str *tagg = vrstr_get_at(&tags, j);
-            //TRYC(str_fmt(str, "%s%.*s", cft->options.decorate && !j ? " " : ",",  STR_F(tagg)));
-            TRYC(str_fmt(str, ",%.*s", STR_F(tagg)));
+    TRYG(ttrstr_dump(&cft->base.file_tags, &dump_files.items, &dump_files.last));
+    vrttrstritem_sort(&dump_files);
+    for(size_t i = 0; i < vrttrstritem_length(&dump_files); ++i) {
+        TTrStrItem *item = vrttrstritem_get_at(&dump_files, i);
+        Str *file = item->key;
+        TrStr *sub = item->val;
+        TRYC(str_fmt(str, "%.*s", STR_F(file)));
+        TRYG(trstr_dump(sub, &dump_tags.items, &dump_tags.last));
+        vrtrstritem_sort(&dump_tags);
+        for(size_t j = 0; j < vrtrstritem_length(&dump_tags); ++j) {
+            TrStrItem *tag = vrtrstritem_get_at(&dump_tags, j);
+            TRYC(str_fmt(str, ",%.*s", STR_F(tag->key)));
         }
-        vrstr_free(&tags);
-#else
-                    size_t ii, jj;
-                    TRY(trtagref_find(&cft->reverse, tag, &ii, &jj), ERR_LUTD_FIND);
-                    TagRef *dump = cft->reverse.buckets[ii].items[jj];
-        vrstr_sort(&tag->tags, 0);
-        TRYC(str_fmt(str, "%.*s", STR_F(&tag->filename)));
-        for(size_t j = 0; j < vrstr_length(&tag->tags); ++j) {
-            Str *tagg = vrstr_get_at(&tag->tags, j);
-            TRYC(str_fmt(str, ",%.*s", STR_F(tagg)));
-        }
-#endif
+        vrtrstritem_free(&dump_tags);
         TRYC(str_fmt(str, "\n"));
     }
     if(str_length(&cft->comments)) {
@@ -436,11 +388,10 @@ ErrDecl cft_fmt(Cft *cft, Str *str) { //{{{
     }
     info_check(INFO_formatting, true);
 clean:
-    vrstr_free(&tags);
-    vrtag_free(&filenames);
+    vrttrstritem_free(&dump_files);
+    vrtrstritem_free(&dump_tags);
     return err;
 error: ERR_CLEAN;
-#endif
     return 0;
 } //}}}
 
@@ -575,7 +526,6 @@ ErrDecl cft_tags_add(Cft *cft, VrStr *files, Str *tags) { //{{{
     ASSERT_ARG(cft);
     ASSERT_ARG(files);
     ASSERT_ARG(tags);
-#if 0
     if(!str_length(tags)) return 0;
     for(size_t i = 0; i < vrstr_length(files); ++i) {
         Str *file = vrstr_get_at(files, i);
@@ -584,10 +534,9 @@ ErrDecl cft_tags_add(Cft *cft, VrStr *files, Str *tags) { //{{{
             if(str_iter_end(&tag) >= str_iter_end(tags)) break;
             tag = str_splice(tags, &tag, ',');
             TRYC(cft_add(cft, file, &tag));
-            //printff("tag [%.*s] with [%.*s]", STR_F(file), STR_F(&tag));
+            printff("tag [%.*s] with [%.*s]", STR_F(file), STR_F(&tag));
         }
     }
-#endif
     return 0;
 error:
     return -1;
