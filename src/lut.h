@@ -271,7 +271,7 @@
         LUT_ASSERT_ARG_M(key, MK); \
         if(!lut->width) return; \
         size_t hash = H(key); \
-        N##Item *item = *A##_static_get_item(lut, key, hash, true); \
+        N##Item *item = *A##_static_get_item(lut, key, hash, false); \
         if(item) { \
             item->hash = LUT_EMPTY; \
             if(FK != 0) LUT_TYPE_FREE(FK, item->key, TK, MK); \
