@@ -19,11 +19,27 @@
 int main(int argc, const char **argv)
 {
     int err = 0;
+
+    //setvbuf(stdout, 0, _IOFBF, 0x10000);
+
+#if 0
+    TrStr lut = {0};
+    Str key = STR("fuckyou");
+    TRYG(trstr_set(&lut, &key, 0));
+    trstr_del(&lut, &key);
+    if(trstr_get(&lut, &STR("fuckyou"))) {
+        printff("EXISTS");
+    }
+#endif
+
     info_disable_all(INFO_LEVEL_ALL);
+    //info_enable(INFO_tag_search, INFO_LEVEL_ALL);
+    //info_enable(INFO_tag_create, INFO_LEVEL_ALL);
     //info_enable(INFO_parsing_file, INFO_LEVEL_ALL);
     //info_enable(INFO_parsing_skip_incorrect_extension, INFO_LEVEL_ALL);
     //info_enable(INFO_parsing_skip_too_large, INFO_LEVEL_ALL);
     //info_enable(INFO_parsing_directory, INFO_LEVEL_ALL);
+    //info_enable(INFO_formatting, INFO_LEVEL_ALL);
     //info_enable_all(INFO_LEVEL_ID | INFO_LEVEL_TEXT);
     
     TRYC(platform_colorprint_init());
@@ -71,13 +87,14 @@ int main(int argc, const char **argv)
     /* reformat */
     if(cft.options.modify || cft.options.merge) {
         if(!str_length(&arg.parsed.file)) {
-            THROW("no %s provieded", arg_str(ARG_OUTPUT));
+            THROW("no %s provided", arg_str(ARG_OUTPUT));
         }
         TRYC(cft_tags_add(&cft, &arg.parsed.remains, &arg.parsed.tags_add));
         //printff("RE [%.*s]", STR_F(&arg.parsed.tags_re));
         TRYC(cft_tags_re(&cft, &arg.parsed.remains, &arg.parsed.tags_re));
         str_clear(&cft.parse.content);
         TRYC(cft_fmt(&cft, &cft.parse.content));
+        //printf("%.*s", STR_F(&cft.parse.content));
         TRYC(file_str_write(&arg.parsed.file, &cft.parse.content));
         goto clean;
     }
@@ -113,6 +130,7 @@ int main(int argc, const char **argv)
     }
 
 clean:
+    fflush(stdout);
     str_free(&ostream);
     cft_free(&cft);
     arg_free(&arg);

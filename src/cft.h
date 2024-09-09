@@ -7,8 +7,8 @@
 #include "arg.h"
 
 typedef struct CftBase {
-    TrTag tags;
-    TrTagRef reverse;
+    TTrStr file_tags;
+    TTrStr tag_files;
 } CftBase;
 
 typedef struct Cft {
@@ -60,10 +60,10 @@ ErrDecl cft_retag(Cft *cft, const Str *filename, const Str *from, const Str *to)
 ErrDecl cft_del(Cft *cft, const Str *filename, const Str *tag);
 
 #define ERR_cft_find_by_tag(cft, x, tag, ...) "failed finding tag: '%.*s'", STR_F(tag)
-ErrDecl cft_find_by_tag(Cft *cft, TagRef **foundr, const Str *tag, bool create_if_nonexist);
+//ErrDecl cft_find_by_tag(Cft *cft, TrStr **foundr, const Str *tag, bool create_if_nonexist);
 
 #define ERR_cft_find_by_filename(cft, x, filename, ...) "failed finding filename: '%.*s'", STR_F(filename)
-ErrDecl cft_find_by_filename(Cft *cft, Tag **found, const Str *filename, bool create_if_nonexist);
+//ErrDecl cft_find_by_filename(Cft *cft, TrStr **found, const Str *filename, bool create_if_nonexist);
 
 #define ERR_cft_parse(...) "failed parsing"
 ErrDecl cft_parse(Cft *cft, const Str *input, const Str *str);
@@ -78,13 +78,13 @@ ErrDecl cft_del_duplicate_folders(Cft *cft);
 ErrDecl cft_fmt(Cft *cft, Str *str);
 
 #define ERR_cft_find_any(x, y, find, ...) "failed finding 'any' for tags '%.*s'", STR_F(find)
-ErrDecl cft_find_any(Cft *cft, TrrTag *found, Str *find);
+//ErrDecl cft_find_any(Cft *cft, TrrTag *found, Str *find);
 
 #define ERR_cft_find_and(x, y, find, ...) "failed finding 'and' for tags '%.*s'", STR_F(find)
-ErrDecl cft_find_and(Cft *cft, TrrTag *found, Str *find, bool first_query);
+//ErrDecl cft_find_and(Cft *cft, TrrTag *found, Str *find, bool first_query);
 
 #define ERR_cft_find_not(x, y, find, ...) "failed finding 'not' for tags '%.*s'", STR_F(find)
-ErrDecl cft_find_not(Cft *cft, TrrTag *found, Str *find, bool first_query);
+//ErrDecl cft_find_not(Cft *cft, TrrTag *found, Str *find, bool first_query);
 
 #define ERR_cft_tags_add(...) "failed adding tags"
 ErrDecl cft_tags_add(Cft *cft, VrStr *files, Str *tags);

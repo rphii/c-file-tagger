@@ -4,14 +4,67 @@
 
 #include "vector.h"
 
-VEC_IMPLEMENT(VStr, vstr, Str, BY_REF, str_free);
-VEC_IMPLEMENT(VrStr, vrstr, Str, BY_REF, 0);
+VEC_IMPLEMENT(VrTTrStrItem, vrttrstritem, TTrStrItem, BY_REF, BASE, 0);
+VEC_IMPLEMENT(VrTTrStrItem, vrttrstritem, TTrStrItem, BY_REF, SORT, ttrstritem_cmp);
 
-VEC_IMPLEMENT(VSlice, vslice, Slice, BY_VAL, 0);
+VEC_IMPLEMENT(VrTrStrItem, vrtrstritem, TrStrItem, BY_REF, BASE, 0);
+VEC_IMPLEMENT(VrTrStrItem, vrtrstritem, TrStrItem, BY_REF, SORT, trstritem_cmp);
 
-VEC_IMPLEMENT(VTag, vtag, Tag, BY_REF, tag_free);
-VEC_IMPLEMENT(VrTag, vrtag, Tag, BY_REF, 0);
-VEC_IMPLEMENT(VrTagRef, vrtagref, TagRef, BY_REF, 0);
+VEC_IMPLEMENT(VrTrTrStrItem, vrtrtrstritem, TrTrStrItem, BY_REF, BASE, 0);
+VEC_IMPLEMENT(VrTrTrStrItem, vrtrtrstritem, TrTrStrItem, BY_REF, SORT, trtrstritem_cmp);
+
+#if 0
+void vrttrstritem_sort(VrTTrStrItem *vec)
+{
+    /* shell sort, https://rosettacode.org/wiki/Sorting_algorithms/Shell_sort#C */
+    size_t h, i, j, n = vrttrstritem_length(vec);
+    TTrStrItem temp;
+    for (h = n; h /= 2;) {
+        for (i = h; i < n; i++) {
+            //t = a[i];
+            temp = *vrttrstritem_get_at(vec, i);
+            //for (j = i; j >= h && t < a[j - h]; j -= h) {
+            for (j = i; j >= h && str_cmp_sortable(temp.key, vrttrstritem_get_at(vec, j-h)->key) < 0; j -= h) {
+                vrttrstritem_set_at(vec, j, vrttrstritem_get_at(vec, j-h));
+                //a[j] = a[j - h];
+            }
+            //a[j] = t;
+            vrttrstritem_set_at(vec, j, &temp);
+        }
+    }
+}
+
+void vrtrstritem_sort(VrTrStrItem *vec)
+{
+    /* shell sort, https://rosettacode.org/wiki/Sorting_algorithms/Shell_sort#C */
+    size_t h, i, j, n = vrtrstritem_length(vec);
+    TrStrItem temp;
+    for (h = n; h /= 2;) {
+        for (i = h; i < n; i++) {
+            //t = a[i];
+            temp = *vrtrstritem_get_at(vec, i);
+            //for (j = i; j >= h && t < a[j - h]; j -= h) {
+            for (j = i; j >= h && str_cmp_sortable(temp.key, vrtrstritem_get_at(vec, j-h)->key) < 0; j -= h) {
+                vrtrstritem_set_at(vec, j, vrtrstritem_get_at(vec, j-h));
+                //a[j] = a[j - h];
+            }
+            //a[j] = t;
+            vrtrstritem_set_at(vec, j, &temp);
+        }
+    }
+}
+#endif
+
+
+
+VEC_IMPLEMENT(VStr, vstr, Str, BY_REF, BASE, str_free);
+VEC_IMPLEMENT(VrStr, vrstr, Str, BY_REF, BASE, 0);
+
+VEC_IMPLEMENT(VSlice, vslice, Slice, BY_VAL, BASE, 0);
+
+VEC_IMPLEMENT(VTag, vtag, Tag, BY_REF, BASE, tag_free);
+VEC_IMPLEMENT(VrTag, vrtag, Tag, BY_REF, BASE, 0);
+VEC_IMPLEMENT(VrTagRef, vrtagref, TagRef, BY_REF, BASE, 0);
 
 void vrstr_sort(VrStr *vec, size_t *counts)
 {
