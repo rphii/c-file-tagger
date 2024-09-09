@@ -6,4 +6,5 @@ data
 *.vim
 *.swp
 src/callgrind.out.*
+temp
 
