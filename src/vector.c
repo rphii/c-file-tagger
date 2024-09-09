@@ -5,12 +5,15 @@
 #include "vector.h"
 
 VEC_IMPLEMENT(VrTTrStrItem, vrttrstritem, TTrStrItem, BY_REF, BASE, 0);
-//VEC_IMPLEMENT(VrTTrStrItem, vrttrstritem, TTrStrItem, BY_REF, SORT, ttrstritem_cmp);
+VEC_IMPLEMENT(VrTTrStrItem, vrttrstritem, TTrStrItem, BY_REF, SORT, ttrstritem_cmp);
 
 VEC_IMPLEMENT(VrTrStrItem, vrtrstritem, TrStrItem, BY_REF, BASE, 0);
-//VEC_IMPLEMENT(VrTrStrItem, vrtrstritem, TrStrItem, BY_REF, SORT, trstritem_cmp);
+VEC_IMPLEMENT(VrTrStrItem, vrtrstritem, TrStrItem, BY_REF, SORT, trstritem_cmp);
 
-#if 1
+VEC_IMPLEMENT(VrTrTrStrItem, vrtrtrstritem, TrTrStrItem, BY_REF, BASE, 0);
+VEC_IMPLEMENT(VrTrTrStrItem, vrtrtrstritem, TrTrStrItem, BY_REF, SORT, trtrstritem_cmp);
+
+#if 0
 void vrttrstritem_sort(VrTTrStrItem *vec)
 {
     /* shell sort, https://rosettacode.org/wiki/Sorting_algorithms/Shell_sort#C */
