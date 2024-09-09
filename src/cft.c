@@ -113,63 +113,6 @@ error:
     return -1;
 } //}}}
 
-#if 0
-ErrDecl cft_del(Cft *cft, const Str *filename, const Str *tag) { //{{{
-    ASSERT_ARG(cft);
-    ASSERT_ARG(filename);
-    ASSERT_ARG(tag);
-#if 0
-    /* search if we have a matching file ... */
-    Str tag_search = *tag;
-    Tag *found = 0;
-    TRYC(cft_find_by_filename(cft, &found, filename, true));
-    if(!found) return 0;
-    for(;;) {
-        /* check if the tag is present */
-        bool present = false;
-        for(size_t i = 0; i < vrstr_length(&found->tags); ++i) {
-            Str *cmp = vrstr_get_at(&found->tags, i);
-            if(str_cmp(cmp, &tag_search)) continue;
-            present = true;
-            break;
-        }
-        /* search for a file tagged with such tag */
-        TagRef *foundr = 0;
-        TRYC(cft_find_by_tag(cft, &foundr, &tag_search, true));
-        if(!foundr) return 0;
-        /* check if the file is present */
-        bool presentr = false;
-        for(size_t i = 0; i < vrstr_length(&foundr->filenames); ++i) {
-            Str *cmp = vrstr_get_at(&foundr->filenames, i);
-            if(str_cmp(cmp, filename)) continue;
-            presentr = true;
-            break;
-        }
-        /* remove */
-        if(!presentr) {
-            printff("REMOVE FILENAME %.*s", STR_F(&found->filename));
-            //TRY(vrstr_push_back(&foundr->filenames, &found->filename), ERR_VEC_PUSH_BACK);
-            //printff("added filename '%.*s' to tag '%.*s'", STR_F(&found->filename), STR_F(&foundr->tag));
-        }
-        if(!present) {
-            printff("REMOVE TAG %.*s", STR_F(&foundr->tag));
-            //TRY(vrstr_push_back(&found->tags, &foundr->tag), ERR_VEC_PUSH_BACK);
-            //printff("added tag '%.*s' to filename '%.*s'", STR_F(&foundr->tag), STR_F(&found->filename));
-        }
-        //info(tag_done, "Tagged '%.*s' with '%.*s'", STR_F(&found->filename), STR_F(&foundr->tag));
-        break;
-        /* check next : */
-        //// size_t iE = str_rch(&tag_search, ':', 0);
-        //// if(iE >= str_length(&tag_search)) break;
-        //// tag_search.last = tag_search.first + iE;
-    }
-#endif
-    return 0;
-error:
-    return -1;
-} //}}}
-#endif
-
 ErrDecl cft_parse(Cft *cft, const Str *input, const Str *str) { //{{{
     ASSERT_ARG(cft);
     ASSERT_ARG(str);
@@ -241,17 +184,6 @@ ErrDecl cft_file_prepare(Cft *cft, Str *filename) //{{{
 {
     ASSERT_ARG(cft);
     ASSERT_ARG(filename);
-    //ASSERT_ARG(btw);
-
-#if 0
-    ++btw->stats.attempts;
-    btw->filename = filename;
-    str_clear(&btw->ext);
-    str_clear(&btw->content);
-    str_clear(&btw->basename);
-    vbtwlex_clear(&btw->items);
-    TRYC(str_fmt_basename(&btw->basename, filename));
-#endif
 
     str_clear(&cft->parse.content);
     str_clear(&cft->parse.extension);
@@ -274,12 +206,10 @@ ErrDecl cft_file_prepare(Cft *cft, Str *filename) //{{{
         }
         if(parse) {
             size_t size = 0;
-            size_t max_file_size = 1ULL << 20;
-            //size_t max_file_size = 0; // TODO:make this an argument
+            size_t max_file_size = 1ULL << 20; // TODO:make this an argument
             if(!max_file_size || (size = file_size(filename)) <= max_file_size) {
                 info(INFO_parsing_file, "parsing '%.*s'", STR_F(filename));
                 TRYC(file_str_read(filename, &cft->parse.content));
-                //str_trim(&btw->content);
             } else {
                 info(INFO_parsing_skip_too_large, "file too large: %zu bytes, not parsing '%.*s'", size, STR_F(filename));
             }
@@ -308,7 +238,6 @@ ErrDecl cft_parse_file(Str *filename, void *cft_void) //{{{
         //++btw->stats.success;
     }
 clean:
-    //btw_free(btw); // TODO: do I need to free here or not??? (asking myself in case I process multiple files in a row -> parse_exec )
     return err;
 error:
     ERR_CLEAN;
@@ -351,7 +280,6 @@ ErrDecl cft_del_duplicate_folders(Cft *cft) { //{{{
         }
     }
 clean:
-    //trrtag_free(&duplicates);
     return err;
 error:
     ERR_CLEAN;
@@ -405,7 +333,6 @@ void cft_free(Cft *cft) { //{{{
     str_free(&cft->parse.content);
     str_free(&cft->parse.extension);
     vstr_free(&cft->parse.dirfiles);
-    //trrtagref_free(&cft->all);
 } //}}}
 
 ErrDecl cft_find_any(Cft *cft, TrTrStr *found, Str *find) { //{{{
@@ -546,44 +473,7 @@ ErrDecl cft_tags_re(Cft *cft, VrStr *files, Str *tags) { //{{{
     ASSERT_ARG(cft);
     ASSERT_ARG(files);
     ASSERT_ARG(tags);
-#if 0
-    //printff("HELLO");
-    /* prepare retagging */
-    if(!str_length(tags)) return 0;
-    size_t iE = str_rch(tags, ',', 0);
-    if(iE >= str_length(tags)) {
-        /* TODO maybe add info here, informing that we got nothing to rename! */
-        return 0;
-    }
-    Str tag_from = {0};
-    Str tag_to = STR_I0(*tags, iE + 1);
-    str_trim(&tag_to);
-    if(!str_length(&tag_to)) {
-        /* TODO maybe add info here, nothing gets changed */
-        return 0;
-    }
-    /* specific files only or globally */
-    if(vrstr_length(files)) {
-        for(size_t i = 0; i < vrstr_length(files); ++i) {
-            Str *file = vrstr_get_at(files, i);
-            for(;;) {
-                if(str_iter_end(&tag_from) >= str_iter_at(tags, iE)) break;
-                tag_from = str_splice(tags, &tag_from, ',');
-                printff("retag [%.*s] -> [%.*s]", STR_F(&tag_from), STR_F(&tag_to));
-                TRYC(cft_retag(cft, file, &tag_from, &tag_to));
-                //TRYC(cft_add(cft, file, &tag));
-                //printff("tag [%.*s] with [%.*s]", STR_F(file), STR_F(&tag));
-            }
-        }
-    } else {
-        for(;;) {
-            if(str_iter_end(&tag_from) >= str_iter_at(tags, iE)) break;
-            tag_from = str_splice(tags, &tag_from, ',');
-            printff("retag [%.*s] -> [%.*s]", STR_F(&tag_from), STR_F(&tag_to));
-            TRYC(cft_retag(cft, 0, &tag_from, &tag_to));
-        }
-    }
-#endif
+    THROW("implementation missing");
     return 0;
 error:
     return -1;
@@ -787,8 +677,6 @@ ErrDecl cft_find_fmt(Cft *cft, Str *out, Str *find_any, Str *find_and, Str *find
     ASSERT_ARG(find_any);
     ASSERT_ARG(find_and);
     ASSERT_ARG(find_not);
-
-#if 1
     int err = 0;
     TrTrStr found = {0};
     VrTrTrStrItem results = {0};
@@ -805,9 +693,7 @@ ErrDecl cft_find_fmt(Cft *cft, Str *out, Str *find_any, Str *find_and, Str *find
         TRYC(cft_find_not(cft, &found, find_not, first));
         first = false;
     }
-    //printff("used %zu", found.used);
     TRYG(trtrstr_dump(&found, &results.items, &results.last));
-    //printff("length %zu", vrtrtrstritem_length(&results));
     vrtrtrstritem_sort(&results);
     for(size_t i = 0; i < vrtrtrstritem_length(&results); ++i) {
         TrTrStrItem *item = vrtrtrstritem_get_at(&results, i);
@@ -822,30 +708,14 @@ ErrDecl cft_find_fmt(Cft *cft, Str *out, Str *find_any, Str *find_and, Str *find
         }
         TRYC(str_fmt(out, "%.*s", STR_F(file)));
         size_t ii, jj;
-        //Tag *found = 0;
-#if 1
-        if(cft->options.list_tags || cft->options.decorate) {
-            //////7TRY(trtag_find(&cft->base.tags, file, &ii, &jj), ERR_LUTD_FIND);
-            //found = cft->base.tags.buckets[ii].items[jj];
-        }
         if(cft->options.list_tags) {
-            //for(size_t j = 0; j < vrstr_length(&found->tags); ++j) {
             for(size_t j = 0; j < LUT_CAP(sub->width); ++j) {
                 TrStrItem *tag = sub->buckets[j];
                 if(!tag) continue;
                 if(tag->hash == LUT_EMPTY) continue;
                 TRYC(str_fmt(out, ",%.*s", STR_F(tag->key)));
             }
-#if 0
-            for(size_t ii = 0; ii < (1ULL << (found->tags.width - 1)); ++ii) {
-                for(size_t jj = 0; jj < found->tags.buckets[ii].len; ++ii) {
-                    Str *tag = found->tags.buckets[ii].items[jj];
-                    TRYC(str_fmt(out, ",%.*s", STR_F(tag)));
-                }
-            }
-#endif
         }
-#endif
         if(cft->options.decorate) {
             TRYC(str_fmt(out, " (%zu)", sub->used));
         }
@@ -854,16 +724,12 @@ ErrDecl cft_find_fmt(Cft *cft, Str *out, Str *find_any, Str *find_and, Str *find
         } else {
             TRYC(str_fmt(out, "\n"));
         }
-        //printf("%.*s\n", STR_F(&file->filename));
     }
 clean:
-    //trtr(&found);
     vrtrtrstritem_free(&results);
     trtrstr_free(&found);
     return err;
 error:
     ERR_CLEAN;
-#endif
-
 } //}}}
 
