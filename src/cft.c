@@ -206,7 +206,8 @@ ErrDecl cft_file_prepare(Cft *cft, Str *filename) //{{{
         }
         if(parse) {
             size_t size = 0;
-            size_t max_file_size = 1ULL << 20; // TODO:make this an argument
+            //size_t max_file_size = 1ULL << 20; // TODO:make this an argument
+            size_t max_file_size = 0;
             if(!max_file_size || (size = file_size(filename)) <= max_file_size) {
                 info(INFO_parsing_file, "parsing '%.*s'", STR_F(filename));
                 TRYC(file_str_read(filename, &cft->parse.content));
