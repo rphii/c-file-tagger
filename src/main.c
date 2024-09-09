@@ -123,41 +123,6 @@ int main(int argc, const char **argv)
 
     /* print tags */
     if(cft.options.list_tags && cft.options.list_tags > cft.options.list_files) {
-
-        //printff("list tags:");
-#if 0
-        for(size_t i = 0; i < LUT_CAP(cft.base.tag_files.width); ++i) {
-            TTrStrItem *item = cft.base.tag_files.buckets[i];
-            if(!item) continue;
-            size_t n = 0;
-            for(size_t j = 0; j < LUT_CAP(item->val->width); ++j) {
-                TrStrItem *file = item->val->buckets[j];
-                if(!file) continue;
-                //printff("  %.*s", STR_F(file->key));
-                ++n;
-            }
-            printf("%.*s (%zu)\n", STR_F(item->key), n);
-        }
-#endif
-
-#if 0
-        VrTTrStrItem dumped = {0};
-        TRYG(ttrstr_dump(&cft.base.tag_files, &dumped.items, &dumped.last));
-        vrttrstritem_sort(&dumped);
-        Str out = {0};
-        for(size_t i = 0; i < vrttrstritem_length(&dumped); ++i) {
-            TTrStrItem *item = vrttrstritem_get_at(&dumped, i);
-            printf("[%zu] %.*s (%zu)\n", i, STR_F(item->key), item->val->used);
-            //str_fmt(&out, "[%zu] %.*s (%zu)\n", i, STR_F(item->key), item->val->used);
-        }
-        //printf("%.*s", STR_F(&out));
-        fflush(stdout);
-        //printff("\n\nLEN: %zu", dumped.last);
-        vrttrstritem_free(&dumped);
-        str_free(&out);
-#endif
-
-
         TRYC(cft_tags_fmt(&cft, &ostream, &arg.parsed.remains));
         printf("%.*s", STR_F(&ostream));
         goto clean;

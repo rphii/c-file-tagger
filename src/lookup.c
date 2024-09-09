@@ -13,14 +13,18 @@ LUT_IMPLEMENT(TrStr, trstr, Str, BY_REF, void *, BY_VAL, str_hash, str_cmp, 0, 0
 
 int ttrstritem_cmp(const TTrStrItem *a, const TTrStrItem *b)
 {
-    return str_cmp(a->key, b->key);
+    return str_cmp_sortable(a->key, b->key);
 }
 
 int trstritem_cmp(const TrStrItem *a, const TrStrItem *b)
 {
-    return str_cmp(a->key, b->key);
+    return str_cmp_sortable(a->key, b->key);
 }
 
+int trtrstritem_cmp(const TrTrStrItem *a, const TrTrStrItem *b)
+{
+    return str_cmp_sortable(a->key, b->key);
+}
 
 size_t trtag_hash(const Tag *tag) {
     size_t result = str_hash(&tag->filename);
@@ -36,6 +40,7 @@ int trtag_cmp(const Tag *a, const Tag *b) {
 
 //LUT_IMPLEMENT(TTrStr, ttrstr, Str, BY_REF, TrStr, BY_REF, str_hash, str_cmp, 0, trstr_free);
 LUT_IMPLEMENT(TTrStr, ttrstr, Str, BY_REF, TrStr, BY_REF, str_hash, str_cmp, str_free, trstr_free);
+LUT_IMPLEMENT(TrTrStr, trtrstr, Str, BY_REF, TrStr, BY_REF, str_hash, str_cmp, 0, 0);
 
 //LUT_IMPLEMENT(TrrTag, trrtag, Str, BY_REF, TrTag, BY_REF, str_hash, str_cmp, 0, 0);
 //LUTD_IMPLEMENT(TrrTagRef, trrtagref, Tag, BY_REF, trtag_hash, trtag_cmp, 0);

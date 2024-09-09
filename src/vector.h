@@ -29,6 +29,10 @@ typedef struct TTrStrItem TTrStrItem;
 VEC_INCLUDE(VrTTrStrItem, vrttrstritem, TTrStrItem, BY_REF, BASE);
 VEC_INCLUDE(VrTTrStrItem, vrttrstritem, TTrStrItem, BY_REF, SORT);
 
+typedef struct TrTrStrItem TrTrStrItem;
+VEC_INCLUDE(VrTrTrStrItem, vrtrtrstritem, TrTrStrItem, BY_REF, BASE);
+VEC_INCLUDE(VrTrTrStrItem, vrtrtrstritem, TrTrStrItem, BY_REF, SORT);
+
 typedef struct TrStrItem TrStrItem;
 VEC_INCLUDE(VrTrStrItem, vrtrstritem, TrStrItem, BY_REF, BASE);
 VEC_INCLUDE(VrTrStrItem, vrtrstritem, TrStrItem, BY_REF, SORT);

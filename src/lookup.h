@@ -10,7 +10,9 @@ typedef struct TagRef TagRef;
 
 LUT_INCLUDE(TrStr, trstr, Str, BY_REF, void *, BY_VAL);
 LUT_INCLUDE(TTrStr, ttrstr, Str, BY_REF, TrStr, BY_REF);
+LUT_INCLUDE(TrTrStr, trtrstr, Str, BY_REF, TrStr, BY_REF);
 
+int trtrstritem_cmp(const TrTrStrItem *a, const TrTrStrItem *b);
 int ttrstritem_cmp(const TTrStrItem *a, const TTrStrItem *b);
 int trstritem_cmp(const TrStrItem *a, const TrStrItem *b);
 
