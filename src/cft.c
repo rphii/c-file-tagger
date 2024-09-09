@@ -684,16 +684,13 @@ ErrDecl cft_tags_fmt(Cft *cft, Str *out, VrStr *files) { //{{{
     ASSERT_ARG(cft);
     ASSERT_ARG(out);
     ASSERT_ARG(files);
-#if 0
     int err = 0;
-    VrTagRef all = {0};
-    VrStr tags = {0};
-    size_t *tags_counts = 0;
-    //TrrTag filtered = {0};
-    ////TrrTagRef filteredr = {0};
-    size_t *counts = 0;
-    /* search */
-    /////TRY(trrtagref_init(&filteredr, cft->base.tags.width), ERR_LUTD_INIT);
+
+    VrTTrStrItem dump_tags = {0};
+    VrTrStrItem dump_files = {0};
+
+    /* filter only matching files */
+    TTrStr base = {0};
     if(vrstr_length(files)) {
         for(size_t i = 0; i < vrstr_length(files); ++i) {
             Str *file = vrstr_get_at(files, i);
@@ -701,74 +698,37 @@ ErrDecl cft_tags_fmt(Cft *cft, Str *out, VrStr *files) { //{{{
             for(;;) {
                 splice = str_splice(file, &splice, ',');
                 if(splice.first >= file->last) { break;}
-                Tag search = { .filename = splice };
-                size_t ii, jj;
-#if 0
-                if(trtag_find(&cft->base.tags, &search, &ii, &jj)) continue;
-                Tag *found = cft->base.tags.buckets[ii].items[jj];
-                //printff("LENGTH %zu", trstr_length(&found->tags));
-#if 1
-                if(!found->tags.width) continue;
-                for(size_t i2 = 0; i2 < (1ULL << (found->tags.width - 1)); ++i2) {
-                    for(size_t j2 = 0; j2 < found->tags.buckets[i2].len; ++j2) {
-                        Str *tag = found->tags.buckets[i2].items[j2];
-                        TagRef add = { .tag = *tag };
-                        TRY(trrtagref_add(&filteredr, &add), ERR_LUTD_ADD);
-                    }
+                Str search = splice;
+                str_trim(&search);
+                TrStr *file_tag = ttrstr_get(&cft->base.file_tags, &search);
+                if(!file_tag) continue;
+                for(size_t j = 0; j < LUT_CAP(file_tag->width); ++j) {
+                    TrStrItem *tag = file_tag->buckets[j];
+                    if(!tag) continue; // TODO: this is ugly -> make iterator for lookup table
+                    if(tag->hash == LUT_EMPTY) continue; // TODO: this is ugly -> make iterator for lookup table
+                    TrStr *associated = ttrstr_get(&cft->base.tag_files, tag->key);
+                    if(!associated) THROW(ERR_UNREACHABLE);
+                    TRYG(ttrstr_set(&base, tag->key, associated));
                 }
-#else
-                for(size_t j = 0; j < vrstr_length(&found->tags); ++j) {
-                    Str *tag = vrstr_get_at(&found->tags, j);
-                    TagRef add = { .tag = *tag };
-                    TRY(trrtagref_add(&filteredr, &add), ERR_LUTD_ADD);
-                    //printff("FOUND %.*s", STR_F(file));
-                }
-#endif
-#endif
             }
         }
-        //TRY(trrtag_dump(&filtered, &all.items, &counts, &all.last), ERR_LUTD_DUMP);
     } else {
-#if 0
-        for(size_t ii = 0; ii < (1ULL << (cft->base.tags.width - 1)); ++ii) {
-            for(size_t jj = 0; jj < cft->base.tags.buckets[ii].len; ++jj) {
-                Tag *found = cft->base.tags.buckets[ii].items[jj];
-#if 1
-                if(!found->tags.width) continue;
-                for(size_t i2 = 0; i2 < (1ULL << (found->tags.width - 1)); ++i2) {
-                    for(size_t j2 = 0; j2 < found->tags.buckets[i2].len; ++j2) {
-                        Str *adds = found->tags.buckets[i2].items[j2];
-                        TagRef addt = { .tag = *adds };
-                        TRY(trrtagref_add(&filteredr, &addt), ERR_LUTD_ADD);
-                    }
-                }
-#else
-                for(size_t i = 0; i < vrstr_length(&add->tags); ++i) {
-                    Str *adds = vrstr_get_at(&add->tags, i);
-                    TagRef addt = { .tag = *adds };
-                    TRY(trrtagref_add(&filteredr, &addt), ERR_LUTD_ADD);
-                    //printff("ADD: [%.*s]", STR_F(&add->tag));
-                }
-#endif
-            }
-        }
-#endif
+        base = cft->base.tag_files;
     }
-    /* generate output */
-#if 0
-    TRY(trrtagref_dump(&filteredr, &all.items, &counts, &all.last), ERR_LUTD_DUMP);
-    vrtagref_sort(&all, counts);
+
+    /* format output */
+    TRYG(ttrstr_dump(&base, &dump_tags.items, &dump_tags.last));
+    vrttrstritem_sort(&dump_tags);
+    /* optional title */
     if(cft->options.title) {
-        TRYC(str_fmt(out, "Total Tags: %zu\n", vrtagref_length(&all)));
+        TRYC(str_fmt(out, "Total Tags: %zu\n", vrttrstritem_length(&dump_tags)));
     }
-    //printf("TOTAL TAGS: %zu\n", vrtagref_length(&all));
-    // TODO:DRY [exactly matches in tags_fmt and fmt_substring]
-    for(size_t i = 0; i < vrtagref_length(&all); ++i) {
-        TagRef *find = vrtagref_get_at(&all, i);
-        size_t ii, jj;
-        TRY(trtagref_find(&cft->base.reverse, find, &ii, &jj), ERR_LUTD_FIND);
-        TagRef *tag = cft->base.reverse.buckets[ii].items[jj];
-        //printf("  [%zu] %.*s (%zu)\n", i, STR_F(&tag->tag), counts[i]);
+    /* all tags */
+    for(size_t i = 0; i < vrttrstritem_length(&dump_tags); ++i) {
+        TTrStrItem *item = vrttrstritem_get_at(&dump_tags, i);
+        Str *tag = item->key;
+        TrStr *sub = item->val;
+        /* optional decoration & compact */
         if(cft->options.decorate) {
             if(cft->options.compact) {
                 TRYC(str_fmt(out, "%s[%zu] ", i ? " " : "", i));
@@ -776,50 +736,36 @@ ErrDecl cft_tags_fmt(Cft *cft, Str *out, VrStr *files) { //{{{
                 TRYC(str_fmt(out, "[%zu] ", i));
             }
         }
-        TRYC(str_fmt(out, "%.*s", STR_F(&tag->tag)));
+        /* the actual tag */
+        TRYC(str_fmt(out, "%.*s", STR_F(tag)));
+        /* how many associated files there are */
         if(cft->options.decorate) {
-            TRYC(str_fmt(out, " (%zu)", trstr_length(&tag->filenames)));
+            TRYC(str_fmt(out, " (%zu)", (sub->used)));
         }
+        /* associated files */
         if(cft->options.list_files) {
-#if 1
-            //printff("WIDTH %zu", tag->filenames.width);
-            size_t ii, jj;
-            TRY(trtagref_find(&cft->base.reverse, tag, &ii, &jj), ERR_LUTD_FIND);
-            TagRef *dump = cft->base.reverse.buckets[ii].items[jj];
-            TRY(trstr_dump(&dump->filenames, &tags.items, &tags_counts, &tags.last), ERR_LUTD_DUMP);
-            vrstr_sort(&tags, tags_counts);
-            for(size_t j = 0; j < vrstr_length(&tags); ++j) {
-                Str *tagg = vrstr_get_at(&tags, j);
-                TRYC(str_fmt(out, "%s%.*s", cft->options.decorate && !j ? " " : ",",  STR_F(tagg)));
+            TRYG(trstr_dump(sub, &dump_files.items, &dump_files.last));
+            vrtrstritem_sort(&dump_files);
+            for(size_t j = 0; j < vrtrstritem_length(&dump_files); ++j) {
+                TrStrItem *file = vrtrstritem_get_at(&dump_files, j);
+                TRYC(str_fmt(out, "%s%.*s", cft->options.decorate && !j ? " " : ",",  STR_F(file->key)));
             }
-            vrstr_free(&tags);
-            free(tags_counts);
-            tags_counts = 0;
-#else
-            size_t ii, jj;
-            TRY(trtagref_find(&cft->reverse, tag, &ii, &jj), ERR_UNREACHABLE " / " ERR_LUTD_FIND);
-            TagRef *tag_actual = cft->reverse.buckets[ii].items[jj];
-            for(size_t j = 0; j < vrstr_length(&tag_actual->filenames); ++j) {
-                Str *file = vrstr_get_at(&tag_actual->filenames, j);
-                TRYC(str_fmt(out, "%s%.*s", cft->options.decorate && !j ? " " : "," , STR_F(file)));
-            }
-#endif
+            vrtrstritem_free(&dump_files);
         }
+        /* compact output */
         if(cft->options.compact) {
-            TRYC(str_fmt(out, "%c", i + 1 < vrtagref_length(&all) ? ',' : '\n'));
+            TRYC(str_fmt(out, "%c", i + 1 < vrttrstritem_length(&dump_tags) ? ' ' : '\n'));
         } else {
             TRYC(str_fmt(out, "\n"));
         }
     }
-#endif
+
 clean:
-    ////////trrtagref_free(&filteredr);
-    vrtagref_free(&all);
-    free(counts);
+    vrttrstritem_free(&dump_tags);
+    vrtrstritem_free(&dump_files);
     return err;
 error:
     ERR_CLEAN;
-#endif
     return 0;
 } //}}}
 

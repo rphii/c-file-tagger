@@ -20,7 +20,7 @@ int main(int argc, const char **argv)
 {
     int err = 0;
 
-    //setvbuf(stdout, 0, _IOFBF, 0x1000);
+    setvbuf(stdout, 0, _IOFBF, 0x10000);
 
 #if 0
     TrStr lut = {0};
@@ -139,19 +139,23 @@ int main(int argc, const char **argv)
             printf("%.*s (%zu)\n", STR_F(item->key), n);
         }
 #endif
+
+#if 0
         VrTTrStrItem dumped = {0};
         TRYG(ttrstr_dump(&cft.base.tag_files, &dumped.items, &dumped.last));
         vrttrstritem_sort(&dumped);
         Str out = {0};
         for(size_t i = 0; i < vrttrstritem_length(&dumped); ++i) {
             TTrStrItem *item = vrttrstritem_get_at(&dumped, i);
-            //printf("[%zu] %.*s (%zu)\n", i, STR_F(item->key), item->val->used);
-            str_fmt(&out, "[%zu] %.*s (%zu)\n", i, STR_F(item->key), item->val->used);
+            printf("[%zu] %.*s (%zu)\n", i, STR_F(item->key), item->val->used);
+            //str_fmt(&out, "[%zu] %.*s (%zu)\n", i, STR_F(item->key), item->val->used);
         }
-        printf("%.*s", STR_F(&out));
+        //printf("%.*s", STR_F(&out));
+        fflush(stdout);
         //printff("\n\nLEN: %zu", dumped.last);
         vrttrstritem_free(&dumped);
         str_free(&out);
+#endif
 
 
         TRYC(cft_tags_fmt(&cft, &ostream, &arg.parsed.remains));
