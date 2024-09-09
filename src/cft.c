@@ -685,12 +685,12 @@ ErrDecl cft_tags_fmt(Cft *cft, Str *out, VrStr *files) { //{{{
     ASSERT_ARG(out);
     ASSERT_ARG(files);
     int err = 0;
-
-    VrTTrStrItem dump_tags = {0};
+    VrTrTrStrItem dump_tags = {0};
     VrTrStrItem dump_files = {0};
 
     /* filter only matching files */
-    TTrStr base = {0};
+    TrTrStr base = {0};
+    bool base_has_to_be_freed = false;
     if(vrstr_length(files)) {
         for(size_t i = 0; i < vrstr_length(files); ++i) {
             Str *file = vrstr_get_at(files, i);
@@ -708,24 +708,26 @@ ErrDecl cft_tags_fmt(Cft *cft, Str *out, VrStr *files) { //{{{
                     if(tag->hash == LUT_EMPTY) continue; // TODO: this is ugly -> make iterator for lookup table
                     TrStr *associated = ttrstr_get(&cft->base.tag_files, tag->key);
                     if(!associated) THROW(ERR_UNREACHABLE);
-                    TRYG(ttrstr_set(&base, tag->key, associated));
+                    TRYG(trtrstr_set(&base, tag->key, associated));
                 }
             }
         }
+        base_has_to_be_freed = true;
     } else {
-        base = cft->base.tag_files;
+        memcpy(&base, &cft->base.tag_files, sizeof(base)); // TODO: probably should not memcpy, even if the struct in theory should be the exact same
+        //base = cft->base.tag_files;
     }
 
     /* format output */
-    TRYG(ttrstr_dump(&base, &dump_tags.items, &dump_tags.last));
-    vrttrstritem_sort(&dump_tags);
+    TRYG(trtrstr_dump(&base, &dump_tags.items, &dump_tags.last));
+    vrtrtrstritem_sort(&dump_tags);
     /* optional title */
     if(cft->options.title) {
-        TRYC(str_fmt(out, "Total Tags: %zu\n", vrttrstritem_length(&dump_tags)));
+        TRYC(str_fmt(out, "Total Tags: %zu\n", vrtrtrstritem_length(&dump_tags)));
     }
     /* all tags */
-    for(size_t i = 0; i < vrttrstritem_length(&dump_tags); ++i) {
-        TTrStrItem *item = vrttrstritem_get_at(&dump_tags, i);
+    for(size_t i = 0; i < vrtrtrstritem_length(&dump_tags); ++i) {
+        TrTrStrItem *item = vrtrtrstritem_get_at(&dump_tags, i);
         Str *tag = item->key;
         TrStr *sub = item->val;
         /* optional decoration & compact */
@@ -754,14 +756,17 @@ ErrDecl cft_tags_fmt(Cft *cft, Str *out, VrStr *files) { //{{{
         }
         /* compact output */
         if(cft->options.compact) {
-            TRYC(str_fmt(out, "%c", i + 1 < vrttrstritem_length(&dump_tags) ? ' ' : '\n'));
+            TRYC(str_fmt(out, "%c", i + 1 < vrtrtrstritem_length(&dump_tags) ? ',' : '\n')); // TODO: this ',' is not ideal
         } else {
             TRYC(str_fmt(out, "\n"));
         }
     }
 
 clean:
-    vrttrstritem_free(&dump_tags);
+    if(base_has_to_be_freed) {
+        trtrstr_free(&base);
+    }
+    vrtrtrstritem_free(&dump_tags);
     vrtrstritem_free(&dump_files);
     return err;
 error:
@@ -773,6 +778,77 @@ ErrDecl cft_files_fmt(Cft *cft, Str *out, VrStr *files) { //{{{
     ASSERT_ARG(cft);
     ASSERT_ARG(out);
     ASSERT_ARG(files);
+    int err = 0;
+    VrTrTrStrItem dump_files = {0};
+    VrTrStrItem dump_tags = {0};
+
+    /* filter only matching files */
+    TrTrStr base = {0};
+    bool base_has_to_be_freed = false;
+    if(vrstr_length(files)) {
+        for(size_t i = 0; i < vrstr_length(files); ++i) {
+            Str *file = vrstr_get_at(files, i);
+            Str splice = {0};
+            for(;;) {
+                splice = str_splice(file, &splice, ',');
+                if(splice.first >= file->last) { break;}
+                Str search = splice;
+                str_trim(&search);
+                TrStr *file_tag = ttrstr_get(&cft->base.file_tags, &search);
+                if(!file_tag) continue;
+                TRYG(trtrstr_set(&base, &search, file_tag));
+            }
+        }
+        base_has_to_be_freed = true;
+    } else {
+        memcpy(&base, &cft->base.file_tags, sizeof(base)); // TODO: probably should not memcpy, even if the struct in theory should be the exact same
+        //base = cft->base.file_tags;
+    }
+
+    /* format output */
+    TRYG(trtrstr_dump(&base, &dump_files.items, &dump_files.last));
+    vrtrtrstritem_sort(&dump_files);
+    /* optional title */
+    if(cft->options.title) {
+        TRYC(str_fmt(out, "Total Files: %zu\n", vrtrtrstritem_length(&dump_files)));
+    }
+    /* all files */
+    for(size_t i = 0; i < vrtrtrstritem_length(&dump_files); ++i) {
+        TrTrStrItem *item = vrtrtrstritem_get_at(&dump_files, i);
+        Str *file = item->key;
+        TrStr *sub = item->val;
+        /* optional decoration & compact */
+        if(cft->options.decorate) {
+            if(cft->options.compact) {
+                TRYC(str_fmt(out, "%s[%zu] ", i ? " " : "", i));
+            } else {
+                TRYC(str_fmt(out, "[%zu] ", i));
+            }
+        }
+        /* the actual file */
+        TRYC(str_fmt(out, "%.*s", STR_F(file)));
+        /* how many associated files there are */
+        if(cft->options.decorate) {
+            TRYC(str_fmt(out, " (%zu)", (sub->used)));
+        }
+        /* associated tags */
+        if(cft->options.list_tags) {
+            TRYG(trstr_dump(sub, &dump_tags.items, &dump_tags.last));
+            vrtrstritem_sort(&dump_tags);
+            for(size_t j = 0; j < vrtrstritem_length(&dump_tags); ++j) {
+                TrStrItem *tag = vrtrstritem_get_at(&dump_tags, j);
+                TRYC(str_fmt(out, "%s%.*s", cft->options.decorate && !j ? " " : ",",  STR_F(tag->key)));
+            }
+            vrtrstritem_free(&dump_tags);
+        }
+        /* compact output */
+        if(cft->options.compact) {
+            TRYC(str_fmt(out, "%c", i + 1 < vrtrtrstritem_length(&dump_files) ? ',' : '\n')); // TODO: this ',' is not ideal
+        } else {
+            TRYC(str_fmt(out, "\n"));
+        }
+    }
+
 #if 0
     int err = 0;
     VrTag all = {0};
@@ -852,12 +928,17 @@ ErrDecl cft_files_fmt(Cft *cft, Str *out, VrStr *files) { //{{{
             TRYC(str_fmt(out, "\n"));
         }
     }
-clean:
     vrtag_free(&all);
+#endif
+clean:
+    if(base_has_to_be_freed) {
+        trtrstr_free(&base);
+    }
+    vrtrtrstritem_free(&dump_files);
+    vrtrstritem_free(&dump_tags);
     return err;
 error:
     ERR_CLEAN;
-#endif
 } //}}}
 
 ErrDecl cft_find_fmt(Cft *cft, Str *out, Str *find_any, Str *find_and, Str *find_not) { //{{{
