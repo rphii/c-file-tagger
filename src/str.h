@@ -17,7 +17,7 @@ typedef uint8_t V3u8[3];
 #define VEC_SETTINGS_STRUCT_ITEMS s
 #include "vec.h"
 
-VEC_INCLUDE(Str, str, char, BY_VAL);
+VEC_INCLUDE(Str, str, char, BY_VAL, BASE);
 
 #undef VEC_SETTINGS_STRUCT_ITEMS
 #undef VEC_SETTINGS_KEEP_ZERO_END
