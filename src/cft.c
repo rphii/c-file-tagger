@@ -457,19 +457,16 @@ void cft_free(Cft *cft) { //{{{
     //trrtagref_free(&cft->all);
 } //}}}
 
-#if 1
 ErrDecl cft_find_any(Cft *cft, TrTrStr *found, Str *find) { //{{{
     ASSERT_ARG(cft);
     ASSERT_ARG(found);
     ASSERT_ARG(find);
     /* search... */
-#if 1
     Str tag = {0};
     for(;;) {
         if(str_iter_end(&tag) >= str_iter_end(find)) break;
         tag = str_splice(find, &tag, ',');
         /* search */
-        //TagRef *foundr = {0};
         TTrStrItem *tag_files = 0;
         TRYC(cft_find_by_str(cft, &cft->base.tag_files, &tag_files, &tag, false));
         if(!tag_files) continue;
@@ -478,93 +475,62 @@ ErrDecl cft_find_any(Cft *cft, TrTrStr *found, Str *find) { //{{{
             TrStrItem *item = sub->buckets[i];
             if(!item) continue;
             if(item->hash == LUT_EMPTY) continue;
-            //printff("FOUND %.*s", STR_F(item->key));
             Str *file = item->key;
             TrStr *data = ttrstr_get(&cft->base.file_tags, file);
             TRYG(trtrstr_set(found, file, data));
         }
-        //trtrstr_set(&found, 
-#if 0
-        TRYC(cft_find_by_tag(cft, &foundr, &tag, false));
-        if(foundr) {
-            if(!foundr->filenames.width) continue;
-            for(size_t ii = 0; ii < (1ULL << (foundr->filenames.width - 1)); ++ii) {
-                for(size_t jj = 0; jj < foundr->filenames.buckets[ii].len; ++jj) {
-                    Str *filename = foundr->filenames.buckets[ii].items[jj];
-                    Tag hit = {.filename = *filename};
-                    TRY(trrtag_add(found, &hit), ERR_LUTD_ADD);
-                    //printf("added:%.*s\n", STR_F(filename));
-                }
-            }
-        }
-#endif
     }
-#endif
     return 0;
 error:
     return -1;
 } //}}}
-#endif
 
-#if 0
-ErrDecl cft_find_and(Cft *cft, TrrTag *found, Str *find, bool first_query) { //{{{
+ErrDecl cft_find_and(Cft *cft, TrTrStr *found, Str *find, bool first_query) { //{{{
     ASSERT_ARG(cft);
     ASSERT_ARG(found);
     ASSERT_ARG(find);
+    TrTrStr temp = {0};
+    TrTrStr temp_swap = {0};
     int err = 0;
-#if 0
-    TrrTag temp = {0};
-    TrrTag temp_swap = {0};
-    /////TRY(trrtag_init(&temp, found->width), ERR_LUTD_INIT);
-    /* search... */
     Str tag = {0};
     size_t iteration = (size_t)(!first_query);
     for(;;) {
         if(str_iter_end(&tag) >= str_iter_end(find)) break;
         tag = str_splice(find, &tag, ',');
-        //printf("[%.*s]\n", STR_F(&tag));
         /* search */
-        TagRef *foundr = {0};
-        TRYC(cft_find_by_tag(cft, &foundr, &tag, false));
-        if(foundr) {
-            if(!foundr->filenames.width) continue;
-#if 0
-            for(size_t ii = 0; ii < (1ULL << (foundr->filenames.width - 1)); ++ii) {
-                for(size_t jj = 0; jj < foundr->filenames.buckets[ii].len; ++jj) {
-                    Str *filename = foundr->filenames.buckets[ii].items[jj];
-                    Tag hit = {.filename = *filename};
-                    //printf("%zu:%.*s\n", iteration, STR_F(filename));
-                    if(iteration == 0) {
-                        TRY(trrtag_add(found, &hit), ERR_LUTD_ADD);
-                    } else {
-                        if(trrtag_has(found, &hit)) {
-                            TRY(trrtag_add(&temp, &hit), ERR_LUTD_ADD);
-                        }
-                        //if(!trrtag_has(found,
-                    }
-                    //printf("added:%.*s\n", STR_F(filename));
+        TTrStrItem *tag_files = 0;
+        TRYC(cft_find_by_str(cft, &cft->base.tag_files, &tag_files, &tag, false));
+        if(!tag_files) continue;
+        TrStr *sub = tag_files->val;
+        for(size_t i = 0; i < LUT_CAP(sub->width); ++i) {
+            TrStrItem *item = sub->buckets[i];
+            if(!item) continue;
+            if(item->hash == LUT_EMPTY) continue;
+            Str *file = item->key;
+            if(iteration == 0) {
+                TrStr *data = ttrstr_get(&cft->base.file_tags, file);
+                TRYG(trtrstr_set(found, file, data));
+            } else {
+                TrStr *data = trtrstr_get(found, file);
+                if(data) {
+                    TRYG(trtrstr_set(&temp, file, data));
                 }
             }
-#endif
         }
         if(iteration) {
+            trtrstr_clear(found);
             temp_swap = *found;
-            ///////trrtag_clear(found);
             *found = temp;
             temp = temp_swap;
-        } else {
-            //temp_swap =
         }
         ++iteration;
     }
-#endif
 clean:
-    //////trrtag_free(&temp_swap);
+    trtrstr_free(&temp_swap);
     return err;
 error:
     ERR_CLEAN;
 } //}}}
-#endif
 
 #if 0
 ErrDecl cft_find_not(Cft *cft, TrrTag *found, Str *find, bool first_query) { //{{{
@@ -885,16 +851,14 @@ ErrDecl cft_find_fmt(Cft *cft, Str *out, Str *find_any, Str *find_and, Str *find
     int err = 0;
     TrTrStr found = {0};
     VrTrTrStrItem results = {0};
-    //////7TRY(trrtag_init(&found, 10), ERR_LUTD_INIT); // TODO switch
     bool first = true;
     if(str_length(find_any)) {
-        //memcpy(&found, &cft->base.file_tags, 0);
         TRYC(cft_find_any(cft, &found, find_any));
         first = false;
     }
     if(str_length(find_and)) {
-        //TRYC(cft_find_and(cft, &found, find_and, first));
-        //first = false;
+        TRYC(cft_find_and(cft, &found, find_and, first));
+        first = false;
     }
     if(str_length(find_not)) {
         //TRYC(cft_find_not(cft, &found, find_not, first));
