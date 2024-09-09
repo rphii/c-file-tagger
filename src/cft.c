@@ -534,7 +534,7 @@ ErrDecl cft_tags_add(Cft *cft, VrStr *files, Str *tags) { //{{{
             if(str_iter_end(&tag) >= str_iter_end(tags)) break;
             tag = str_splice(tags, &tag, ',');
             TRYC(cft_add(cft, file, &tag));
-            printff("tag [%.*s] with [%.*s]", STR_F(file), STR_F(&tag));
+            //printff("tag [%.*s] with [%.*s]", STR_F(file), STR_F(&tag));
         }
     }
     return 0;
