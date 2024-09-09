@@ -5,4 +5,5 @@ src/cft
 data
 *.vim
 *.swp
+src/callgrind.out.*
 
