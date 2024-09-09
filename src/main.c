@@ -20,7 +20,7 @@ int main(int argc, const char **argv)
 {
     int err = 0;
 
-    setvbuf(stdout, 0, _IOFBF, 0x10000);
+    //setvbuf(stdout, 0, _IOFBF, 0x10000);
 
 #if 0
     TrStr lut = {0};
