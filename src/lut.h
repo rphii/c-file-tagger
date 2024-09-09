@@ -58,6 +58,7 @@
     } N; \
     \
     void A##_free(N *lut); \
+    void A##_clear(N *lut); \
     int A##_grow(N *lut, size_t width); \
     int A##_set(N *lut, const LUT_ITEM(TK, MK) key, LUT_ITEM(TV, MV) val); \
     TV *A##_get(N *lut, const LUT_ITEM(TK, MK) key); \
@@ -73,6 +74,7 @@
 #define LUT_IMPLEMENT(N, A, TK, MK, TV, MV, H, C, FK, FV)   \
     LUT_IMPLEMENT_COMMON_STATIC_GET_ITEM(N, A, TK, MK, TV, MV, H, C, FK, FV) \
     LUT_IMPLEMENT_COMMON_FREE(N, A, TK, MK, TV, MV, H, C, FK, FV) \
+    LUT_IMPLEMENT_COMMON_CLEAR(N, A, TK, MK, TV, MV, H, C, FK, FV) \
     LUT_IMPLEMENT_COMMON_GROW(N, A, TK, MK, TV, MV, H, C, FK, FV) \
     LUT_IMPLEMENT_COMMON_SET(N, A, TK, MK, TV, MV, H, C, FK, FV) \
     LUT_IMPLEMENT_COMMON_GET(N, A, TK, MK, TV, MV, H, C, FK, FV) \
@@ -146,6 +148,17 @@
         } \
         free(lut->buckets); \
         memset(lut, 0, sizeof(*lut)); \
+    }
+
+#define LUT_IMPLEMENT_COMMON_CLEAR(N, A, TK, MK, TV, MV, H, C, FK, FV) \
+    void A##_clear(N *lut) { \
+        ASSERT_ARG(lut); \
+        for(size_t i = 0; i < LUT_CAP(lut->width); ++i) { \
+            N##Item *item = lut->buckets[i]; \
+            if(!item) continue; \
+            item->hash = LUT_EMPTY; \
+        } \
+        lut->used = 0; \
     }
 
 #define LUT_IMPLEMENT_COMMON_GROW(N, A, TK, MK, TV, MV, H, C, FK, FV) \
