@@ -135,7 +135,7 @@ ErrImpl str_reserve(Str *str, size_t cap)
     cap += 1; /* zero end */
     Str temp = {0};
 
-    if(cap < STR_SHORT_CAP) {
+    if(cap < STR_SHORT_CAP && !(!STR_SMALL_ACTIVE(str) && !str->cap)) {
         STR_SMALL_ENABLE(str);
     } else {
         /* copy to temp if string was short */
