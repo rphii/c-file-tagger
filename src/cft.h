@@ -3,7 +3,6 @@
 #include "err.h"
 #include "vector.h"
 #include "lookup.h"
-#include "tag.h"
 #include "arg.h"
 
 typedef struct CftBase {
