@@ -12,7 +12,7 @@
 #include "file.h"
 #include "platform.h"
 
-void str_print_verbose(Str *str)
+inline void str_print_verbose(Str *str)
 {
     if(str) {
         printf("ptr %p\n", str);
@@ -25,7 +25,7 @@ void str_print_verbose(Str *str)
     }
 }
 
-size_t str_alloced_bytes_in_use(Str *str)
+inline size_t str_alloced_bytes_in_use(Str *str)
 {
     if(STR_SMALL_ACTIVE(str)) {
         return STR_SMALL_LEN(str);
@@ -46,7 +46,7 @@ static inline char *static_str_get_at(const Str *str, size_t i) /*{{{*/
     }
 } /*}}}*/
 
-void str_free(Str *str) /*{{{*/
+inline void str_free(Str *str) /*{{{*/
 {
     if(STR_SMALL_ACTIVE(str)) {
     } else {
@@ -55,7 +55,7 @@ void str_free(Str *str) /*{{{*/
     str_zero(str);
 } /*}}}*/
 
-void str_clear(Str *str) /*{{{*/
+inline void str_clear(Str *str) /*{{{*/
 {
     if(STR_SMALL_ACTIVE(str)) {
         str->small.s[0] = 0;
@@ -69,12 +69,12 @@ void str_clear(Str *str) /*{{{*/
     }
 } /*}}}*/
 
-void str_zero(Str *str) /*{{{*/
+inline void str_zero(Str *str) /*{{{*/
 {
     memset(str, 0, sizeof(*str));
 } /*}}}*/
 
-size_t str_length(const Str *str) /*{{{*/
+inline size_t str_length(const Str *str) /*{{{*/
 {
     ASSERT_ARG(str);
 #if 1
@@ -91,7 +91,7 @@ size_t str_length(const Str *str) /*{{{*/
 } /*}}}*/
 
 
-ErrDecl str_copy(Str *dst, const Str *src) /*{{{*/
+ErrImpl str_copy(Str *dst, const Str *src) /*{{{*/
 {
     ASSERT_ARG(src);
     ASSERT_ARG(dst);
@@ -116,7 +116,7 @@ error:
     return -1;
 } /*}}}*/
 
-ErrDecl str_reserve(Str *str, size_t cap)
+ErrImpl str_reserve(Str *str, size_t cap)
 {
     ASSERT_ARG(str);
     cap += 1; /* zero end */
@@ -157,7 +157,7 @@ error:
     return -1;
 }
 
-ErrDecl str_push_back(Str *str, char c) /*{{{*/
+ErrImpl str_push_back(Str *str, char c) /*{{{*/
 {
     ASSERT_ARG(str);
     /* make sure we have enough memory */
@@ -178,7 +178,7 @@ error:
     return -1;
 } /*}}}*/
 
-ErrDecl str_push_front(Str *str, char c) /*{{{*/
+ErrImpl str_push_front(Str *str, char c) /*{{{*/
 {
     ASSERT_ARG(str);
     /* make sure we have enough memory */
@@ -199,14 +199,14 @@ error:
     return -1;
 } /*}}}*/
 
-void str_set_at(Str *str, size_t i, char c)
+inline void str_set_at(Str *str, size_t i, char c)
 {
     ASSERT_ARG(str);
     char *s = static_str_get_at(str, i);
     *s = c;
 }
 
-ErrDecl str_extend_back(Str *str, Str *add)
+ErrImpl str_extend_back(Str *str, Str *add)
 {
     ASSERT_ARG(str);
     ASSERT_ARG(add);
@@ -229,7 +229,7 @@ error:
     return -1;
 }
 
-void str_pop_back(Str *str, char *c) /*{{{*/
+inline void str_pop_back(Str *str, char *c) /*{{{*/
 {
     ASSERT_ARG(str);
     char *s = 0;
@@ -244,7 +244,7 @@ void str_pop_back(Str *str, char *c) /*{{{*/
     *s = 0;
 } /*}}}*/
 
-void str_pop_front(Str *str, char *c) /*{{{*/
+inline void str_pop_front(Str *str, char *c) /*{{{*/
 {
     ASSERT_ARG(str);
     if(STR_SMALL_ACTIVE(str)) {
@@ -261,7 +261,7 @@ void str_pop_front(Str *str, char *c) /*{{{*/
 
 //{{{
 
-char str_get_front(const Str *str)
+inline char str_get_front(const Str *str)
 {
     ASSERT_ARG(str);
     if(STR_SMALL_ACTIVE(str)) {
@@ -271,7 +271,7 @@ char str_get_front(const Str *str)
     }
 }
 
-char str_get_back(const Str *str)
+inline char str_get_back(const Str *str)
 {
     ASSERT_ARG(str);
     if(STR_SMALL_ACTIVE(str)) {
@@ -281,7 +281,7 @@ char str_get_back(const Str *str)
     }
 }
 
-char str_get_at(const Str *str, size_t i)
+inline char str_get_at(const Str *str, size_t i)
 {
     ASSERT_ARG(str);
     if(STR_SMALL_ACTIVE(str)) {
@@ -292,7 +292,7 @@ char str_get_at(const Str *str, size_t i)
 }
 
 
-char *str_iter_begin(const Str *str)
+inline char *str_iter_begin(const Str *str)
 {
     ASSERT_ARG(str);
     if(STR_SMALL_ACTIVE(str)) {
@@ -307,7 +307,7 @@ char *str_iter_begin(const Str *str)
     }
 }
 
-char *str_iter_end(const Str *str)
+inline char *str_iter_end(const Str *str)
 {
     ASSERT_ARG(str);
     if(STR_SMALL_ACTIVE(str)) {
@@ -317,7 +317,7 @@ char *str_iter_end(const Str *str)
     }
 }
 
-char *str_iter_at(const Str *str, size_t i)
+inline char *str_iter_at(const Str *str, size_t i)
 {
     ASSERT_ARG(str);
     if(STR_SMALL_ACTIVE(str)) {
@@ -348,7 +348,7 @@ VEC_IMPLEMENT(Str, str, char, BY_VAL, BASE, 0);
 
 // basic, no fail, manipulation function {{{
 
-void str_pop_back_char(Str *str) //{{{
+inline void str_pop_back_char(Str *str) //{{{
 {
     ASSERT_ARG(str);
     bool next;
@@ -363,7 +363,7 @@ void str_pop_back_char(Str *str) //{{{
     } while(next);
 } //}}}
 
-void str_pop_back_word(Str *str) //{{{
+inline void str_pop_back_word(Str *str) //{{{
 {
     ASSERT_ARG(str);
     size_t len = str_length(str);
@@ -379,7 +379,7 @@ void str_pop_back_word(Str *str) //{{{
     str->last = str->first + len; // TODO:pointer-access
 } //}}}
 
-void str_triml(Str *str) //{{{
+inline void str_triml(Str *str) //{{{
 {
     ASSERT_ARG(str);
     if(STR_SMALL_ACTIVE(str)) {
@@ -398,7 +398,7 @@ void str_triml(Str *str) //{{{
     }
 } //}}}
 
-void str_trimr(Str *str) //{{{
+inline void str_trimr(Str *str) //{{{
 {
     ASSERT_ARG(str);
     if(STR_SMALL_ACTIVE(str)) {
@@ -418,7 +418,7 @@ void str_trimr(Str *str) //{{{
     }
 } //}}}
 
-void str_trim(Str *str) //{{{
+inline void str_trim(Str *str) //{{{
 {
     ASSERT_ARG(str);
     str_triml(str);
@@ -429,14 +429,14 @@ void str_trim(Str *str) //{{{
 
 // pseudo directory {{{
 
-void str_cstr(const Str *str, char *cstr, size_t len) {
+inline void str_cstr(const Str *str, char *cstr, size_t len) {
     ASSERT_ARG(str);
     ASSERT_ARG(cstr);
     cstr[0] = 0;
     snprintf(cstr, len, "%.*s", STR_F(str));
 }
 
-void str_clear_to_last(Str *str) { // TODO:REMOVE???
+inline void str_clear_to_last(Str *str) { // TODO:REMOVE???
     ASSERT_ARG(str);
     if(STR_SMALL_ACTIVE(str)) {
         str->small.s[0] = 0;
@@ -482,7 +482,7 @@ error:
     return -1;
 } //}}}
 
-int str_fmt(Str *str, const char *format, ...) //{{{
+inline int str_fmt(Str *str, const char *format, ...) //{{{
 {
     ASSERT_ARG(str);
     ASSERT_ARG(format);
@@ -496,7 +496,7 @@ int str_fmt(Str *str, const char *format, ...) //{{{
     return result;
 } //}}}
 
-ErrDecl str_fmt_ext(Str *ext, const Str *str) //{{{
+ErrImpl str_fmt_ext(Str *ext, const Str *str) //{{{
 {
     ASSERT_ARG(str);
     ASSERT_ARG(ext);
@@ -516,7 +516,7 @@ error:
     return -1;
 } //}}}
 
-ErrDecl str_fmt_noext(Str *ext, const Str *str) //{{{
+ErrImpl str_fmt_noext(Str *ext, const Str *str) //{{{
 {
     ASSERT_ARG(str);
     ASSERT_ARG(ext);
@@ -530,7 +530,7 @@ error:
     return -1;
 } //}}}
 
-ErrDecl str_fmt_basename(Str *basename, const Str *str) //{{{
+ErrImpl str_fmt_basename(Str *basename, const Str *str) //{{{
 {
     ASSERT_ARG(str);
     ASSERT_ARG(basename);
@@ -551,7 +551,7 @@ error:
 } //}}}
 
 // TODO: what if up is larger than the directory string? what should be returned then??
-ErrDecl str_fmt_dir(Str *dir, const Str *str, size_t up) //{{{
+ErrImpl str_fmt_dir(Str *dir, const Str *str, size_t up) //{{{
 {
     ASSERT_ARG(str);
     ASSERT_ARG(dir);
@@ -577,7 +577,7 @@ error:
     return -1;
 } //}}}
 
-ErrDecl str_fmt_nodir(Str *nodir, const Str *str) //{{{
+ErrImpl str_fmt_nodir(Str *nodir, const Str *str) //{{{
 {
     ASSERT_ARG(str);
     ASSERT_ARG(nodir);
@@ -598,7 +598,7 @@ error:
 
 //}}}
 
-int str_get_str(Str *str) //{{{
+inline int str_get_str(Str *str) //{{{
 {
     ASSERT_ARG(str);
     int err = 0;
@@ -615,7 +615,7 @@ clean:
 error: ERR_CLEAN;
 } //}}}
 
-void str_remove_trailing_ch(Str *str, char ch, char ch_escape) //{{{
+inline void str_remove_trailing_ch(Str *str, char ch, char ch_escape) //{{{
 {
     ASSERT_ARG(str);
     while(str_length(str) && str_get_back(str) == ch) {
@@ -628,7 +628,7 @@ void str_remove_trailing_ch(Str *str, char ch, char ch_escape) //{{{
     }
 } //}}}
 
-ErrDecl str_expand_path(Str *path, const Str *base, const Str *home) // TODO: move into platform.c ... {{{
+ErrImpl str_expand_path(Str *path, const Str *base, const Str *home) // TODO: move into platform.c ... {{{
 {
     ASSERT_ARG(path);
     ASSERT_ARG(base);
@@ -689,7 +689,7 @@ error:
     ERR_CLEAN;
 } //}}}
 
-ErrDecl str_fmt_line(Str *line, const Str *str, size_t i0, size_t *iE) { //{{{
+ErrImpl str_fmt_line(Str *line, const Str *str, size_t i0, size_t *iE) { //{{{
     ASSERT_ARG(line);
     ASSERT_ARG(str);
     Str fake = *str;
@@ -702,7 +702,7 @@ error:
     return -1;
 } //}}}
 
-void str_get_line(const Str *str, size_t *i0, size_t *iE) {/*{{{*/
+inline void str_get_line(const Str *str, size_t *i0, size_t *iE) {/*{{{*/
     ASSERT_ARG(str);
     ASSERT_ARG(i0);
     ASSERT_ARG(iE);
@@ -719,7 +719,7 @@ void str_get_line(const Str *str, size_t *i0, size_t *iE) {/*{{{*/
     ASSERT(*i0 <= *iE, "expected i0 (%zu) to be smaller than iE (%zu)", *i0, *iE);
 }/*}}}*/
 
-ErrDecl str_fmt_fgbg(Str *out, const Str *text, const V3u8 fg, const V3u8 bg, bool bold, bool italic, bool underline) {
+ErrImpl str_fmt_fgbg(Str *out, const Str *text, const V3u8 fg, const V3u8 bg, bool bold, bool italic, bool underline) {
     ASSERT_ARG(out);
     ASSERT_ARG(text);
     bool do_fmt = ((fg || bg || bold || italic || underline));
@@ -748,7 +748,7 @@ error:
 
 // comparing stuff {{{
 
-int str_cmp(const Str *a, const Str *b) //{{{
+inline int str_cmp(const Str *a, const Str *b) //{{{
 {
     ASSERT_ARG(a);
     ASSERT_ARG(b);
@@ -759,7 +759,7 @@ int str_cmp(const Str *a, const Str *b) //{{{
     return result;
 } //}}}
 
-int str_cmp_sortable(const Str *a, const Str *b) //{{{
+inline int str_cmp_sortable(const Str *a, const Str *b) //{{{
 {
     ASSERT_ARG(a);
     ASSERT_ARG(b);
@@ -781,7 +781,7 @@ int str_cmp_sortable(const Str *a, const Str *b) //{{{
     return result;
 } //}}}
 
-int str_cmp_ci(const Str *a, const Str *b) {/*{{{*/
+inline int str_cmp_ci(const Str *a, const Str *b) {/*{{{*/
     ASSERT_ARG(a);
     ASSERT_ARG(b);
     if(str_length(a) != str_length(b)) return -1;
@@ -792,7 +792,7 @@ int str_cmp_ci(const Str *a, const Str *b) {/*{{{*/
     return 0;
 }/*}}}*/
 
-int str_cmp_esci(const Str *a, const Str *b) {/*{{{*/
+inline int str_cmp_esci(const Str *a, const Str *b) {/*{{{*/
     ASSERT_ARG(a);
     ASSERT_ARG(b);
 #if 1
@@ -878,7 +878,7 @@ int str_cmp_esci(const Str *a, const Str *b) {/*{{{*/
     return 0;
 }/*}}}*/
 
-int str_cmp_ci_any(const Str *a, const Str **b, size_t len) {/*{{{*/
+inline int str_cmp_ci_any(const Str *a, const Str **b, size_t len) {/*{{{*/
     ASSERT_ARG(a);
     ASSERT_ARG(b);
     for (size_t i = 0; i < len; ++i) {
@@ -939,7 +939,7 @@ inline size_t str_find_substring(const Str *restrict str, const Str *restrict su
     return str_length(str);
 } //}}}
 
-size_t str_find_any(const Str *str, const Str *any) { //{{{
+inline size_t str_find_any(const Str *str, const Str *any) { //{{{
     ASSERT_ARG(str);
     ASSERT_ARG(any);
     size_t result = str_length(str);
@@ -950,7 +950,7 @@ size_t str_find_any(const Str *str, const Str *any) { //{{{
     return result;
 } //}}}
 
-size_t str_find_nany(const Str *str, const Str *any) { //{{{
+inline size_t str_find_nany(const Str *str, const Str *any) { //{{{
     ASSERT_ARG(str);
     ASSERT_ARG(any);
     for(size_t i = 0; i < str_length(str); ++i) {
@@ -960,7 +960,7 @@ size_t str_find_nany(const Str *str, const Str *any) { //{{{
     return str_length(str);
 } //}}}
 
-size_t str_nch(const Str *str, char ch, size_t n) { //{{{
+inline size_t str_nch(const Str *str, char ch, size_t n) { //{{{
     ASSERT_ARG(str);
     size_t ni = 0;
     for(size_t i = 0; i < str_length(str); ++i) {
@@ -973,7 +973,7 @@ size_t str_nch(const Str *str, char ch, size_t n) { //{{{
     return str_length(str);
 } //}}}
 
-size_t str_ch(const Str *str, char ch, size_t n) { //{{{
+inline size_t str_ch(const Str *str, char ch, size_t n) { //{{{
     ASSERT_ARG(str);
     size_t ni = 0;
     for(size_t i = 0; i < str_length(str); ++i) {
@@ -986,14 +986,14 @@ size_t str_ch(const Str *str, char ch, size_t n) { //{{{
     return str_length(str);
 } //}}}
 
-size_t str_ch_from(const Str *str, char ch, size_t n, size_t from) {/*{{{*/
+inline size_t str_ch_from(const Str *str, char ch, size_t n, size_t from) {/*{{{*/
     ASSERT_ARG(str);
     Str search = STR_LL(str_iter_at(str, from), str_length(str) - from);
     size_t result = str_ch(&search, ch, n) + from;
     return result;
 }/*}}}*/
 
-size_t str_ch_pair(const Str *str, char c1) { //{{{
+inline size_t str_ch_pair(const Str *str, char c1) { //{{{
     ASSERT_ARG(str);
     if(!str_length(str)) return str_length(str);
     size_t level = 1;
@@ -1007,7 +1007,7 @@ size_t str_ch_pair(const Str *str, char c1) { //{{{
     return str_length(str);
 } //}}}
 
-size_t str_find_ws(const Str *str) { //{{{
+inline size_t str_find_ws(const Str *str) { //{{{
     ASSERT_ARG(str);
     for(size_t i = 0; i < str_length(str); ++i) {
         char c = str_get_at(str, i);
@@ -1016,7 +1016,7 @@ size_t str_find_ws(const Str *str) { //{{{
     return str_length(str);
 } //}}}
 
-size_t str_find_nws(const Str *str) { //{{{
+inline size_t str_find_nws(const Str *str) { //{{{
     ASSERT_ARG(str);
     for(size_t i = 0; i < str_length(str); ++i) {
         char c = str_get_at(str, i);
@@ -1026,7 +1026,7 @@ size_t str_find_nws(const Str *str) { //{{{
 } //}}}
 
 // find reverse non-whitespace
-size_t str_find_rnws(const Str *str) { //{{{
+inline size_t str_find_rnws(const Str *str) { //{{{
     ASSERT_ARG(str);
     for(size_t i = str_length(str); i > 0; --i) {
         char c = str_get_at(str, i - 1);
@@ -1035,7 +1035,7 @@ size_t str_find_rnws(const Str *str) { //{{{
     return str_length(str);
 } //}}}
 
-size_t str_rch(const Str *str, char ch, size_t n) //{{{
+inline size_t str_rch(const Str *str, char ch, size_t n) //{{{
 {
     ASSERT_ARG(str);
     size_t ni = 0;
@@ -1049,7 +1049,7 @@ size_t str_rch(const Str *str, char ch, size_t n) //{{{
     return str_length(str);
 } //}}}
 
-size_t str_rnch(const Str *str, char ch, size_t n) {
+inline size_t str_rnch(const Str *str, char ch, size_t n) {
     ASSERT_ARG(str);
     size_t ni = 0;
     for(size_t i = str_length(str); i > 0; --i) {
@@ -1062,7 +1062,7 @@ size_t str_rnch(const Str *str, char ch, size_t n) {
     return 0; //str_length(str);
 }
 
-size_t str_count_ch(const Str *str, char ch) {/*{{{*/
+inline size_t str_count_ch(const Str *str, char ch) {/*{{{*/
     ASSERT_ARG(str);
     size_t result = 0;
     if(str->first < str->last) { /* TODO: add this to basically every string utility function :) */ // TODO:pointer-access
@@ -1074,7 +1074,7 @@ size_t str_count_ch(const Str *str, char ch) {/*{{{*/
     return result;
 }/*}}}*/
 
-size_t str_irch(const Str *str, size_t iE, char ch, size_t n) { //{{{
+inline size_t str_irch(const Str *str, size_t iE, char ch, size_t n) { //{{{
     ASSERT_ARG(str);
     if(iE <= str_length(str)) {
         size_t ni = 0;
@@ -1089,14 +1089,15 @@ size_t str_irch(const Str *str, size_t iE, char ch, size_t n) { //{{{
     return str_length(str);
 } //}}}
 
-size_t str_hash(const Str *a) //{{{
+inline size_t str_hash(const Str *a) //{{{
 {
     ASSERT_ARG(a);
     size_t hash = 5381;
     size_t i = 0;
-    if(str_length(a)) {
+    size_t len = str_length(a);
+    if(len) {
         char *s = str_iter_begin(a);
-        while(i < str_length(a)) {
+        while(i < len) {
             unsigned char c = s[i++];
             hash = ((hash << 5) + hash) + c; /* hash * 33 + c */
         }
@@ -1105,7 +1106,7 @@ size_t str_hash(const Str *a) //{{{
     return hash;
 } //}}}
 
-size_t str_hash_ci(const Str *a) //{{{
+inline size_t str_hash_ci(const Str *a) //{{{
 {
     ASSERT_ARG(a);
     size_t hash = 5381;
@@ -1117,7 +1118,7 @@ size_t str_hash_ci(const Str *a) //{{{
     return hash;
 } //}}}
 
-size_t str_hash_esci(const Str *a) {/*{{{*/
+inline size_t str_hash_esci(const Str *a) {/*{{{*/
     ASSERT_ARG(a);
     size_t hash = 5381;
     size_t i = 0;
@@ -1136,7 +1137,7 @@ size_t str_hash_esci(const Str *a) {/*{{{*/
 
 //}}}
 
-Str str_splice(Str *to_splice, Str *prev_splice, char sep) {/*{{{*/
+inline Str str_splice(Str *to_splice, Str *prev_splice, char sep) {/*{{{*/
     ASSERT_ARG(to_splice);
     Str result = *to_splice;
     if(prev_splice && str_length(prev_splice)) { // TODO:accessing s
@@ -1150,7 +1151,7 @@ Str str_splice(Str *to_splice, Str *prev_splice, char sep) {/*{{{*/
     return result;
 }/*}}}*/
 
-ErrDecl str_remove_escapes(Str *restrict out, Str *restrict in)
+ErrImpl str_remove_escapes(Str *restrict out, Str *restrict in)
 {
     ASSERT(out, ERR_NULL_ARG);
     ASSERT(in, ERR_NULL_ARG);

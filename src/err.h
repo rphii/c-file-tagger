@@ -20,6 +20,7 @@
 
 /* use this when declaring function that can error */
 #define ErrDecl             ATTR_NODISCARD int
+#define ErrImpl             ATTR_NODISCARD inline int 
 #define ErrDeclStatic       ATTR_NODISCARD static inline int
 
 #define SIZE_ARRAY(x)       (sizeof(x)/sizeof(*x))
