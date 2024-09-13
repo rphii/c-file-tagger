@@ -20,6 +20,7 @@ int main(int argc, const char **argv)
 {
     int err = 0;
 
+
     //setvbuf(stdout, 0, _IOFBF, 0x10000);
 
 #if 0
@@ -117,6 +118,7 @@ int main(int argc, const char **argv)
 
     /* print files */
     if(cft.options.list_files && cft.options.list_files > cft.options.list_tags) {
+        printff("FORMATTING FILES");
         TRYC(cft_files_fmt(&cft, &ostream, &arg.parsed.remains));
         printf("%.*s", STR_F(&ostream));
         goto clean;
@@ -124,6 +126,7 @@ int main(int argc, const char **argv)
 
     /* print tags */
     if(cft.options.list_tags && cft.options.list_tags > cft.options.list_files) {
+        printff("FORMATTING TAGS");
         TRYC(cft_tags_fmt(&cft, &ostream, &arg.parsed.remains));
         printf("%.*s", STR_F(&ostream));
         goto clean;

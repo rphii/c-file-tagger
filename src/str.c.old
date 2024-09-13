@@ -1,333 +1,12 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <ctype.h>
-#include <stdbool.h>
 
 #include "colorprint.h"
 #include "err.h"
-//#include "vector.h"
 
-#if 1
-#include "str.h"
-#include "file.h"
-#include "platform.h"
-
-void str_print_verbose(Str *str)
-{
-    if(str) {
-        printf("ptr %p\n", str);
-        printf("small.active %u | small.len %u\n", (bool)(str->small.f & STR_MASK_ACTIVE), str->small.f & STR_MASK_LEN);
-        printf(".first %zu | .last %zu | .cap %zu\n", str->first, str->last, str->cap);
-        printf("  %p str->s\n  %p str->small.s\n", str->s, str->small.s);
-        printf("  %zu [%.100s...]\n", str_length(str), str_iter_begin(str));
-    } else {
-        printf("str argument pointer is (null)\n");
-    }
-}
-
-size_t str_alloced_bytes_in_use(Str *str)
-{
-    if(STR_SMALL_ACTIVE(str)) {
-        return STR_SMALL_LEN(str);
-        return 0;
-    } else {
-        return str->last;
-    }
-}
-
-static inline char *static_str_get_at(const Str *str, size_t i) /*{{{*/
-{
-    if(STR_SMALL_ACTIVE(str)) {
-        ASSERT(i < STR_SHORT_CAP, ERR_INTERNAL("index %zu too large for small string"), i);
-        return (char *)&str->small.s[i];
-    } else {
-        ASSERT(i >= str->first && i < str->last, ERR_INTERNAL("index %zu out of range [%zu..%zu["), i, str->first, str->last);
-        ASSERT(str->first <= str->last, ERR_INTERNAL("first index %zu not <= last index %zu"), str->first, str->last);
-        return &str->s[i];
-    }
-} /*}}}*/
-
-void str_free(Str *str) /*{{{*/
-{
-    if(STR_SMALL_ACTIVE(str)) {
-    } else {
-        free(str->s);
-    }
-    str_zero(str);
-} /*}}}*/
-
-void str_clear(Str *str) /*{{{*/
-{
-    if(STR_SMALL_ACTIVE(str)) {
-        str->small.s[0] = 0;
-        STR_SMALL_LEN_CLEAR(str);
-    } else {
-        //if(str->cap) {
-        //    str->s[0] = 0;
-        //}
-        str->first = 0;
-        str->last = 0;
-    }
-} /*}}}*/
-
-void str_zero(Str *str) /*{{{*/
-{
-    memset(str, 0, sizeof(*str));
-} /*}}}*/
-
-size_t str_length(const Str *str) /*{{{*/
-{
-    ASSERT_ARG(str);
-    if(STR_SMALL_ACTIVE(str)) {
-        return STR_SMALL_LEN(str);
-    } else {
-        return str->last - str->first;
-    }
-} /*}}}*/
-
-
-ErrDecl str_copy(Str *dst, const Str *src) /*{{{*/
-{
-    ASSERT_ARG(src);
-    ASSERT_ARG(dst);
-    str_clear(dst);
-    size_t len = str_length(src);
-    TRYC(str_reserve(dst, len));
-    if(STR_SMALL_ACTIVE(dst)) {
-        if(len) {
-            memcpy(dst->small.s, str_iter_begin(src), len);
-        }
-        STR_SMALL_LEN_SET(dst, str_length(src));
-        dst->small.s[str_length(src)] = 0;
-    } else {
-        if(len) {
-            memcpy(dst->s, str_iter_begin(src), len);
-        }
-        dst->last = str_length(src);
-        dst->s[dst->last] = 0;
-    }
-    return 0;
-error:
-    return -1;
-} /*}}}*/
-
-ErrDecl str_reserve(Str *str, size_t cap)
-{
-    ASSERT_ARG(str);
-    cap += 1; /* zero end */
-    size_t cap_is = str->cap;
-    Str temp = {0};
-
-    if(cap < STR_SHORT_CAP) {
-        STR_SMALL_ENABLE(str);
-    } else {
-        /* copy to temp if string was short */
-        if(STR_SMALL_ACTIVE(str)) {
-            temp = *str;
-            str->cap = 0;
-            str_zero(str);
-        }
-        /* now increase */
-        cap += VEC_KEEP_ZERO_END; \
-        size_t cap_is = str->cap; \
-        if(cap > cap_is) { \
-            size_t required = str->cap ? str->cap : VEC_DEFAULT_SIZE;\
-            while(required < cap) required *= 2; \
-            if(required > str->cap) { \
-                void *temp = realloc(str->s, sizeof(*str->s) * required); \
-                if(!temp) return VEC_ERROR_REALLOC; \
-                str->s = temp; \
-                memset(&str->s[cap_is], 0, sizeof(*str->s) * (required - cap_is)); \
-                str->cap = required; \
-            } \
-        } \
-        /* reassign values */
-        if(STR_SMALL_ACTIVE(&temp)) {
-            str->last = STR_SMALL_LEN(&temp);
-            memcpy(str->s, temp.small.s, STR_SMALL_LEN(&temp));
-        }
-    }
-    return 0;
-error:
-    return -1;
-}
-
-ErrDecl str_push_back(Str *str, char c) /*{{{*/
-{
-    ASSERT_ARG(str);
-    /* make sure we have enough memory */
-    size_t len = str_length(str) + 1;
-    TRYC(str_reserve(str, len));
-    if(STR_SMALL_ACTIVE(str)) {
-        STR_SMALL_LEN_ADD(str, 1);
-    } else {
-        ++str->last;
-    }
-    ASSERT(str_length(str) == len, ERR_INTERNAL(ERR_UNREACHABLE));
-    /* actually push */
-    char *s = static_str_get_at(str, len);
-    s[0] = c;
-    s[1] = 0;
-    return 0;
-error:
-    return -1;
-} /*}}}*/
-
-ErrDecl str_push_front(Str *str, char c) /*{{{*/
-{
-    ASSERT_ARG(str);
-    /* make sure we have enough memory */
-    size_t len = str_length(str) + 1;
-    TRYC(str_reserve(str, len));
-    if(STR_SMALL_ACTIVE(str)) {
-        STR_SMALL_LEN_ADD(str, 1);
-    } else {
-        ++str->last;
-    }
-    ASSERT(str_length(str) == len, ERR_INTERNAL(ERR_UNREACHABLE));
-    /* actually push */
-    char *s = static_str_get_at(str, 0);
-    memmove(s + 1, s, len);
-    *s = c;
-    return 0;
-error:
-    return -1;
-} /*}}}*/
-
-void str_set_at(Str *str, size_t i, char c)
-{
-    ASSERT_ARG(str);
-    char *s = static_str_get_at(str, i);
-    *s = c;
-}
-
-ErrDecl str_extend_back(Str *str, Str *add)
-{
-    ASSERT_ARG(str);
-    ASSERT_ARG(add);
-
-    size_t until = str_length(add);
-    size_t require = str_alloced_bytes_in_use(str) + until; // str->last + until; //TODO:pointer-access
-    size_t from = require < str_length(str) ? str_length(str) - require : 0;
-    TRYC(str_reserve(str, require));
-    if(STR_SMALL_ACTIVE(str)) {
-        STR_SMALL_LEN_ADD(str, until);
-    } else {
-        str->last += until;
-    }
-    for(size_t i = 0; i < until; i++) {
-        char value = str_get_at(add, i);
-        str_set_at(str, from + i, value);
-    }
-    return 0;
-error:
-    return -1;
-}
-
-void str_pop_back(Str *str, char *c) /*{{{*/
-{
-    ASSERT_ARG(str);
-    char *s = 0;
-    if(STR_SMALL_ACTIVE(str)) {
-        s = static_str_get_at(str, STR_SMALL_LEN(str));
-        STR_SMALL_LEN_ADD(str, -1);
-    } else {
-        s = static_str_get_at(str, str->last - 1);
-        --str->last;
-    }
-    if(c) *c = *s;
-    *s = 0;
-} /*}}}*/
-
-void str_pop_front(Str *str, char *c) /*{{{*/
-{
-    ASSERT_ARG(str);
-    if(STR_SMALL_ACTIVE(str)) {
-        char c0 = str->small.s[0];
-        memmove(str->small.s, str->small.s + 1, STR_SMALL_LEN(str));
-        if(c) *c = c0;
-        STR_SMALL_LEN_ADD(str, -1);
-    } else {
-        char *s = static_str_get_at(str, str->first);
-        ++str->first;
-        if(c) *c = *s;
-    }
-} /*}}}*/
-
-//{{{
-
-char str_get_front(const Str *str)
-{
-    ASSERT_ARG(str);
-    if(STR_SMALL_ACTIVE(str)) {
-        return str->small.s[0];
-    } else {
-        return *static_str_get_at(str, str->first);
-    }
-}
-
-char str_get_back(const Str *str)
-{
-    ASSERT_ARG(str);
-    if(STR_SMALL_ACTIVE(str)) {
-        return *static_str_get_at(str, STR_SMALL_LEN(str));
-    } else {
-        return *static_str_get_at(str, str->last - 1);
-    }
-}
-
-char str_get_at(const Str *str, size_t i)
-{
-    ASSERT_ARG(str);
-    if(STR_SMALL_ACTIVE(str)) {
-        return *static_str_get_at(str, i);
-    } else {
-        return *static_str_get_at(str, str->first + i);
-    }
-}
-
-
-char *str_iter_begin(const Str *str)
-{
-    ASSERT_ARG(str);
-    if(STR_SMALL_ACTIVE(str)) {
-        return (char *)str->small.s;
-    } else {
-        //printff("ITERATE FROM BEGIN %zx", str->first);
-        //for(size_t i = 0; i < STR_SHORT_CAP; ++i) {
-        //    printf("%zu[%c] ", i, str->small.s[i]);
-        //}
-        //printff("\nFOR STRING: %s", str->s);
-        return &str->s[str->first];
-    }
-}
-
-char *str_iter_end(const Str *str)
-{
-    ASSERT_ARG(str);
-    if(STR_SMALL_ACTIVE(str)) {
-        return (char *)&str->small.s[STR_SMALL_LEN(str)];
-    } else {
-        return &str->s[str->last];
-    }
-}
-
-char *str_iter_at(const Str *str, size_t i)
-{
-    ASSERT_ARG(str);
-    if(STR_SMALL_ACTIVE(str)) {
-        return static_str_get_at(str, i);
-    } else {
-        return static_str_get_at(str, str->first + i);
-    }
-}
-
-//}}}
-
-
-
-#else
 /* inclusion and configuration of vector */
+#include "vstr.h"
 #include "str.h"
 #include "file.h"
 #include "platform.h"
@@ -336,8 +15,7 @@ char *str_iter_at(const Str *str, size_t i)
 #define VEC_SETTINGS_KEEP_ZERO_END 1
 #define VEC_SETTINGS_STRUCT_ITEMS s
 
-VEC_IMPLEMENT(Str, str, char, BY_VAL, BASE, 0);
-#endif
+VEC_IMPLEMENT(Str, str, char, BY_VAL, 0);
 
 /* other functions */
 
@@ -371,45 +49,26 @@ void str_pop_back_word(Str *str) //{{{
             if(!ws && wsI) { ++len; break; }
         }
     }
-    str->last = str->first + len; // TODO:pointer-access
+    str->last = str->first + len;
 } //}}}
 
 void str_triml(Str *str) //{{{
 {
     ASSERT_ARG(str);
-    if(STR_SMALL_ACTIVE(str)) {
-        size_t i = 0;
-        while(i < STR_SHORT_CAP && isspace(str->small.s[i])) {
-            ++i;
-        }
-        memmove(str->small.s, str->small.s + i, sizeof(char));
-        STR_SMALL_LEN_ADD(str, -i);
-    } else {
-        while(str->first < str->last) {
-            char c = str->s[str->first];
-            if(!isspace(c)) break;
-            ++str->first;
-        }
+    while(str->first < str->last) {
+        char c = str->s[str->first];
+        if(!isspace(c)) break;
+        ++str->first;
     }
 } //}}}
 
 void str_trimr(Str *str) //{{{
 {
     ASSERT_ARG(str);
-    if(STR_SMALL_ACTIVE(str)) {
-        size_t i = STR_SMALL_LEN(str);
-        while(i && isspace(str->small.s[i])) {
-            --i;
-        }
-        str->small.s[i] = 0;
-        STR_SMALL_LEN_CLEAR(str);
-        STR_SMALL_LEN_ADD(str, i);
-    } else {
-        while(str->last > str->first) {
-            char c = str->s[str->last - 1];
-            if(!isspace(c)) break;
-            --str->last;
-        }
+    while(str->last > str->first) {
+        char c = str->s[str->last - 1];
+        if(!isspace(c)) break;
+        --str->last;
     }
 } //}}}
 
@@ -431,14 +90,9 @@ void str_cstr(const Str *str, char *cstr, size_t len) {
     snprintf(cstr, len, "%.*s", STR_F(str));
 }
 
-void str_clear_to_last(Str *str) { // TODO:REMOVE???
+void str_clear_to_last(Str *str) {
     ASSERT_ARG(str);
-    if(STR_SMALL_ACTIVE(str)) {
-        str->small.s[0] = 0;
-        STR_SMALL_LEN_CLEAR(str);
-    } else {
-        str->first = str->last; // TODO:pointer-access
-    }
+    str->first = str->last;
 }
 
 inline int str_fmt_va(Str *str, const char *format, va_list argp) //{{{
@@ -454,20 +108,15 @@ inline int str_fmt_va(Str *str, const char *format, va_list argp) //{{{
         THROW("len_app is < 0!");
     }
     // calculate required memory
-    //size_t len_new = str->last + len_app; //TODO:pointer-access
-    size_t len_new = str_alloced_bytes_in_use(str) + len_app; //TODO:pointer-access
+    size_t len_new = str->last + len_app;
     if(str_reserve(str, len_new)) {
         THROW("failed reserving %zu bytes!", len_new);
     }
     // actual append
-    int len_chng = vsnprintf(str_iter_end(str), len_app + 1, format, argp);
+    int len_chng = vsnprintf(&(str->s)[str->last], len_app + 1, format, argp);
     // check for success
     if(len_chng >= 0 && (size_t)len_chng <= len_app) {
-        if(STR_SMALL_ACTIVE(str)) {
-            STR_SMALL_LEN_ADD(str, len_chng);
-        } else {
-            str->last += (size_t)len_chng; // successful, change length
-        }
+        str->last += (size_t)len_chng; // successful, change length
     } else {
         THROW("len_chng is < 0!");
     }
@@ -599,9 +248,9 @@ int str_get_str(Str *str) //{{{
     int err = 0;
     int c = 0;
     while((c = getchar()) != '\n' && c != EOF) {
-        TRY(str_fmt(str, "%c", (char)c), ERR_STR_FMT);  /* append string */
+        TRYC(str_fmt(str, "%c", (char)c));  /* append string */
     }
-    if(!str->last && (!c || c == EOF || c == '\n')) { //TODO:pointer-access
+    if(!str->last && (!c || c == EOF || c == '\n')) {
         //THROW("an error"); /* TODO describe this error */
     }
 clean:
@@ -619,7 +268,7 @@ void str_remove_trailing_ch(Str *str, char ch, char ch_escape) //{{{
                 break;
             }
         }
-        --str->last; //TODO:pointer-access
+        --str->last;
     }
 } //}}}
 
@@ -1060,7 +709,7 @@ size_t str_rnch(const Str *str, char ch, size_t n) {
 size_t str_count_ch(const Str *str, char ch) {/*{{{*/
     ASSERT_ARG(str);
     size_t result = 0;
-    if(str->first < str->last) { /* TODO: add this to basically every string utility function :) */ // TODO:pointer-access
+    if(str->first < str->last) { /* TODO: add this to basically every string utility function :) */
         for(size_t i = 0; i < str_length(str); ++i) {
             char c = str_get_at(str, i);
             if(c == ch) ++result;
@@ -1093,7 +742,6 @@ size_t str_hash(const Str *a) //{{{
         unsigned char c = (unsigned char)str_get_at(a, i++);
         hash = ((hash << 5) + hash) + c; /* hash * 33 + c */
     }
-    //printff("hash %zx [%.*s]", hash, STR_F(a));
     return hash;
 } //}}}
 
@@ -1131,8 +779,7 @@ size_t str_hash_esci(const Str *a) {/*{{{*/
 Str str_splice(Str *to_splice, Str *prev_splice, char sep) {/*{{{*/
     ASSERT_ARG(to_splice);
     Str result = *to_splice;
-    if(prev_splice && str_length(prev_splice)) { // TODO:accessing s
-    //if(prev_splice && prev_splice->s) { // TODO:accessing s
+    if(prev_splice && prev_splice->s) {
         result.first += str_ch_from(to_splice, sep, 0, str_iter_begin(prev_splice) - str_iter_begin(to_splice)); // TODO is this really += ??
         if((size_t)(str_iter_begin(&result) - str_iter_begin(to_splice)) < str_length(to_splice)) {
             ++result.first;
@@ -1153,7 +800,7 @@ ErrDecl str_remove_escapes(Str *restrict out, Str *restrict in)
         char c = str_get_at(in, i);
         if(!skip) {
             if(c == '\033') {
-                TRY(str_fmt(out, "%.*s", (int)(i - iX), str_iter_at(in, iX)), ERR_STR_FMT);
+                TRYC(str_fmt(out, "%.*s", (int)(i - iX), str_iter_at(in, iX)));
                 skip = true;
 #if 0
             } else if(c == '\'') {
@@ -1161,7 +808,7 @@ ErrDecl str_remove_escapes(Str *restrict out, Str *restrict in)
                 iX = i + 1;
 #endif
             } else if(!isspace(c_last) && isspace(c)) {
-                TRY(str_fmt(out, "%.*s ", (int)(i - iX), str_iter_at(in, iX)), ERR_STR_FMT);
+                TRYC(str_fmt(out, "%.*s ", (int)(i - iX), str_iter_at(in, iX)));
                 iX = i + 1;
             } else if(isspace(c_last) && isspace(c)) {
                 iX = i + 1;
@@ -1175,7 +822,7 @@ ErrDecl str_remove_escapes(Str *restrict out, Str *restrict in)
         }
     }
     if(!skip) {
-        TRY(str_fmt(out, "%.*s", (int)(str_length(in) - iX), str_iter_at(in, iX)), ERR_STR_FMT);
+        TRYC(str_fmt(out, "%.*s", (int)(str_length(in) - iX), str_iter_at(in, iX)));
     }
     return 0;
 error:

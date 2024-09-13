@@ -120,6 +120,7 @@
         *items = malloc(sizeof(N##Item *) * lut->used); \
         if(!items) return -1; \
         *len = 0; \
+        printff("dump %zu used...", lut->used);\
         for(size_t i = 0; i < LUT_CAP(lut->width); i++) { \
             N##Item *item = lut->buckets[i]; \
             if(!item) continue; \
@@ -127,6 +128,7 @@
             if(*len + 1 > lut->used) return -1; \
             (*items)[(*len)++] = item; \
         } \
+        ASSERT(*len == lut->used, ERR_INTERNAL("less elements dumped than used: %zu/%zu"), *len, lut->used); \
         return 0; \
     }
 
@@ -240,6 +242,7 @@
         } else { \
             memcpy(LUT_REF(MV)(*item)->val, LUT_REF(MV)val, sizeof(TV)); \
         } \
+        /*printff("set %zx!", (*item)->hash);*/\
         (*item)->hash = hash; \
         ++lut->used; \
         return 0; \

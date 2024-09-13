@@ -53,12 +53,16 @@ ErrDecl cft_find_by_str(Cft *cft, TTrStr *base, TTrStrItem **table, const Str *t
     str_trim(&find);
     if(!str_length(&find)) return 0;
     /* now search */
+    //printff("HELLO");
+    //str_print_verbose(&find);
     info(INFO_tag_search, "Searching '%.*s'", STR_F(&find));
     *table = ttrstr_get_kv(base, &find);
     Str temp = {0};
     /* first add the tag to the file-specific table */
     if(!*table) {
         if(!create_if_nonexist) return 0;
+        //printff("============================");
+        //str_print_verbose(&find);
         info(INFO_tag_create, "Creating '%.*s'", STR_F(&find));
         str_zero(&temp);
         TRYC(str_copy(&temp, &find));
@@ -80,6 +84,7 @@ ErrDecl cft_add(Cft *cft, const Str *filename, const Str *tag) { //{{{
     Str find = *tag;
     /* search if we have a matching file ... */
     TTrStrItem *file_tags = 0;
+    //printff("add %.*s // %.*s", STR_F(tag), STR_F(filename));
     TRYC(cft_find_by_str(cft, &cft->base.file_tags, &file_tags, filename, true));
     if(!file_tags) return 0; //THROW(ERR_UNREACHABLE "; should have created/found a table");
     for(;;) {
@@ -134,6 +139,7 @@ ErrDecl cft_parse(Cft *cft, const Str *input, const Str *str) { //{{{
         Str tag = {0};
         for(;;) {
             tag = str_splice(&line, &tag, ',');
+            //str_print_verbose(&tag);
             //printff("TAG %zu..%zu:'%.*s'", tag.first, tag.last, STR_F(&tag));
             //printff("[%zu..%zu] %.*s", line.first, line.last, STR_F(&line));getchar();
             if(!filename.s) {
@@ -158,6 +164,8 @@ ErrDecl cft_parse(Cft *cft, const Str *input, const Str *str) { //{{{
                     }
                 }
             } else {
+            //str_print_verbose(&tag);
+            //str_print_verbose(&filename_real);
                 //printff("add %.*s to %.*s", STR_F(&tag), STR_F(&filename));
                 TRYC(cft_add(cft, &filename_real, &tag));
             }
@@ -461,6 +469,7 @@ ErrDecl cft_tags_add(Cft *cft, VrStr *files, Str *tags) { //{{{
         for(;;) {
             if(str_iter_end(&tag) >= str_iter_end(tags)) break;
             tag = str_splice(tags, &tag, ',');
+            //printff("add %.*s to %.*s", STR_F(&tag), STR_F(&tag));
             TRYC(cft_add(cft, file, &tag));
             //printff("tag [%.*s] with [%.*s]", STR_F(file), STR_F(&tag));
         }
@@ -540,6 +549,7 @@ ErrDecl cft_tags_fmt(Cft *cft, Str *out, VrStr *files) { //{{{
     /* all tags */
     for(size_t i = 0; i < vrtrtrstritem_length(&dump_tags); ++i) {
         TrTrStrItem *item = vrtrtrstritem_get_at(&dump_tags, i);
+        //printff("item %zu/%zu", i, vrtrtrstritem_length(&dump_tags));
         Str *tag = item->key;
         TrStr *sub = item->val;
         /* optional decoration & compact */

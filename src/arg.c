@@ -436,6 +436,7 @@ int arg_parse(Arg *args, size_t argc, const char **argv) /* {{{ */
         //printff("[%zu] argYY [%.*s] available ? %s", i, STR_F(&argYY), argYY_available ? "true" : "false");
         /* find matching argument from our list */
         for(;;) {
+            //printff("asdf");
             ArgList j = 0;
             err_arg_many = arg_many;
             for(j = 0; j < ARG__COUNT; ++j) {
@@ -455,8 +456,11 @@ int arg_parse(Arg *args, size_t argc, const char **argv) /* {{{ */
                 else if(i + argY_i + 1 < argc) argY = STR_L((char *)argv[i + argY_i + 1]);
                 /* parse & process */
                 //printff("[%s] argY = [%zu]->[%.*s]", arg_str(j), i+argY_i+1, STR_F(&argY));
+                //printff("0123");
                 TRY(static_arg_parse_spec(args, j, &argY, spec, &argY_consumed), ERR_ARG_PARSE_SPEC);
                 TRY(arg_static_execute(args, j, &argY), ERR_ARG_EXECUTE);
+                //printff("593");
+                TRY(static_arg_parse_spec(args, j, &argY, spec, &argY_consumed), ERR_ARG_PARSE_SPEC);
                 //printff("argY consumed? %s", argY_consumed ? "true" : "false");
                 if(argY_consumed) {
                     if(argYY_available) {
@@ -469,6 +473,7 @@ int arg_parse(Arg *args, size_t argc, const char **argv) /* {{{ */
                 //printff("[i+argY_i+1] = [%zu+%zu+1]", i, argY_i);
                 //getchar();
             }
+            //printff("xyz");
             /* confirm for a valid option */
             if(j == ARG__COUNT) {
                 if(arg_opt) {

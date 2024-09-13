@@ -5,86 +5,11 @@
 #include <stdarg.h>
 #include <stdbool.h>
 #include <stdint.h>
-#include <stdlib.h>
 
 #include "err.h"
 
 typedef uint8_t V3u8[3];
 
-#if 1
-
-typedef struct Str {
-    union {
-        struct {
-            char *s;
-            size_t first;
-            size_t last;
-            size_t cap;
-        };
-        struct {
-            char s[sizeof(size_t) * 3 + sizeof(char *) - 1];
-            uint8_t f;
-            //uint8_t len:7;
-            //uint8_t active:1;
-        } small;
-    };
-} Str;
-
-#define STR_MASK_ACTIVE     0x80
-#define STR_MASK_LEN        0x7F
-
-#define STR_SMALL_LEN_SET(str, len)     do { STR_SMALL_LEN_CLEAR(str); (str)->small.f |= (len & STR_MASK_LEN); } while(0)
-#define STR_SMALL_LEN_ADD(str, n)       (str)->small.f += (n)
-#define STR_SMALL_LEN_CLEAR(str)        ((str)->small.f &= ~STR_MASK_LEN)
-#define STR_SMALL_ENABLE(str)           ((str)->small.f |= STR_MASK_ACTIVE)
-#define STR_SMALL_DISABLE(str)          ((str)->small.f &= ~STR_MASK_ACTIVE)
-#define STR_SMALL_ACTIVE(str)           (bool)((str)->small.f & STR_MASK_ACTIVE)
-#define STR_SMALL_LEN(str)              (uint8_t)((str)->small.f & STR_MASK_LEN)
-
-void str_free(Str *str);
-void str_clear(Str *str);
-void str_zero(Str *str);
-size_t str_length(const Str *str);
-
-size_t str_alloced_bytes_in_use(Str *str);
-
-#define ERR_str_reserve(...) "failed reserving memory"
-ErrDecl str_copy(Str *dst, const Str *src);
-ErrDecl str_reserve(Str *str, size_t cap);
-ErrDecl str_push_back(Str *str, char c);
-ErrDecl str_push_front(Str *str, char c);
-
-void str_print_verbose(Str *str);
-
-void str_set_at(Str *str, size_t i, char c);
-
-#define ERR_str_extend_back(...) "asdf"
-ErrDecl str_extend_back(Str *str, Str *add);
-
-void str_pop_back(Str *str, char *c);
-void str_pop_front(Str *str, char *c);
-
-char str_get_front(const Str *str);
-char str_get_back(const Str *str);
-char str_get_at(const Str *str, size_t i);
-
-char *str_iter_begin(const Str *str);
-char *str_iter_end(const Str *str);
-char *str_iter_at(const Str *str, size_t i);
-
-#define STR_IS_SHORT(str)               (0)
-//#define STR_IS_SHORT(str)               ((str)->w[STR_SHORT_CAP] & 0x80)
-#define STR_SHORT_GET_LEN(str)          ((str)->w[STR_SHORT_CAP] & 0x7F)
-#define STR_SHORT_CAP                   (sizeof(Str) - 1)
-
-#define STR_SHORT_SET_LEN(str, len)     ((str)->w[STR_SHORT_CAP] = (len & 0x7F))
-
-#define STR_SHORT_ENABLE(str)           ((str)->w[STR_SHORT_CAP] |= 0x80)
-#define STR_SHORT_DISABLE(str)          ((str)->w[STR_SHORT_CAP] &= ~0x80)
-
-#define STR_LONG_DEFAULT_SIZE           (2*sizeof(Str))
-
-#else
 /* configuration, inclusion and de-configuration of vector */
 
 #define VEC_SETTINGS_DEFAULT_SIZE STR_DEFAULT_SIZE
@@ -92,8 +17,7 @@ char *str_iter_at(const Str *str, size_t i);
 #define VEC_SETTINGS_STRUCT_ITEMS s
 #include "vec.h"
 
-VEC_INCLUDE(Str, str, char, BY_VAL, BASE);
-#endif
+VEC_INCLUDE(Str, str, char, BY_VAL);
 
 #undef VEC_SETTINGS_STRUCT_ITEMS
 #undef VEC_SETTINGS_KEEP_ZERO_END
@@ -108,11 +32,8 @@ VEC_INCLUDE(Str, str, char, BY_VAL, BASE);
 #define STR_I0(str, i0)         (const Str){.s = (str).s, .first = ((str).first + i0 < (str).last) ? (str).first + i0 : (str).last, .last = (str).last}
 #define STR_IE(str, iE)         (const Str){.s = (str).s, .first = (str).first, .last = (str).first + iE}
 
-#define ERR_STR_CAT_BACK    "failed appending string to other string"
-#define ERR_STR_FMT         "failed string formatting"
-#define ERR_STR_COPY        "failed copying string"
-
-#define ERR_str_copy(v1, v2) "failed copying string"
+#define ERR_str_extend_back(...)    "failed appending string to other string"
+#define ERR_str_copy(...)           "failed copying string"
 
 /* other functions */
 
@@ -126,6 +47,11 @@ void str_remove_trailing_ch(Str *str, char ch, char ch_escape);
 
 void str_cstr(const Str *str, char *cstr, size_t len);
 void str_clear_to_last(Str *str);
+
+#define str_pop_front_raw(str, n)  do { \
+        (str)->s += (n); \
+        (str)->last -= (n); \
+    } while(0)
 
 #define ERR_str_fmt_va(str, format, argp) "failed formatting string"
 ErrDecl str_fmt_va(Str *str, const char *format, va_list argp);

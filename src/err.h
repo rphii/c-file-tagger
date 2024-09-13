@@ -3,6 +3,7 @@
 #include <stddef.h>
 #include <stdio.h>
 #include <assert.h>
+#include <stdlib.h>
 
 #include "colorprint.h"
 #include "attr.h"
@@ -27,6 +28,7 @@
 #define ERR_CLEAN           do { err = -1; goto clean; } while(0)
 
 /* general error messages */
+#define ERR_INTERNAL(msg)   "internal error: " msg
 #define ERR_MALLOC          "failed to malloc"
 #define ERR_CREATE_POINTER  "expected pointer to Create"
 #define ERR_SIZE_T_POINTER  "expected pointer to size_t"
@@ -101,6 +103,8 @@ void platform_trace(void);  /* implementation in platform.c */
 
 #define printff(fmt, ...)   do { /*printf("%s():%i: ", __func__, __LINE__);*/  \
         \
+        printf(fmt, ##__VA_ARGS__); \
+        printf(" * %s:%i\n", __func__, __LINE__); /*\
         int l = snprintf(0, 0, "* %s:%i ", __func__, __LINE__); \
         struct winsize w; \
         ioctl(STDOUT_FILENO, TIOCGWINSZ, &w); \
@@ -113,7 +117,7 @@ void platform_trace(void);  /* implementation in platform.c */
         } \
         }else{printf("%*s", missing, "");}\
         printf("* %s:%i \n", __func__, __LINE__); \
-        \
+        */\
     } while(0);
 
 //#define TRYF(function, ...)  TRY(function(__VA_ARGS__), function##_ERR(__VA_ARGS__))

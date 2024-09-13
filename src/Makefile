@@ -23,6 +23,7 @@ CFLAGS  := -Wall -Wextra -Wimplicit -Wfatal-errors -std=gnu2x \
 		   -DPROC_COUNT=$(shell nproc --all) \
 		   ${OPTIMIZE} $(JEMALLOC) \
 		   ##############\
+		   -Og -rdynamic -ggdb3 \
 		   -Og -fsanitize=address -rdynamic -ggdb3 \
 		   -Og -rdynamic -ggdb3 \
 		   -DCOLORPRINT_DISABLE \
@@ -34,7 +35,6 @@ LDFLAGS := \
 		   ##############\
 		   -Og -fsanitize=address -rdynamic -ggdb3 \
 		   -Og -rdynamic -ggdb3 \
-		   ${OPTIMIZE} $(JEMALLOC) \
 		   -pg -rdynamic \
 		   ##############
 CSUFFIX	:= .c

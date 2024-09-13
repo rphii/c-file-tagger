@@ -41,6 +41,8 @@ void info_handle_abort(void) {
         if(type == INFO_TYPE_CHECK && s_info.status[id] != INFO_STATUS_NONE) {
             info_check(id, false);
         }
+        Str *last = info_query_last(id);
+        str_free(last);
     }
     info_handle_end(INFO_NONE);
 }

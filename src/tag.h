@@ -1,6 +1,5 @@
 #ifndef TAG_H
 
-#include "slice.h"
 #include "vector.h"
 #include "str.h"
 #include "lookup.h"

@@ -28,6 +28,29 @@ FileTypeList file_get_type(Str *filename) {
     return 0;
 }
 
+FileTypeList file_get_type_faster(Str *filename, Str *buf) {
+#if defined(PLATFORM_WINDOWS)
+    ASSERT("not implemented");
+#else
+    struct stat s;
+#if 0
+    TRYC(str_copy(buf, filename));
+    //char path[FILE_PATH_MAX];
+    //str_cstr(filename, path, FILE_PATH_MAX);
+    printff("%.*s", STR_F(&buf));
+    int r = lstat(str_iter_begin(buf), &s);
+#endif
+    int r = lstat(str_iter_begin(filename), &s);
+    if(r) return FILE_TYPE_ERROR;
+    if(S_ISREG(s.st_mode)) return FILE_TYPE_FILE;
+    if(S_ISDIR(s.st_mode)) return FILE_TYPE_DIR;
+#endif
+    return 0;
+error:
+    return FILE_TYPE_ERROR;
+}
+
+
 int file_is_dir(const Str *filename)
 {
 #if defined(PLATFORM_WINDOWS)
@@ -191,8 +214,9 @@ ErrDecl file_exec(Str *dirname, VStr *subdirs, bool recursive, FileFunc exec, vo
     int err = 0;
     DIR *dir = 0;
     Str subdir = {0};
+    Str buf = {0};
     //printf("FILENAME: %.*s\n", STR_F(dirname));
-    FileTypeList type = file_get_type(dirname);
+    FileTypeList type = file_get_type_faster(dirname, &buf);
     if(type == FILE_TYPE_DIR) {
         if(!recursive) {
             THROW("will not go over '%.*s' (enable recursion to do so)", STR_F(dirname));
@@ -214,7 +238,7 @@ ErrDecl file_exec(Str *dirname, VStr *subdirs, bool recursive, FileFunc exec, vo
             if(len2 != strlen(filename)) THROW("should probably have len2!");
             //--len;
             Str filename2 = STR_LL(filename, len2);
-            FileTypeList type2 = file_get_type(&filename2);
+            FileTypeList type2 = file_get_type_faster(&filename2, &buf);
             if(type2 == FILE_TYPE_DIR) {
                 TRYC(str_fmt(&subdir, "%.*s", STR_F(&filename2)));
                 TRY(vstr_push_back(subdirs, &subdir), ERR_VEC_PUSH_BACK);
@@ -222,7 +246,7 @@ ErrDecl file_exec(Str *dirname, VStr *subdirs, bool recursive, FileFunc exec, vo
             } else if(type2 == FILE_TYPE_FILE) {
                 TRY(exec(&filename2, args), "an error occured while executing the function");
             } else {
-                info(INFO_skipping_nofile_nodir, "skipping '%.*s' since no regular file nor directory", STR_F(dirname));
+                info(INFO_skipping_nofile_nodir, "skipping '%.*s' since no regular file nor directory", STR_F(&filename2));
             }
         }
     } else if(type == FILE_TYPE_FILE) {
@@ -233,6 +257,7 @@ ErrDecl file_exec(Str *dirname, VStr *subdirs, bool recursive, FileFunc exec, vo
         info(INFO_skipping_nofile_nodir, "skipping '%.*s' since no regular file nor directory", STR_F(dirname));
     }
 clean:
+    str_free(&buf);
     str_free(&subdir);
     if(dir) closedir(dir);
     return err;

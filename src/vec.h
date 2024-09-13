@@ -421,11 +421,14 @@ typedef enum
                 temp = *A##_get_at(vec, i); \
                 /*for (j = i; j >= h && t < a[j - h]; j -= h) { */\
                 for (j = i; j >= h && CMP(&temp, A##_get_at(vec, j-h)) < 0; j -= h) { \
-                    A##_set_at(vec, j, A##_get_at(vec, j-h)); \
+                    T *dst = VEC_REF(M) *A##_static_get(vec, vec->first + j); \
+                    T *src = VEC_REF(M) *A##_static_get(vec, vec->first + j-h); \
+                    *dst = *src; \
                     /*a[j] = a[j - h]; */\
                 } \
                 /*a[j] = t; */\
-                A##_set_at(vec, j, &temp); \
+                T *item = VEC_REF(M) *A##_static_get(vec, vec->first + j); \
+                *item = temp; \
             } \
         } \
     }
