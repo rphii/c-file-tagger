@@ -258,7 +258,6 @@ error:
 ErrDecl cft_del_duplicate_folders(Cft *cft) { //{{{
     ASSERT_ARG(cft);
     int err = 0;
-    TrTrStr asdf = {0};
     for(size_t i = 0; i < LUT_CAP(cft->base.tag_files.width); ++i) {
         TTrStrItem *item = cft->base.tag_files.buckets[i];
         if(!item) continue;
@@ -708,7 +707,6 @@ ErrDecl cft_find_fmt(Cft *cft, Str *out, Str *find_any, Str *find_and, Str *find
             }
         }
         TRYC(str_fmt(out, "%.*s", STR_F(file)));
-        size_t ii, jj;
         if(cft->options.list_tags) {
             for(size_t j = 0; j < LUT_CAP(sub->width); ++j) {
                 TrStrItem *tag = sub->buckets[j];
