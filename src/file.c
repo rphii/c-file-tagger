@@ -57,9 +57,13 @@ int file_is_dir(const Str *filename)
     ASSERT("not implemented");
 #else
     struct stat s;
+#if 1
+    int r = lstat(str_iter_begin(filename), &s);
+#else
     char path[FILE_PATH_MAX];
     str_cstr(filename, path, FILE_PATH_MAX);
     int r = lstat(path, &s);
+#endif
     if(r) return 0;
     return S_ISDIR(s.st_mode);
 #endif

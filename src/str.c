@@ -34,7 +34,7 @@ inline size_t str_alloced_bytes_in_use(Str *str)
     }
 }
 
-static inline char *static_str_get_at(const Str *str, size_t i) /*{{{*/
+static inline char *static_str_iter_at(const Str *str, size_t i) /*{{{*/
 {
     if(STR_SMALL_ACTIVE(str)) {
         ASSERT(i < STR_SHORT_CAP, ERR_INTERNAL("index %zu too large for small string"), i);
@@ -45,6 +45,19 @@ static inline char *static_str_get_at(const Str *str, size_t i) /*{{{*/
         return &str->s[i];
     }
 } /*}}}*/
+
+static inline char static_str_get_at(const Str *str, size_t i) /*{{{*/
+{
+    if(STR_SMALL_ACTIVE(str)) {
+        ASSERT(i < STR_SHORT_CAP, ERR_INTERNAL("index %zu too large for small string"), i);
+        return str->small.s[i];
+    } else {
+        ASSERT(i >= str->first && i < str->last, ERR_INTERNAL("index %zu out of range [%zu..%zu["), i, str->first, str->last);
+        ASSERT(str->first <= str->last, ERR_INTERNAL("first index %zu not <= last index %zu"), str->first, str->last);
+        return str->s[i];
+    }
+} /*}}}*/
+
 
 inline void str_free(Str *str) /*{{{*/
 {
@@ -120,7 +133,6 @@ ErrImpl str_reserve(Str *str, size_t cap)
 {
     ASSERT_ARG(str);
     cap += 1; /* zero end */
-    size_t cap_is = str->cap;
     Str temp = {0};
 
     if(cap < STR_SHORT_CAP) {
@@ -170,7 +182,7 @@ ErrImpl str_push_back(Str *str, char c) /*{{{*/
     }
     ASSERT(str_length(str) == len, ERR_INTERNAL(ERR_UNREACHABLE));
     /* actually push */
-    char *s = static_str_get_at(str, len);
+    char *s = static_str_iter_at(str, len);
     s[0] = c;
     s[1] = 0;
     return 0;
@@ -191,7 +203,7 @@ ErrImpl str_push_front(Str *str, char c) /*{{{*/
     }
     ASSERT(str_length(str) == len, ERR_INTERNAL(ERR_UNREACHABLE));
     /* actually push */
-    char *s = static_str_get_at(str, 0);
+    char *s = static_str_iter_at(str, 0);
     memmove(s + 1, s, len);
     *s = c;
     return 0;
@@ -202,7 +214,7 @@ error:
 inline void str_set_at(Str *str, size_t i, char c)
 {
     ASSERT_ARG(str);
-    char *s = static_str_get_at(str, i);
+    char *s = static_str_iter_at(str, i);
     *s = c;
 }
 
@@ -234,10 +246,10 @@ inline void str_pop_back(Str *str, char *c) /*{{{*/
     ASSERT_ARG(str);
     char *s = 0;
     if(STR_SMALL_ACTIVE(str)) {
-        s = static_str_get_at(str, STR_SMALL_LEN(str));
+        s = static_str_iter_at(str, STR_SMALL_LEN(str));
         STR_SMALL_LEN_ADD(str, -1);
     } else {
-        s = static_str_get_at(str, str->last - 1);
+        s = static_str_iter_at(str, str->last - 1);
         --str->last;
     }
     if(c) *c = *s;
@@ -253,9 +265,9 @@ inline void str_pop_front(Str *str, char *c) /*{{{*/
         if(c) *c = c0;
         STR_SMALL_LEN_ADD(str, -1);
     } else {
-        char *s = static_str_get_at(str, str->first);
+        char c_here = static_str_get_at(str, str->first);
         ++str->first;
-        if(c) *c = *s;
+        if(c) *c = c_here;
     }
 } /*}}}*/
 
@@ -267,7 +279,7 @@ inline char str_get_front(const Str *str)
     if(STR_SMALL_ACTIVE(str)) {
         return str->small.s[0];
     } else {
-        return *static_str_get_at(str, str->first);
+        return static_str_get_at(str, str->first);
     }
 }
 
@@ -275,20 +287,24 @@ inline char str_get_back(const Str *str)
 {
     ASSERT_ARG(str);
     if(STR_SMALL_ACTIVE(str)) {
-        return *static_str_get_at(str, STR_SMALL_LEN(str));
+        return static_str_get_at(str, STR_SMALL_LEN(str));
     } else {
-        return *static_str_get_at(str, str->last - 1);
+        return static_str_get_at(str, str->last - 1);
     }
 }
 
 inline char str_get_at(const Str *str, size_t i)
 {
     ASSERT_ARG(str);
-    if(STR_SMALL_ACTIVE(str)) {
-        return *static_str_get_at(str, i);
-    } else {
-        return *static_str_get_at(str, str->first + i);
+    switch((int)STR_SMALL_ACTIVE(str)) {
+        case 0: return static_str_get_at(str, str->first + i);
+        default: return static_str_get_at(str, i);
     }
+    //if(STR_SMALL_ACTIVE(str)) {
+    //    return static_str_get_at(str, i);
+    //} else {
+    //    return static_str_get_at(str, str->first + i);
+    //}
 }
 
 
@@ -321,9 +337,9 @@ inline char *str_iter_at(const Str *str, size_t i)
 {
     ASSERT_ARG(str);
     if(STR_SMALL_ACTIVE(str)) {
-        return static_str_get_at(str, i);
+        return static_str_iter_at(str, i);
     } else {
-        return static_str_get_at(str, str->first + i);
+        return static_str_iter_at(str, str->first + i);
     }
 }
 
@@ -785,7 +801,8 @@ inline int str_cmp_ci(const Str *a, const Str *b) {/*{{{*/
     ASSERT_ARG(a);
     ASSERT_ARG(b);
     if(str_length(a) != str_length(b)) return -1;
-    for (size_t i = 0; i < str_length(a); ++i) {
+    size_t len = str_length(a);
+    for (size_t i = 0; i < len; ++i) {
         int d = tolower(str_get_at(a, i)) - tolower(str_get_at(b, i));
         if (d != 0) return d;
     }
@@ -943,7 +960,8 @@ inline size_t str_find_any(const Str *str, const Str *any) { //{{{
     ASSERT_ARG(str);
     ASSERT_ARG(any);
     size_t result = str_length(str);
-    for(size_t i = 0; i < str_length(any); ++i) {
+    size_t len = str_length(any);
+    for(size_t i = 0; i < len; ++i) {
         size_t temp = str_ch(str, str_get_at(any, i), 0);
         if(temp < result) result = temp;
     }
@@ -953,7 +971,8 @@ inline size_t str_find_any(const Str *str, const Str *any) { //{{{
 inline size_t str_find_nany(const Str *str, const Str *any) { //{{{
     ASSERT_ARG(str);
     ASSERT_ARG(any);
-    for(size_t i = 0; i < str_length(str); ++i) {
+    size_t len = str_length(str);
+    for(size_t i = 0; i < len; ++i) {
         size_t temp = str_ch(any, str_get_at(str, i), 0);
         if(temp >= str_length(any)) return i;
     }
@@ -963,7 +982,8 @@ inline size_t str_find_nany(const Str *str, const Str *any) { //{{{
 inline size_t str_nch(const Str *str, char ch, size_t n) { //{{{
     ASSERT_ARG(str);
     size_t ni = 0;
-    for(size_t i = 0; i < str_length(str); ++i) {
+    size_t len = str_length(str);
+    for(size_t i = 0; i < len; ++i) {
         char c = str_get_at(str, i);
         if(c != ch) {
             if(ni == n) return i;
@@ -976,8 +996,10 @@ inline size_t str_nch(const Str *str, char ch, size_t n) { //{{{
 inline size_t str_ch(const Str *str, char ch, size_t n) { //{{{
     ASSERT_ARG(str);
     size_t ni = 0;
-    for(size_t i = 0; i < str_length(str); ++i) {
-        char c = str_get_at(str, i);
+    size_t len = str_length(str);
+    char *s = str_iter_begin(str);
+    for(size_t i = 0; i < len; ++i) {
+        char c = s[i];
         if(c == ch) {
             if(ni == n) return i;
             ++ni;
@@ -998,7 +1020,8 @@ inline size_t str_ch_pair(const Str *str, char c1) { //{{{
     if(!str_length(str)) return str_length(str);
     size_t level = 1;
     char c0 = str_get_at(str, 0);
-    for(size_t i = 1; i < str_length(str); ++i) {
+    size_t len = str_length(str);
+    for(size_t i = 1; i < len; ++i) {
         char c = str_get_at(str, i);
         if(c == c0) level++;
         else if(c == c1) level--;
@@ -1009,7 +1032,8 @@ inline size_t str_ch_pair(const Str *str, char c1) { //{{{
 
 inline size_t str_find_ws(const Str *str) { //{{{
     ASSERT_ARG(str);
-    for(size_t i = 0; i < str_length(str); ++i) {
+    size_t len = str_length(str);
+    for(size_t i = 0; i < len; ++i) {
         char c = str_get_at(str, i);
         if(isspace(c)) return i;
     }
@@ -1018,7 +1042,8 @@ inline size_t str_find_ws(const Str *str) { //{{{
 
 inline size_t str_find_nws(const Str *str) { //{{{
     ASSERT_ARG(str);
-    for(size_t i = 0; i < str_length(str); ++i) {
+    size_t len = str_length(str);
+    for(size_t i = 0; i < len; ++i) {
         char c = str_get_at(str, i);
         if(!isspace(c)) return i;
     }
@@ -1028,7 +1053,8 @@ inline size_t str_find_nws(const Str *str) { //{{{
 // find reverse non-whitespace
 inline size_t str_find_rnws(const Str *str) { //{{{
     ASSERT_ARG(str);
-    for(size_t i = str_length(str); i > 0; --i) {
+    size_t len = str_length(str);
+    for(size_t i = len; i > 0; --i) {
         char c = str_get_at(str, i - 1);
         if(!isspace(c)) return i - 1;
     }
@@ -1039,8 +1065,10 @@ inline size_t str_rch(const Str *str, char ch, size_t n) //{{{
 {
     ASSERT_ARG(str);
     size_t ni = 0;
-    for(size_t i = str_length(str); i > 0; --i) {
-        char c = str_get_at(str, i - 1);
+    size_t len = str_length(str);
+    char *s = str_iter_begin(str);
+    for(size_t i = len; i > 0; --i) {
+        char c = s[i - 1];
         if(c == ch) {
             if(ni == n) return i - 1;
             ++ni;
@@ -1052,7 +1080,8 @@ inline size_t str_rch(const Str *str, char ch, size_t n) //{{{
 inline size_t str_rnch(const Str *str, char ch, size_t n) {
     ASSERT_ARG(str);
     size_t ni = 0;
-    for(size_t i = str_length(str); i > 0; --i) {
+    size_t len = str_length(str);
+    for(size_t i = len; i > 0; --i) {
         char c = str_get_at(str, i - 1);
         if(c != ch) {
             if(ni == n) return i - 1;
@@ -1066,7 +1095,8 @@ inline size_t str_count_ch(const Str *str, char ch) {/*{{{*/
     ASSERT_ARG(str);
     size_t result = 0;
     if(str->first < str->last) { /* TODO: add this to basically every string utility function :) */ // TODO:pointer-access
-        for(size_t i = 0; i < str_length(str); ++i) {
+        size_t len = str_length(str);
+        for(size_t i = 0; i < len; ++i) {
             char c = str_get_at(str, i);
             if(c == ch) ++result;
         }
@@ -1158,7 +1188,8 @@ ErrImpl str_remove_escapes(Str *restrict out, Str *restrict in)
     bool skip = 0;
     size_t iX = 0;
     char c_last = 0;
-    for(size_t i = 0; i < str_length(in); i++) {
+    size_t len = str_length(in);
+    for(size_t i = 0; i < len; i++) {
         char c = str_get_at(in, i);
         if(!skip) {
             if(c == '\033') {
