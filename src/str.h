@@ -24,8 +24,6 @@ typedef struct Str {
         struct {
             char s[sizeof(size_t) * 3 + sizeof(char *) - 1];
             uint8_t f;
-            //uint8_t len:7;
-            //uint8_t active:1;
         } small;
     };
 } Str;

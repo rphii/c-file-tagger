@@ -232,7 +232,6 @@ error:
     return -1;
 } //}}}
 
-
 ErrDecl cft_parse_file(Str *filename, void *cft_void) //{{{
 {
     ASSERT_ARG(cft_void);

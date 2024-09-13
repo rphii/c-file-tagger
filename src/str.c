@@ -29,7 +29,6 @@ size_t str_alloced_bytes_in_use(Str *str)
 {
     if(STR_SMALL_ACTIVE(str)) {
         return STR_SMALL_LEN(str);
-        return 0;
     } else {
         return str->last;
     }
@@ -78,11 +77,17 @@ void str_zero(Str *str) /*{{{*/
 size_t str_length(const Str *str) /*{{{*/
 {
     ASSERT_ARG(str);
+#if 1
+    size_t active = (bool)(STR_SMALL_ACTIVE(str));
+    size_t length = (str->last - str->first) * !active + (STR_SMALL_LEN(str)) * active;
+    return length;
+#else
     if(STR_SMALL_ACTIVE(str)) {
         return STR_SMALL_LEN(str);
     } else {
         return str->last - str->first;
     }
+#endif
 } /*}}}*/
 
 
@@ -1089,9 +1094,12 @@ size_t str_hash(const Str *a) //{{{
     ASSERT_ARG(a);
     size_t hash = 5381;
     size_t i = 0;
-    while(i < str_length(a)) {
-        unsigned char c = (unsigned char)str_get_at(a, i++);
-        hash = ((hash << 5) + hash) + c; /* hash * 33 + c */
+    if(str_length(a)) {
+        char *s = str_iter_begin(a);
+        while(i < str_length(a)) {
+            unsigned char c = s[i++];
+            hash = ((hash << 5) + hash) + c; /* hash * 33 + c */
+        }
     }
     //printff("hash %zx [%.*s]", hash, STR_F(a));
     return hash;
