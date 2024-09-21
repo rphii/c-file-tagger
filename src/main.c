@@ -22,16 +22,6 @@ int main(int argc, const char **argv)
 
     //setvbuf(stdout, 0, _IOFBF, 0x10000);
 
-#if 0
-    TrStr lut = {0};
-    Str key = STR("fuckyou");
-    TRYG(trstr_set(&lut, &key, 0));
-    trstr_del(&lut, &key);
-    if(trstr_get(&lut, &STR("fuckyou"))) {
-        printff("EXISTS");
-    }
-#endif
-
     info_disable_all(INFO_LEVEL_ALL);
     //info_enable(INFO_tag_search, INFO_LEVEL_ALL);
     //info_enable(INFO_tag_create, INFO_LEVEL_ALL);
@@ -50,7 +40,6 @@ int main(int argc, const char **argv)
 
     TRY(arg_parse(&arg, argc > 0 ? (size_t)argc : 0, argv), ERR_ARG_PARSE);
     if(arg.exit_early) goto clean;
-    //screen_enter();
 
     /* program start */
     TRYC(cft_arg(&cft, &arg));
@@ -135,7 +124,6 @@ clean:
     cft_free(&cft);
     arg_free(&arg);
     info_handle_abort();
-    //screen_leave();
     return err;
 error:
     ERR_CLEAN;
