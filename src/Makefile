@@ -42,7 +42,7 @@ HSUFFIX	:= .h
 
 #### End of system configuration section. ####
 
-APPNAME = cft
+APPNAME = cft.out
 
 # Path for important files
 # .c and .h files

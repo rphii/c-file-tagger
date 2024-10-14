@@ -1,6 +1,6 @@
 *.o
 *.d
-src/cft
+src/cft.out
 *.txt
 data
 *.vim
