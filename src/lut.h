@@ -60,12 +60,15 @@
     void A##_free(N *lut); \
     void A##_clear(N *lut); \
     int A##_grow(N *lut, size_t width); \
+    N##Item *A##_once(N *lut, const LUT_ITEM(TK, MK) key, LUT_ITEM(TV, MV) val); \
     int A##_set(N *lut, const LUT_ITEM(TK, MK) key, LUT_ITEM(TV, MV) val); \
     TV *A##_get(N *lut, const LUT_ITEM(TK, MK) key); \
     N##Item *A##_get_kv(N *lut, const LUT_ITEM(TK, MK) key); \
     void A##_del(N *lut, const LUT_ITEM(TK, MK) key); \
+    N##Item **A##_iter_all(N *lut, N##Item **item); \
     int A##_dump(N *lut, N##Item ***items, size_t *len); \
     /* error strings for certain fail cases */ \
+    char *ERR_##A##_once(void *x, ...); \
     char *ERR_##A##_set(void *x, ...); \
     char *ERR_##A##_grow(void *x, ...); \
     char *ERR_##A##_dump(void *x, ...); \
@@ -76,16 +79,43 @@
     LUT_IMPLEMENT_COMMON_FREE(N, A, TK, MK, TV, MV, H, C, FK, FV) \
     LUT_IMPLEMENT_COMMON_CLEAR(N, A, TK, MK, TV, MV, H, C, FK, FV) \
     LUT_IMPLEMENT_COMMON_GROW(N, A, TK, MK, TV, MV, H, C, FK, FV) \
+    LUT_IMPLEMENT_COMMON_ONCE(N, A, TK, MK, TV, MV, H, C, FK, FV) \
     LUT_IMPLEMENT_COMMON_SET(N, A, TK, MK, TV, MV, H, C, FK, FV) \
     LUT_IMPLEMENT_COMMON_GET(N, A, TK, MK, TV, MV, H, C, FK, FV) \
     LUT_IMPLEMENT_COMMON_GET_KV(N, A, TK, MK, TV, MV, H, C, FK, FV) \
     LUT_IMPLEMENT_COMMON_DEL(N, A, TK, MK, TV, MV, H, C, FK, FV) \
     LUT_IMPLEMENT_COMMON_DUMP(N, A, TK, MK, TV, MV, H, C, FK, FV) \
+    LUT_IMPLEMENT_COMMON_ITER_ALL(N, A, TK, MK, TV, MV, H, C, FK, FV) \
     /* error strings for certain fail cases */ \
+    char *ERR_##A##_once(void *x, ...) { return "failed setting value once"; } \
     char *ERR_##A##_set(void *x, ...) { return ERR_LUT_SET; } \
     char *ERR_##A##_grow(void *x, ...) { return ERR_LUT_GROW; } \
     char *ERR_##A##_dump(void *x, ...) { return ERR_LUT_DUMP; } \
     /****************************************/
+
+#define LUT_IMPLEMENT_COMMON_ITER_ALL(N, A, TK, MK, TV, MV, H, C, FK, FV) \
+    N##Item **A##_iter_all(N *lut, N##Item **item) { \
+        LUT_ASSERT_ARG(lut); \
+        if(!lut->width) return 0; \
+        N##Item **result = {0}; \
+        if(!item) { \
+            result = &lut->buckets[0]; \
+        } else { \
+            result = item + 1; \
+        } \
+        size_t i = result - lut->buckets; /*0;*/ \
+        for(i = result - lut->buckets; i < LUT_CAP(lut->width); ++i) { \
+            result = &lut->buckets[i]; \
+            if(!*result) continue; \
+            if((*result)->hash == LUT_EMPTY) continue; \
+            break; \
+        } \
+        if(i < LUT_CAP(lut->width)) { \
+            return result; \
+        } else { \
+            return 0; \
+        } \
+    }
 
 #define LUT_IMPLEMENT_COMMON_STATIC_GET_ITEM(N, A, TK, MK, TV, MV, H, C, FK, FV) \
     static N##Item **A##_static_get_item(N *lut, const LUT_ITEM(TK, MK) key, size_t hash, bool intend_to_set) { \
@@ -197,6 +227,53 @@
         return 0; \
     }
 
+#define LUT_IMPLEMENT_COMMON_ONCE(N, A, TK, MK, TV, MV, H, C, FK, FV) \
+    N##Item *A##_once(N *lut, const LUT_ITEM(TK, MK) key, LUT_ITEM(TV, MV) val) { \
+        LUT_ASSERT_ARG(lut); \
+        LUT_ASSERT_ARG_M(key, MK); \
+        if(2 * lut->used >= LUT_CAP(lut->width)) { \
+            if(A##_grow(lut, lut->width + 2)) return 0; \
+        } \
+        size_t hash = H(key); \
+        N##Item **item = A##_static_get_item(lut, key, hash, true); \
+        if(*item) { \
+            return 0; \
+        } else { \
+            size_t req = sizeof(**item); \
+            if(LUT_IS_BY_REF(MK)) { \
+                req += sizeof(*LUT_REF(MK)(*item)->key); \
+            } \
+            if(LUT_IS_BY_REF(MV)) { \
+                req += sizeof(*LUT_REF(MV)(*item)->val); \
+            } \
+            *item = malloc(req); \
+            memset(*item, 0, req); \
+            if(!*item) return 0; \
+            if(LUT_IS_BY_REF(MK)) { \
+                N##Item *p = (N##Item *)((uint8_t *)*item + sizeof(**item) + 0); \
+                memset(p, 0, sizeof((*item)->key)); \
+                memcpy(&(*item)->key, &p, sizeof((*item)->key)); \
+            } \
+            if(LUT_IS_BY_REF(MV)) { \
+                N##Item *p = (N##Item *)((uint8_t *)*item + sizeof(**item) + sizeof(*LUT_REF(MK)(*item)->key)); \
+                memset(p, 0, sizeof((*item)->val)); \
+                memcpy(&(*item)->val, &p, sizeof((*item)->val)); \
+            } \
+        } \
+        memcpy(LUT_REF(MK)(*item)->key, LUT_REF(MK)key, sizeof(TK)); \
+        if(LUT_IS_BY_REF(MV)) { \
+            if(LUT_REF(MV)val != 0) { \
+                memcpy(LUT_REF(MV)(*item)->val, LUT_REF(MV)val, sizeof(TV)); \
+            } \
+        } else { \
+            memcpy(LUT_REF(MV)(*item)->val, LUT_REF(MV)val, sizeof(TV)); \
+        } \
+        (*item)->hash = hash; \
+        ++lut->used; \
+        return *item; \
+    }
+
+
 #define LUT_IMPLEMENT_COMMON_SET(N, A, TK, MK, TV, MV, H, C, FK, FV) \
     int A##_set(N *lut, const LUT_ITEM(TK, MK) key, LUT_ITEM(TV, MV) val) { \
         LUT_ASSERT_ARG(lut); \
@@ -222,12 +299,12 @@
             memset(*item, 0, req); \
             if(!*item) return -1; \
             if(LUT_IS_BY_REF(MK)) { \
-                void *p = (void *)*item + sizeof(**item) + 0; \
+                void *p = (uint8_t *)*item + sizeof(**item) + 0; \
                 memset(p, 0, sizeof((*item)->key)); \
                 memcpy(&(*item)->key, &p, sizeof((*item)->key)); \
             } \
             if(LUT_IS_BY_REF(MV)) { \
-                void *p = (void *)*item + sizeof(**item) + sizeof(*LUT_REF(MK)(*item)->key); \
+                void *p = (uint8_t *)*item + sizeof(**item) + sizeof(*LUT_REF(MK)(*item)->key); \
                 memset(p, 0, sizeof((*item)->val)); \
                 memcpy(&(*item)->val, &p, sizeof((*item)->val)); \
             } \
@@ -273,9 +350,10 @@
         size_t hash = H(key); \
         N##Item *item = *A##_static_get_item(lut, key, hash, false); \
         if(item) { \
-            item->hash = LUT_EMPTY; \
             if(FK != 0) LUT_TYPE_FREE(FK, item->key, TK, MK); \
             if(FV != 0) LUT_TYPE_FREE(FV, item->val, TV, MV); \
+            memset(item, 0, sizeof(*item)); \
+            item->hash = LUT_EMPTY; \
         } \
     }
 
