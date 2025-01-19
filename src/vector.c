@@ -60,10 +60,12 @@ void vrtrstritem_sort(VrTrStrItem *vec)
 VEC_IMPLEMENT(VStr, vstr, Str, BY_REF, BASE, str_free);
 VEC_IMPLEMENT(VStr, vstr, Str, BY_REF, ERR);
 VEC_IMPLEMENT(VrStr, vrstr, Str, BY_REF, BASE, 0);
+VEC_IMPLEMENT(VrStr, vrstr, Str, BY_REF, SORT, str_cmp_sortable);
 VEC_IMPLEMENT(VrStr, vrstr, Str, BY_REF, ERR);
 
 VEC_IMPLEMENT(VSlice, vslice, Slice, BY_VAL, BASE, 0);
 
+#if 0
 void vrstr_sort(VrStr *vec, size_t *counts)
 {
     /* shell sort, https://rosettacode.org/wiki/Sorting_algorithms/Shell_sort#C */
@@ -87,6 +89,7 @@ void vrstr_sort(VrStr *vec, size_t *counts)
         }
     }
 }
+#endif
 
 
 

@@ -5,13 +5,12 @@
 /* other types of lookup tables */
 
 typedef struct Str Str;
-typedef struct RStr RStr;
 typedef struct Tag Tag;
 typedef struct TagRef TagRef;
 
-LUT_INCLUDE(TrStr, trstr, RStr, BY_REF, void *, BY_VAL);
-LUT_INCLUDE(TTrStr, ttrstr, RStr, BY_REF, TrStr, BY_REF);
-LUT_INCLUDE(TrTrStr, trtrstr, RStr, BY_REF, TrStr, BY_REF);
+LUT_INCLUDE(TrStr, trstr, Str, BY_REF, void *, BY_VAL);
+LUT_INCLUDE(TTrStr, ttrstr, Str, BY_REF, TrStr, BY_REF);
+LUT_INCLUDE(TrTrStr, trtrstr, Str, BY_REF, TrStr, BY_REF);
 
 int trtrstritem_cmp(const TrTrStrItem *a, const TrTrStrItem *b);
 int ttrstritem_cmp(const TTrStrItem *a, const TTrStrItem *b);

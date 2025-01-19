@@ -17,7 +17,6 @@ void platform_path_up(RStr *path);
 #define ERR_platform_expand_path(...) "failed expanding path"
 ErrDecl platform_expand_path(Str *path, const Str *base, const Str *home);
 
-
 #define ERR_platform_file
 
 int platform_getch(void);

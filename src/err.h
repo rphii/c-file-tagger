@@ -79,7 +79,10 @@
         } \
     } while(0)
 
+void platform_trace(void);
+
 #define ABORT(fmt, ...)      do { \
+    platform_trace(); \
     ERR_PRINTF(F("[ABORT]", BOLD FG_BK BG_RD_B) " " F("%s:%d:%s (end of trace)", FG_WT_B) " " fmt "\n" , __FILE__, __LINE__, __func__, ##__VA_ARGS__); exit(-1); } while(0)
 
 #define INFO(fmt, ...)       do { \
