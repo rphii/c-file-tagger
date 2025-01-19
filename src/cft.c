@@ -44,27 +44,28 @@ error:
 } //}}}
 
 #define ERR_cft_find_by_str(...)    "failed adding string to table"
-ErrDecl cft_find_by_str(Cft *cft, TTrStr *base, TTrStrItem **table, const RStr tag, bool create_if_nonexist) { //{{{
+ErrDecl cft_find_by_str(Cft *cft, TTrStr *base, TTrStrItem **table, const Str tag, bool create_if_nonexist) { //{{{
     ASSERT_ARG(cft);
     ASSERT_ARG(base);
     ASSERT_ARG(table);
     /* prepare to search */
-    RStr find = rstr_trim(tag);
-    if(!rstr_length(find)) return 0;
+    Str find = RSTR_STR(str_trim(tag));
+    if(!str_length(find)) return 0;
+    const Str *findx = &STR_LL(str_iter_begin(find), str_length(find));
     /* now search */
-    info(INFO_tag_search, "Searching '%.*s'", RSTR_F(find));
+    info(INFO_tag_search, "Searching '%.*s'", STR_F(find));
     if(!cft->options.partial) {
     //printff("SEARCHING PARTIALLY? %u", cft->options.partial);
-        *table = ttrstr_get_kv(base, &find);
+        *table = ttrstr_get_kv(base, findx);
         Str temp = {0};
         /* first add the tag to the file-specific table */
         if(!*table) {
             if(!create_if_nonexist) return 0;
-            info(INFO_tag_create, "Creating '%.*s'", RSTR_F(find));
-            //str_zero(&temp); //?????
-            //TRYG(str_copy(&temp, &find)); //?????
-            TRYG(ttrstr_set(base, &find, 0));
-            *table = ttrstr_get_kv(base, &find);
+            info(INFO_tag_create, "Creating '%.*s'", STR_F(find));
+            str_zero(&temp);
+            TRYG(str_copy(&temp, &find));
+            TRYG(ttrstr_set(base, &temp, 0));
+            *table = ttrstr_get_kv(base, findx);
             ASSERT(*table, ERR_UNREACHABLE);
             info_check(INFO_tag_create, true);
         }
@@ -85,14 +86,14 @@ error:
 ErrDecl cft_add(Cft *cft, const Str filename, const RStr tag) { //{{{
     ASSERT_ARG(cft);
     /* prepare to search */
-    RStr find = rstr_trim(tag);
+    Str find = RSTR_STR(rstr_trim(tag));
     /* search if we have a matching file ... */
     TTrStrItem *file_tags = 0;
-    TRYC(cft_find_by_str(cft, &cft->base.file_tags, &file_tags, str_rstr(filename), true));
+    TRYC(cft_find_by_str(cft, &cft->base.file_tags, &file_tags, filename, true));
     if(!file_tags) return 0; //THROW(ERR_UNREACHABLE "; should have created/found a table");
     for(;;) {
         /* prepare string */
-        if(!rstr_length(find)) break;
+        if(!str_length(find)) break;
         /* find entry */
         TTrStrItem *tag_files = 0;
         TRYC(cft_find_by_str(cft, &cft->base.tag_files, &tag_files, find, true));
@@ -101,8 +102,8 @@ ErrDecl cft_add(Cft *cft, const Str filename, const RStr tag) { //{{{
         trstr_set(file_tags->val, tag_files->key, 0);
         trstr_set(tag_files->val, file_tags->key, 0);
         /* check next : */
-        size_t iE = rstr_rfind_ch(find, ':', 0);
-        if(iE >= rstr_length(find)) break;
+        size_t iE = str_rfind_ch(find, ':', 0);
+        if(iE >= str_length(find)) break;
         find.last = find.first + iE;
     }
     return 0;
@@ -127,14 +128,12 @@ ErrDecl cft_parse(Cft *cft, const RStr input, const Str *str) { //{{{
 #if 1
     size_t line_number = 0;
     info(INFO_parsing, "Parsing");
-    RStr line = str_rstr(*str);
     //printff("str_length %zu", str_length(str));
     Str filename_real = {0};
     Str prepend = {0};
     TRYC(str_fmt(&prepend, "%.*s", RSTR_F(input)));
     TRYC(platform_expand_path(&prepend, &cft->misc.current_dir, &cft->misc.homedir));
-    for(RStr iter = {0}; iter.first < str->last; line.s ? ++line_number : line_number, line = str_splice(*str, &line, '\n'), line = rstr_trim(line)) {
-        //printf("%zu\r", line_number);
+    for(RStr iter = {0}, line = {0}; iter.first < str->last; line.s ? ++line_number : line_number, iter = str_splice(*str, &iter, '\n'), line = rstr_trim(iter)) {
         RStr filename = {0};
         RStr tag = {0};
         for(;;) {
@@ -158,12 +157,11 @@ ErrDecl cft_parse(Cft *cft, const RStr input, const Str *str) { //{{{
                         TRYC(str_fmt(&filename_real, "%.*s", RSTR_F(filename)));
                         TRYC(platform_expand_path(&filename_real, &prepend, &cft->misc.homedir));
                     } else {
-                        //filename_real = filename;
-                        TRYG(rstr_copy(&filename_real, &filename));
+                        filename_real = RSTR_STR(filename);
                     }
                 }
             } else {
-                //printff("add %.*s to %.*s", STR_F(&tag), STR_F(&filename));
+                //printff(">>> TAG [%.*s] with [%.*s]", STR_F(filename_real), RSTR_F(tag));
                 TRYC(cft_add(cft, filename_real, tag));
             }
             if(tag.first >= line.last) { break;}
@@ -238,9 +236,9 @@ ErrDecl cft_parse_file(RStr filename, void *cft_void) //{{{
 
     TRYC(cft_file_prepare(cft, filename));
     if(str_length(cft->parse.content)) {
+        //printff("FILE %.*s", RSTR_F(filename));return 0;
         TRYC(cft_parse(cft, filename, &cft->parse.content));
         info_check(INFO_parsing_file, true);
-        //++btw->stats.success;
     }
 clean:
     return err;
@@ -265,18 +263,19 @@ ErrDecl cft_del_duplicate_folders(Cft *cft) { //{{{
         TTrStrItem *item = cft->base.tag_files.buckets[i];
         if(!item) continue;
         if(item->hash == LUT_EMPTY) continue;
-        RStr *tag = item->key;
+        RStr tag = str_rstr(*item->key);
         TrStr *sub = item->val;
-        size_t iE = rstr_rfind_ch(*tag, ':', 0);
-        if(iE >= rstr_length(*tag)) continue;
-        RStr remove = str_trim(STR_IE(*tag, iE));
-        if(!rstr_length(remove)) continue;
+        size_t iE = rstr_rfind_ch(tag, ':', 0);
+        if(iE >= rstr_length(tag)) continue;
+        Str remove = RSTR_STR(rstr_trim(RSTR_IE(tag, iE)));
+        if(!str_length(remove)) continue;
         for(size_t j = 0; j < LUT_CAP(sub->width); ++j) {
             TrStrItem *item2 = sub->buckets[j];
             if(!item2) continue;
             if(item2->hash == LUT_EMPTY) continue;
-            RStr *file = item2->key;
-            TrStr *modify = ttrstr_get(&cft->base.file_tags, file);
+            Str *file = item2->key;
+            Str filex = STR_LL(str_iter_begin(*file), str_length(*file));
+            TrStr *modify = ttrstr_get(&cft->base.file_tags, &filex);
             if(!modify) THROW(ERR_UNREACHABLE);
             trstr_del(modify, &remove);
         }
@@ -301,14 +300,14 @@ ErrDecl cft_fmt(Cft *cft, Str *str) { //{{{
     vrttrstritem_sort(&dump_files);
     for(size_t i = 0; i < vrttrstritem_length(dump_files); ++i) {
         TTrStrItem *item = vrttrstritem_get_at(&dump_files, i);
-        RStr *file = item->key;
+        RStr file = str_rstr(*item->key);
         TrStr *sub = item->val;
-        TRYC(str_fmt(str, "%.*s", RSTR_F(*file)));
+        TRYC(str_fmt(str, "%.*s", RSTR_F(file)));
         TRYG(trstr_dump(sub, &dump_tags.items, &dump_tags.last));
         vrtrstritem_sort(&dump_tags);
         for(size_t j = 0; j < vrtrstritem_length(dump_tags); ++j) {
             TrStrItem *tag = vrtrstritem_get_at(&dump_tags, j);
-            TRYC(str_fmt(str, ",%.*s", RSTR_F(*tag->key)));
+            TRYC(str_fmt(str, ",%.*s", STR_F(*tag->key)));
         }
         vrtrstritem_free(&dump_tags);
         TRYC(str_fmt(str, "\n"));
@@ -348,15 +347,16 @@ ErrDecl cft_find_any(Cft *cft, TrTrStr *found, Str *find) { //{{{
         tag = str_splice(*find, &tag, ',');
         /* search */
         TTrStrItem *tag_files = 0;
-        TRYC(cft_find_by_str(cft, &cft->base.tag_files, &tag_files, tag, false));
+        TRYC(cft_find_by_str(cft, &cft->base.tag_files, &tag_files, RSTR_STR(tag), false));
         if(!tag_files) continue;
         TrStr *sub = tag_files->val;
         for(size_t i = 0; i < LUT_CAP(sub->width); ++i) {
             TrStrItem *item = sub->buckets[i];
             if(!item) continue;
             if(item->hash == LUT_EMPTY) continue;
-            RStr *file = item->key;
-            TrStr *data = ttrstr_get(&cft->base.file_tags, file);
+            Str *file = item->key;
+            Str filex = STR_LL(str_iter_begin(*file), str_length(*file));
+            TrStr *data = ttrstr_get(&cft->base.file_tags, &filex);
             TRYG(trtrstr_set(found, file, data));
         }
     }
@@ -379,16 +379,17 @@ ErrDecl cft_find_and(Cft *cft, TrTrStr *found, Str *find, bool first_query) { //
         tag = str_splice(*find, &tag, ',');
         /* search */
         TTrStrItem *tag_files = 0;
-        TRYC(cft_find_by_str(cft, &cft->base.tag_files, &tag_files, tag, false));
+        TRYC(cft_find_by_str(cft, &cft->base.tag_files, &tag_files, RSTR_STR(tag), false));
         if(!tag_files) continue;
         TrStr *sub = tag_files->val;
         for(size_t i = 0; i < LUT_CAP(sub->width); ++i) {
             TrStrItem *item = sub->buckets[i];
             if(!item) continue;
             if(item->hash == LUT_EMPTY) continue;
-            RStr *file = item->key;
+            Str *file = item->key;
+            Str filex = STR_LL(str_iter_begin(*file), str_length(*file));
             if(iteration == 0) {
-                TrStr *data = ttrstr_get(&cft->base.file_tags, file);
+                TrStr *data = ttrstr_get(&cft->base.file_tags, &filex);
                 TRYG(trtrstr_set(found, file, data));
             } else {
                 TrStr *data = trtrstr_get(found, file);
@@ -424,9 +425,9 @@ ErrDecl cft_find_not(Cft *cft, TrTrStr *found, Str *find, bool first_query) { //
             TTrStrItem *item = cft->base.file_tags.buckets[i];
             if(!item) continue;
             if(item->hash == LUT_EMPTY) continue;
-            RStr *file = item->key;
+            RStr file = str_rstr(*item->key);
             TrStr *data = item->val;
-            TRYG(trtrstr_set(found, file, data));
+            TRYG(trtrstr_set(found, &RSTR_STR(file), data));
         }
     }
     /* search... */
@@ -435,14 +436,14 @@ ErrDecl cft_find_not(Cft *cft, TrTrStr *found, Str *find, bool first_query) { //
         tag = str_splice(*find, &tag, ',');
         /* search */
         TTrStrItem *tag_files = 0;
-        TRYC(cft_find_by_str(cft, &cft->base.tag_files, &tag_files, tag, false));
+        TRYC(cft_find_by_str(cft, &cft->base.tag_files, &tag_files, RSTR_STR(tag), false));
         if(!tag_files) continue;
         TrStr *sub = tag_files->val;
         for(size_t i = 0; i < LUT_CAP(sub->width); ++i) {
             TrStrItem *item = sub->buckets[i];
             if(!item) continue;
             if(item->hash == LUT_EMPTY) continue;
-            RStr *file = item->key;
+            Str *file = item->key;
             trtrstr_del(found, file);
         }
     }
@@ -463,7 +464,7 @@ ErrDecl cft_tags_add(Cft *cft, VrStr *files, Str *tags) { //{{{
             if(rstr_iter_end(&tag) >= str_iter_end(tags)) break;
             tag = str_splice(*tags, &tag, ',');
             TRYC(cft_add(cft, *file, tag));
-            //printff("tag [%.*s] with [%.*s]", STR_F(file), STR_F(&tag));
+            //printff(">>> TAG [%.*s] with [%.*s]", STR_F(*file), RSTR_F(tag));
         }
     }
     return 0;
@@ -512,7 +513,8 @@ ErrDecl cft_tags_fmt(Cft *cft, Str *out, VrStr *files) { //{{{
                 splice = str_splice(*file, &splice, ',');
                 if(splice.first >= file->last) { break;}
                 RStr search = rstr_trim(splice);
-                TrStr *file_tag = ttrstr_get(&cft->base.file_tags, &search);
+                Str searchx = STR_LL(rstr_iter_begin(search), rstr_length(search));
+                TrStr *file_tag = ttrstr_get(&cft->base.file_tags, &searchx);
                 if(!file_tag) continue;
                 for(size_t j = 0; j < LUT_CAP(file_tag->width); ++j) {
                     TrStrItem *tag = file_tag->buckets[j];
@@ -540,7 +542,7 @@ ErrDecl cft_tags_fmt(Cft *cft, Str *out, VrStr *files) { //{{{
     /* all tags */
     for(size_t i = 0; i < vrtrtrstritem_length(dump_tags); ++i) {
         TrTrStrItem *item = vrtrtrstritem_get_at(&dump_tags, i);
-        RStr *tag = item->key;
+        Str *tag = item->key;
         TrStr *sub = item->val;
         /* optional decoration & compact */
         if(cft->options.decorate) {
@@ -551,7 +553,7 @@ ErrDecl cft_tags_fmt(Cft *cft, Str *out, VrStr *files) { //{{{
             }
         }
         /* the actual tag */
-        TRYC(str_fmt(out, "%.*s", RSTR_F(*tag)));
+        TRYC(str_fmt(out, "%.*s", STR_F(*tag)));
         /* how many associated files there are */
         if(cft->options.decorate) {
             TRYC(str_fmt(out, " (%zu)", (sub->used)));
@@ -562,7 +564,7 @@ ErrDecl cft_tags_fmt(Cft *cft, Str *out, VrStr *files) { //{{{
             vrtrstritem_sort(&dump_files);
             for(size_t j = 0; j < vrtrstritem_length(dump_files); ++j) {
                 TrStrItem *file = vrtrstritem_get_at(&dump_files, j);
-                TRYC(str_fmt(out, "%s%.*s", cft->options.decorate && !j ? " " : ",",  RSTR_F(*file->key)));
+                TRYC(str_fmt(out, "%s%.*s", cft->options.decorate && !j ? " " : ",", STR_F(*file->key)));
             }
             vrtrstritem_free(&dump_files);
         }
@@ -605,9 +607,9 @@ ErrDecl cft_files_fmt(Cft *cft, Str *out, VrStr *files) { //{{{
                 splice = str_splice(*file, &splice, ',');
                 if(splice.first >= file->last) { break;}
                 RStr search = rstr_trim(splice);
-                TrStr *file_tag = ttrstr_get(&cft->base.file_tags, &search);
+                TrStr *file_tag = ttrstr_get(&cft->base.file_tags, &RSTR_STR(search));
                 if(!file_tag) continue;
-                TRYG(trtrstr_set(&base, &search, file_tag));
+                TRYG(trtrstr_set(&base, &RSTR_STR(search), file_tag));
             }
         }
         base_has_to_be_freed = true;
@@ -626,7 +628,7 @@ ErrDecl cft_files_fmt(Cft *cft, Str *out, VrStr *files) { //{{{
     /* all files */
     for(size_t i = 0; i < vrtrtrstritem_length(dump_files); ++i) {
         TrTrStrItem *item = vrtrtrstritem_get_at(&dump_files, i);
-        RStr *file = item->key;
+        Str *file = item->key;
         TrStr *sub = item->val;
         /* optional decoration & compact */
         if(cft->options.decorate) {
@@ -637,7 +639,7 @@ ErrDecl cft_files_fmt(Cft *cft, Str *out, VrStr *files) { //{{{
             }
         }
         /* the actual file */
-        TRYC(str_fmt(out, "%.*s", RSTR_F(*file)));
+        TRYC(str_fmt(out, "%.*s", STR_F(*file)));
         /* how many associated files there are */
         if(cft->options.decorate) {
             TRYC(str_fmt(out, " (%zu)", (sub->used)));
@@ -648,7 +650,7 @@ ErrDecl cft_files_fmt(Cft *cft, Str *out, VrStr *files) { //{{{
             vrtrstritem_sort(&dump_tags);
             for(size_t j = 0; j < vrtrstritem_length(dump_tags); ++j) {
                 TrStrItem *tag = vrtrstritem_get_at(&dump_tags, j);
-                TRYC(str_fmt(out, "%s%.*s", cft->options.decorate && !j ? " " : ",",  RSTR_F(*tag->key)));
+                TRYC(str_fmt(out, "%s%.*s", cft->options.decorate && !j ? " " : ",", *tag->key));
             }
             vrtrstritem_free(&dump_tags);
         }
@@ -697,7 +699,7 @@ ErrDecl cft_find_fmt(Cft *cft, Str *out, Str *find_any, Str *find_and, Str *find
     vrtrtrstritem_sort(&results);
     for(size_t i = 0; i < vrtrtrstritem_length(results); ++i) {
         TrTrStrItem *item = vrtrtrstritem_get_at(&results, i);
-        RStr *file = item->key;
+        Str *file = item->key;
         TrStr *sub = item->val;
         if(cft->options.decorate) {
             if(cft->options.compact) {
@@ -706,13 +708,13 @@ ErrDecl cft_find_fmt(Cft *cft, Str *out, Str *find_any, Str *find_and, Str *find
                 TRYC(str_fmt(out, "  [%zu] ", i));
             }
         }
-        TRYC(str_fmt(out, "%.*s", RSTR_F(*file)));
+        TRYC(str_fmt(out, "%.*s", STR_F(*file)));
         if(cft->options.list_tags) {
             for(size_t j = 0; j < LUT_CAP(sub->width); ++j) {
                 TrStrItem *tag = sub->buckets[j];
                 if(!tag) continue;
                 if(tag->hash == LUT_EMPTY) continue;
-                TRYC(str_fmt(out, ",%.*s", RSTR_F(*tag->key)));
+                TRYC(str_fmt(out, ",%.*s", tag->key));
             }
         }
         if(cft->options.decorate) {

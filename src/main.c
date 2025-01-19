@@ -30,7 +30,7 @@ int main(int argc, const char **argv)
     //info_enable(INFO_parsing_skip_too_large, INFO_LEVEL_ALL);
     //info_enable(INFO_parsing_directory, INFO_LEVEL_ALL);
     //info_enable(INFO_formatting, INFO_LEVEL_ALL);
-    //info_enable_all(INFO_LEVEL_ID | INFO_LEVEL_TEXT);
+    info_enable_all(INFO_LEVEL_ID | INFO_LEVEL_TEXT);
     
     TRYC(platform_colorprint_init());
 
@@ -66,9 +66,7 @@ int main(int argc, const char **argv)
             TRYC(file_exec(input, &cft.parse.dirfiles, cft.options.recursive, cft_parse_file, &cft));
             while(vstr_length(cft.parse.dirfiles)) {
                 vstr_pop_back(&cft.parse.dirfiles, &pop);
-                memset(cft.parse.dirfiles.items[vstr_length(cft.parse.dirfiles)], 0, sizeof(Str)); // TODO: this should probably happen in my vector!
-                TRYC(file_exec(input, &cft.parse.dirfiles, cft.options.recursive, cft_parse_file, &cft));
-                str_free(&pop);
+                TRYC(file_exec(str_rstr(pop), &cft.parse.dirfiles, cft.options.recursive, cft_parse_file, &cft));
             }
         }
     }

@@ -53,7 +53,7 @@ VEC_INCLUDE(VrTag, vrtag, Tag, BY_REF, BASE);
 typedef struct TagRef TagRef;
 VEC_INCLUDE(VrTagRef, vrtagref, TagRef, BY_REF, BASE);
 
-void vrstr_sort(VrStr *vec, size_t *counts);
+//void vrstr_sort(VrStr *vec, size_t *counts);
 
 void vrtag_sort(VrTag *vec);
 void vrtagref_sort(VrTagRef *vec, size_t *counts);

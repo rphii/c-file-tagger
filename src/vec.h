@@ -100,7 +100,7 @@ typedef enum {
 #define VEC_REF_BY_REF
 #define VEC_REF(M)       VEC_REF_##M
 
-#define VEC_ASSERT_REAL(x)   assert(x && "assertion failed")
+#define VEC_ASSERT_REAL(x)   ASSERT(x, "assertion failed")
 
 #define VEC_ASSERT_BY_REF(x)    VEC_ASSERT_REAL(x)
 #define VEC_ASSERT_BY_VAL(x)
@@ -873,7 +873,9 @@ typedef enum {
                 VEC_TYPE_FREE(F, &vec->VEC_STRUCT_ITEMS[i], T); \
             } \
         } \
-        free(vec->VEC_STRUCT_ITEMS); \
+        if(vec->cap) { \
+            free(vec->VEC_STRUCT_ITEMS); \
+        } \
         A##_static_zero(vec); \
     }
 

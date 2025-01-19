@@ -43,6 +43,10 @@ void info_handle_abort(void) {
         }
     }
     info_handle_end(INFO_NONE);
+    for(size_t id = 0; id < INFO__COUNT; ++id) {
+        Str *last = info_query_last(id);
+        str_free(last);
+    }
 }
 
 void info_handle_prev(InfoList id) {
