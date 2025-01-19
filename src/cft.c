@@ -44,7 +44,7 @@ error:
 } //}}}
 
 #define ERR_cft_find_by_str(...)    "failed adding string to table"
-ErrDecl cft_find_by_str(Cft *cft, TTrStr *base, TTrStrItem **table, const Str tag, bool create_if_nonexist) { //{{{
+ErrDecl cft_find_by_str(Cft *cft, TTrStr *base, TTrStrItem **table, const Str tag, bool create_if_nonexist, bool partial) { //{{{
     ASSERT_ARG(cft);
     ASSERT_ARG(base);
     ASSERT_ARG(table);
@@ -54,8 +54,7 @@ ErrDecl cft_find_by_str(Cft *cft, TTrStr *base, TTrStrItem **table, const Str ta
     const Str *findx = &STR_LL(str_iter_begin(find), str_length(find));
     /* now search */
     info(INFO_tag_search, "Searching '%.*s'", STR_F(find));
-    if(!cft->options.partial) {
-    //printff("SEARCHING PARTIALLY? %u", cft->options.partial);
+    if(!partial) {
         *table = ttrstr_get_kv(base, findx);
         Str temp = {0};
         /* first add the tag to the file-specific table */
@@ -70,11 +69,10 @@ ErrDecl cft_find_by_str(Cft *cft, TTrStr *base, TTrStrItem **table, const Str ta
             info_check(INFO_tag_create, true);
         }
     } else {
-        for(TTrStrItem **iter = 0; iter; iter = ttrstr_iter_all(base, iter)) {
-            TrStr *item = (*iter)->val;
-            for(TrStrItem **iiter = 0; iiter; iiter = trstr_iter_all(item, iiter)) {
-                Str *iitem = (*iiter)->val;
-
+        for(TTrStrItem **iter = ttrstr_iter_all(base, 0); iter; iter = ttrstr_iter_all(base, iter)) {
+            Str *item = (*iter)->key;
+            if(str_find_substring(item, &tag) < str_length(*item)) {
+                printff("%.*s", STR_F(*item));
             }
         }
     }
@@ -89,14 +87,14 @@ ErrDecl cft_add(Cft *cft, const Str filename, const RStr tag) { //{{{
     Str find = RSTR_STR(rstr_trim(tag));
     /* search if we have a matching file ... */
     TTrStrItem *file_tags = 0;
-    TRYC(cft_find_by_str(cft, &cft->base.file_tags, &file_tags, filename, true));
+    TRYC(cft_find_by_str(cft, &cft->base.file_tags, &file_tags, filename, true, false));
     if(!file_tags) return 0; //THROW(ERR_UNREACHABLE "; should have created/found a table");
     for(;;) {
         /* prepare string */
         if(!str_length(find)) break;
         /* find entry */
         TTrStrItem *tag_files = 0;
-        TRYC(cft_find_by_str(cft, &cft->base.tag_files, &tag_files, find, true));
+        TRYC(cft_find_by_str(cft, &cft->base.tag_files, &tag_files, find, true, false));
         if(!tag_files) return 0; //THROW(ERR_UNREACHABLE "; should have created/found a table");
         /* cross-reference */
         trstr_set(file_tags->val, tag_files->key, 0);
@@ -347,7 +345,7 @@ ErrDecl cft_find_any(Cft *cft, TrTrStr *found, Str *find) { //{{{
         tag = str_splice(*find, &tag, ',');
         /* search */
         TTrStrItem *tag_files = 0;
-        TRYC(cft_find_by_str(cft, &cft->base.tag_files, &tag_files, RSTR_STR(tag), false));
+        TRYC(cft_find_by_str(cft, &cft->base.tag_files, &tag_files, RSTR_STR(tag), false, cft->options.partial));
         if(!tag_files) continue;
         TrStr *sub = tag_files->val;
         for(size_t i = 0; i < LUT_CAP(sub->width); ++i) {
@@ -379,7 +377,7 @@ ErrDecl cft_find_and(Cft *cft, TrTrStr *found, Str *find, bool first_query) { //
         tag = str_splice(*find, &tag, ',');
         /* search */
         TTrStrItem *tag_files = 0;
-        TRYC(cft_find_by_str(cft, &cft->base.tag_files, &tag_files, RSTR_STR(tag), false));
+        TRYC(cft_find_by_str(cft, &cft->base.tag_files, &tag_files, RSTR_STR(tag), false, cft->options.partial));
         if(!tag_files) continue;
         TrStr *sub = tag_files->val;
         for(size_t i = 0; i < LUT_CAP(sub->width); ++i) {
@@ -436,7 +434,7 @@ ErrDecl cft_find_not(Cft *cft, TrTrStr *found, Str *find, bool first_query) { //
         tag = str_splice(*find, &tag, ',');
         /* search */
         TTrStrItem *tag_files = 0;
-        TRYC(cft_find_by_str(cft, &cft->base.tag_files, &tag_files, RSTR_STR(tag), false));
+        TRYC(cft_find_by_str(cft, &cft->base.tag_files, &tag_files, RSTR_STR(tag), false, cft->options.partial));
         if(!tag_files) continue;
         TrStr *sub = tag_files->val;
         for(size_t i = 0; i < LUT_CAP(sub->width); ++i) {
