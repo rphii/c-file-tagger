@@ -143,8 +143,8 @@
 
 #define LUT_IMPLEMENT_COMMON_DUMP(N, A, TK, MK, TV, MV, H, C, FK, FV) \
     int A##_dump(N *lut, N##Item ***items, size_t *len) { \
-        ASSERT_ARG(lut); \
-        ASSERT_ARG(items); \
+        LUT_ASSERT_ARG(lut); \
+        LUT_ASSERT_ARG(items); \
         if(!lut->used) return 0; \
         if(*items) return -1; \
         *items = malloc(sizeof(N##Item *) * lut->used); \
@@ -162,13 +162,14 @@
 
 #define LUT_IMPLEMENT_COMMON_FREE(N, A, TK, MK, TV, MV, H, C, FK, FV) \
     void A##_free(N *lut) { \
-        ASSERT_ARG(lut); \
+        LUT_ASSERT_ARG(lut); \
         for(size_t i = 0; i < LUT_CAP(lut->width); ++i) { \
             N##Item *item = lut->buckets[i]; \
             if(!item) continue; \
             /*printff(ERR_STRINGIFY(A) " freeing : %p", item);*/\
             if(FK != 0) { /*printff("  free key %p", item->key);*/ LUT_TYPE_FREE(FK, item->key, TK, MK); } \
             if(FV != 0) { /*printff("  free val %p", item->val);*/ LUT_TYPE_FREE(FV, item->val, TV, MV); } \
+            memset(item, 0, sizeof(*item)); \
             /*free(item);*/ \
         } \
         for(size_t i = 0; i < LUT_CAP(lut->width); ++i) { \
@@ -182,7 +183,7 @@
 
 #define LUT_IMPLEMENT_COMMON_CLEAR(N, A, TK, MK, TV, MV, H, C, FK, FV) \
     void A##_clear(N *lut) { \
-        ASSERT_ARG(lut); \
+        LUT_ASSERT_ARG(lut); \
         for(size_t i = 0; i < LUT_CAP(lut->width); ++i) { \
             N##Item *item = lut->buckets[i]; \
             if(!item) continue; \
@@ -246,7 +247,10 @@
             if(LUT_IS_BY_REF(MV)) { \
                 req += sizeof(*LUT_REF(MV)(*item)->val); \
             } \
+            /*req *= 10;*/ \
+            /*printf("REQ: %zu\n", req);*/\
             *item = malloc(req); \
+            /*printf("MALLOCD: %p (%zu)\n", *item, req);*/\
             memset(*item, 0, req); \
             if(!*item) return 0; \
             if(LUT_IS_BY_REF(MK)) { \
@@ -260,6 +264,8 @@
                 memcpy(&(*item)->val, &p, sizeof((*item)->val)); \
             } \
         } \
+        /*printf("*item %p / (*item)->key %p , &: %p / (*item)->val %p\n", *item, (*item)->key, &(*item)->key, (*item)->val);*/\
+        /*printf("%p <- %p\n", LUT_REF(MK)(*item)->key, LUT_REF(MK)key);*/ \
         memcpy(LUT_REF(MK)(*item)->key, LUT_REF(MK)key, sizeof(TK)); \
         if(LUT_IS_BY_REF(MV)) { \
             if(LUT_REF(MV)val != 0) { \
@@ -287,6 +293,7 @@
             /* free old key */ \
             if(FK != 0) LUT_TYPE_FREE(FK, (*item)->key, TK, MK); \
             if(FV != 0) LUT_TYPE_FREE(FV, (*item)->val, TV, MV); \
+            memset(*item, 0, sizeof(**item)); \
         } else { \
             size_t req = sizeof(**item); \
             if(LUT_IS_BY_REF(MK)) { \
@@ -299,12 +306,12 @@
             memset(*item, 0, req); \
             if(!*item) return -1; \
             if(LUT_IS_BY_REF(MK)) { \
-                void *p = (uint8_t *)*item + sizeof(**item) + 0; \
+                void *p = (void *)(uint8_t *)*item + sizeof(**item) + 0; \
                 memset(p, 0, sizeof((*item)->key)); \
                 memcpy(&(*item)->key, &p, sizeof((*item)->key)); \
             } \
             if(LUT_IS_BY_REF(MV)) { \
-                void *p = (uint8_t *)*item + sizeof(**item) + sizeof(*LUT_REF(MK)(*item)->key); \
+                void *p = (void *)(uint8_t *)*item + sizeof(**item) + sizeof(*LUT_REF(MK)(*item)->key); \
                 memset(p, 0, sizeof((*item)->val)); \
                 memcpy(&(*item)->val, &p, sizeof((*item)->val)); \
             } \

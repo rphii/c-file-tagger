@@ -91,7 +91,7 @@ Str *info_query_last(InfoList id);
         (void)(str_fmt(last, "%s", decorators ? " " : "")); \
         decorators = false; \
         (void)(str_fmt(last, str, ##__VA_ARGS__)); \
-        ERR_PRINTF("%.*s", STR_F(last)); \
+        ERR_PRINTF("%.*s", STR_F(*last)); \
         info_handle_end(id); \
     } while(0)
 

@@ -47,16 +47,16 @@ int main(int argc, const char **argv)
 
     /* read specified file */
     //TRYC(file_str_read(&arg.parsed.file, &cft.parse.content));
-    if(file_size(&arg.parsed.file) != SIZE_MAX) {
-        TRYC(file_exec(&arg.parsed.file, &cft.parse.dirfiles, cft.options.recursive, cft_parse_file, &cft));
+    if(file_size(arg.parsed.file) != SIZE_MAX) {
+        TRYC(file_exec(arg.parsed.file, &cft.parse.dirfiles, cft.options.recursive, cft_parse_file, &cft));
     }
 
     /* read all other specified files */
     if(!cft.options.modify || cft.options.merge) {
-        for(size_t i = 0; i < vrstr_length(&arg.parsed.inputs); ++i) {
-            Str *input = vrstr_get_at(&arg.parsed.inputs, i);
-
-            if(!str_cmp(input, &arg.parsed.file)) {
+        for(size_t i = 0; i < vrstr_length(arg.parsed.inputs); ++i) {
+            RStr input = str_rstr(*vrstr_get_at(&arg.parsed.inputs, i));
+            Str pop = {0};
+            if(!rstr_cmp(input, arg.parsed.file)) {
                 /* TODO add some info here that skips two exact file paths... doesn't
                  * break anything if we DO, but helps to inform the user about what
                  * he's doing (absolutely not happened to me and I did NOT get confused
@@ -64,18 +64,18 @@ int main(int argc, const char **argv)
                 continue;
             }
             TRYC(file_exec(input, &cft.parse.dirfiles, cft.options.recursive, cft_parse_file, &cft));
-            while(vstr_length(&cft.parse.dirfiles)) {
-                vstr_pop_back(&cft.parse.dirfiles, input);
-                memset(cft.parse.dirfiles.items[vstr_length(&cft.parse.dirfiles)], 0, sizeof(Str)); // TODO: this should probably happen in my vector!
+            while(vstr_length(cft.parse.dirfiles)) {
+                vstr_pop_back(&cft.parse.dirfiles, &pop);
+                memset(cft.parse.dirfiles.items[vstr_length(cft.parse.dirfiles)], 0, sizeof(Str)); // TODO: this should probably happen in my vector!
                 TRYC(file_exec(input, &cft.parse.dirfiles, cft.options.recursive, cft_parse_file, &cft));
-                str_free(input);
+                str_free(&pop);
             }
         }
     }
 
     /* reformat */
     if(cft.options.modify || cft.options.merge) {
-        if(!str_length(&arg.parsed.file)) {
+        if(!rstr_length(arg.parsed.file)) {
             THROW("no %s provided", arg_str(ARG_OUTPUT));
         }
         TRYC(cft_tags_add(&cft, &arg.parsed.remains, &arg.parsed.tags_add));
@@ -84,7 +84,7 @@ int main(int argc, const char **argv)
         str_clear(&cft.parse.content);
         TRYC(cft_fmt(&cft, &cft.parse.content));
         //printf("%.*s", STR_F(&cft.parse.content));
-        TRYC(file_str_write(&arg.parsed.file, &cft.parse.content));
+        TRYC(file_str_write(arg.parsed.file, &cft.parse.content));
         goto clean;
     }
 
@@ -94,27 +94,27 @@ int main(int argc, const char **argv)
         //printff("and [%.*s]", STR_F(&arg.parsed.find_and));
         //printff("not [%.*s]", STR_F(&arg.parsed.find_not));
         TRYC(cft_find_fmt(&cft, &ostream, &arg.parsed.find_any, &arg.parsed.find_and, &arg.parsed.find_not));
-        printf("%.*s", STR_F(&ostream));
+        printf("%.*s", STR_F(ostream));
         goto clean;
     }
 
-    if(str_length(&arg.parsed.substring_tags)) {
+    if(str_length(arg.parsed.substring_tags)) {
         TRYC(cft_fmt_substring_tags(&cft, &ostream, &arg.parsed.substring_tags));
-        printf("%.*s", STR_F(&ostream));
+        printf("%.*s", STR_F(ostream));
         goto clean;
     }
 
     /* print files */
     if(cft.options.list_files && cft.options.list_files > cft.options.list_tags) {
         TRYC(cft_files_fmt(&cft, &ostream, &arg.parsed.remains));
-        printf("%.*s", STR_F(&ostream));
+        printf("%.*s", STR_F(ostream));
         goto clean;
     }
 
     /* print tags */
     if(cft.options.list_tags && cft.options.list_tags > cft.options.list_files) {
         TRYC(cft_tags_fmt(&cft, &ostream, &arg.parsed.remains));
-        printf("%.*s", STR_F(&ostream));
+        printf("%.*s", STR_F(ostream));
         goto clean;
     }
 

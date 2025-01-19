@@ -46,7 +46,7 @@ ErrDecl platform_fmt_home(Str *str)
     struct passwd *pw = getpwuid(getuid());
     const char *homedir = pw->pw_dir;
     TRYC(str_fmt(str, "%s", homedir));
-    str_remove_trailing_ch(str, PLATFORM_CH_SUBDIR, '\\'); // juuuust to be sure
+    str_rremove_ch(str, PLATFORM_CH_SUBDIR, '\\'); // juuuust to be sure
 #endif
     return 0;
 error:
@@ -65,30 +65,30 @@ ErrDecl platform_fmt_cwd(Str *str)
     } else {
         THROW("getcwd() error");
     }
-    str_remove_trailing_ch(str, PLATFORM_CH_SUBDIR, '\\'); // juuuust to be sure
+    str_rremove_ch(str, PLATFORM_CH_SUBDIR, '\\'); // juuuust to be sure
 #endif
    return 0;
 error:
    return -1;
 }
 
-void platform_path_up(Str *path) //{{{
+void platform_path_up(RStr *path) //{{{
 {
     ASSERT_ARG(path);
-    Str path2 = *path;
+    RStr path2 = *path;
 #if defined(PLATFORM_WINDOWS)
     ABORT("not yet implemented for windows");
 #else
     size_t n = 0;
     for(;;) {
-        n = str_rch(&path2, PLATFORM_CH_SUBDIR, 0);
-        if(n == 0 || n >= str_length(&path2)) {
+        n = rstr_rfind_ch(path2, PLATFORM_CH_SUBDIR, 0);
+        if(n == 0 || n >= rstr_length(path2)) {
             path2.last = path2.first;
             break;
         }
         path2.last = path2.first + n - 1;
-        str_remove_trailing_ch(&path2, PLATFORM_CH_SUBDIR, '\\');
-        if(str_length(&path2) && str_get_back(&path2) == PLATFORM_CH_SUBDIR) {
+        rstr_rremove_ch(&path2, PLATFORM_CH_SUBDIR, '\\');
+        if(rstr_length(path2) && rstr_get_back(&path2) == PLATFORM_CH_SUBDIR) {
             --path2.last;
         } else {
             path2.last = path2.first + n;
@@ -161,6 +161,71 @@ void platform_trace(void)
     free(strs);
 #endif
 }
+
+
+#if 1 /* STR_EXPAND_PATH ??? -> move to file stuff ... {{{*/
+#include "file.h"
+ErrDecl platform_expand_path(Str *path, const Str *base, const Str *home) // TODO: move into platform.c ... {{{
+{
+    ASSERT_ARG(path);
+    ASSERT_ARG(base);
+    ASSERT_ARG(home);
+    int err = 0;
+    Str result = {0};
+    Str temp = {0};
+    RStr base2 = str_rstr(*base);
+    str_trim(*path);
+#if defined(PLATFORM_WINDOWS)
+    ABORT("not yet implemented in windows");
+#else
+    if(!str_length(*path)) return 0;
+    if(str_length(*path) >= 2 && !str_cmp(STR_IE(*path, 2), STR("~/"))) {
+        TRYC(str_fmt(&result, "%.*s%.*s", STR_F(*home), STR_F(STR_I0(*path, 1))));
+        /* assign result */
+        str_clear(path);
+        temp = *path;
+        *path = result;
+        result = temp;
+    } else if(str_get_front(path) != PLATFORM_CH_SUBDIR) {
+        if(file_get_type(base2) != FILE_TYPE_DIR) {
+            platform_path_up(&base2);
+        }
+        //printff("%.*s .. %.*s", STR_F(&base2), STR_F(path));
+        if(rstr_length(base2)) {
+            TRYC(str_fmt(&result, "%.*s%c%.*s", RSTR_F(base2), PLATFORM_CH_SUBDIR, STR_F(*path)));
+        } else {
+            TRYC(str_fmt(&result, "%.*s", STR_F(*path)));
+        }
+        /* assign result */
+        str_clear(path);
+        temp = *path;
+        *path = result;
+        result = temp;
+    }
+    /* remove any and all dot-dot's -> '..' */
+    for(;;) {
+        size_t n = str_find_substring(path, &STR(".."));
+        if(n >= str_length(*path)) break;
+        RStr prepend = str_rstr(*path);
+        Str append = *path;
+        prepend.last = prepend.first + n;
+        append.first = append.first + n + str_length(STR(".."));
+        rstr_rremove_ch(&prepend, PLATFORM_CH_SUBDIR, '\\');
+        platform_path_up(&prepend);
+        str_clear(&result);
+        TRYC(str_fmt(&result, "%.*s%.*s", RSTR_F(prepend), STR_F(append)));
+        temp = *path;
+        *path = result;
+        result = temp;
+    }
+#endif
+clean:
+    str_free(&temp);
+    return err;
+error:
+    ERR_CLEAN;
+} /*}}}*/
+#endif /*}}}*/
 
 
 /******************************************************************************/

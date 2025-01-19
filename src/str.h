@@ -1,5 +1,9 @@
 #ifndef STR_H
 
+/* {{{ header-only fluff */
+
+/* {{{ basic includes */
+
 #define STR_DEFAULT_SIZE 32
 
 #include <stdarg.h>
@@ -8,81 +12,157 @@
 
 #include "err.h"
 
-typedef uint8_t V3u8[3];
+/* }}} basic includes */
 
-/* configuration, inclusion and de-configuration of vector */
+/* {{{ configuration, inclusion and de-configuration of vector */
+
+typedef uint8_t V3u8[3];
+typedef struct VStr VStr;
+
+#include "vec.h"
+//VEC_INCLUDE(VStr, vstr, struct Str, BY_REF, BASE);
+//VEC_INCLUDE(VStr, vstr, struct Str, BY_REF, ERR);
+//VEC_INCLUDE(VrStr, vrstr, struct RStr, BY_REF, BASE);
+//VEC_INCLUDE(VrStr, vrstr, struct RStr, BY_REF, ERR);
 
 #define VEC_SETTINGS_DEFAULT_SIZE STR_DEFAULT_SIZE
 #define VEC_SETTINGS_KEEP_ZERO_END 1
 #define VEC_SETTINGS_STRUCT_ITEMS s
 #include "vec.h"
-
 VEC_INCLUDE(Str, str, char, BY_VAL, BASE);
-
-#undef VEC_SETTINGS_STRUCT_ITEMS
-#undef VEC_SETTINGS_KEEP_ZERO_END
+VEC_INCLUDE(Str, str, char, BY_VAL, ERR);
 #undef VEC_SETTINGS_DEFAULT_SIZE
+#undef VEC_SETTINGS_KEEP_ZERO_END
+#undef VEC_SETTINGS_STRUCT_ITEMS
+
+/* }}} configuration, inclusion and de-configuration of vector */
+
+/* {{{ utility macros */
 
 #define STR(string)             (Str){.s = (char *)string, .last = sizeof(string)/sizeof(*string)-1}
 #define STR_L(string)           (Str){.s = (char *)string, .last = strlen(string ? string : "")}
 #define STR_LL(string, length)  (Str){.s = (char *)string, .last = length}
 
-#define STR_F(s)                (int)str_length(s), str_iter_begin(s)
+#define RSTR(string)             (RStr){.s = (char *)string, .last = sizeof(string)/sizeof(*string)-1}
+#define RSTR_L(string)           (RStr){.s = (char *)string, .last = strlen(string ? string : "")}
+#define RSTR_LL(string, length)  (RStr){.s = (char *)string, .last = length}
 
+#define STR_F(s)                (int)str_length(s), str_iter_begin(s)
 #define STR_I0(str, i0)         (const Str){.s = (str).s, .first = ((str).first + i0 < (str).last) ? (str).first + i0 : (str).last, .last = (str).last}
 #define STR_IE(str, iE)         (const Str){.s = (str).s, .first = (str).first, .last = (str).first + iE}
 
-#define ERR_STR_CAT_BACK    "failed appending string to other string"
-#define ERR_STR_FMT         "failed string formatting"
-#define ERR_STR_COPY        "failed copying string"
+#define RSTR_F(s)               (int)rstr_length(s), rstr_iter_begin(s)
+#define RSTR_I0(str, i0)        (const RStr){.s = (str).s, .first = ((str).first + i0 < (str).last) ? (str).first + i0 : (str).last, .last = (str).last}
+#define RSTR_IE(str, iE)        (const RStr){.s = (str).s, .first = (str).first, .last = (str).first + iE}
 
-#define ERR_str_copy(v1, v2) "failed copying string"
+/* }}} utility macros */
 
-/* other functions */
+/* {{{ header helper macros */
 
-void str_pop_back_char(Str *str);
-void str_pop_back_word(Str *str);
-void str_triml(Str *str);
-void str_trimr(Str *str);
-void str_trim(Str *str);
+#define STR_INCLUDE_MOD(type, name, ...)  \
+    type str_##name(Str *str, ##__VA_ARGS__); \
+    type rstr_##name(RStr *str, ##__VA_ARGS__);
 
-void str_remove_trailing_ch(Str *str, char ch, char ch_escape);
+#define STR_INCLUDE_CONST(type, name, ...)  \
+    type str_##name(const Str str, ##__VA_ARGS__); \
+    type rstr_##name(const RStr str, ##__VA_ARGS__);
 
-void str_cstr(const Str *str, char *cstr, size_t len);
-void str_clear_to_last(Str *str);
+#define PSTR_INCLUDE_CONST(type, name, ...)  \
+    type str_p##name(const Str *str, ##__VA_ARGS__); \
+    type rstr_p##name(const RStr *str, ##__VA_ARGS__);
 
-#define ERR_str_fmt_va(str, format, argp) "failed formatting string"
+/* }}} header helper macros */
+
+/* }}} header-only fluff */
+
+/* {{{ both , failable */
+
+#define ERR_str_fmt_va(...) "failed formatting string"
 ErrDecl str_fmt_va(Str *str, const char *format, va_list argp);
-#define ERR_str_fmt(str, format, ...) "failed formatting string"
-ErrDecl str_fmt(Str *str, const char *format, ...);
-#define ERR_str_fmt_ext(ext, str) "failed formatting extension"
-ErrDecl str_fmt_ext(Str *ext, const Str *str); // extract extension
-#define ERR_str_fmt_noext(ext, str) "failed removing extension"
-ErrDecl str_fmt_noext(Str *ext, const Str *str); // remove extension
-#define ERR_str_fmt_dir(dir, str, up) "failed formatting directory"
-ErrDecl str_fmt_dir(Str *dir, const Str *str, size_t up); // extract directory
-#define ERR_str_fmt_nodir(nodir, str) "failed formatting without directory"
-ErrDecl str_fmt_nodir(Str *nodir, const Str *str); // remove directory
-#define ERR_str_fmt_basename(basename, str) "failed formatting basename"
-ErrDecl str_fmt_basename(Str *basename, const Str *str); // remove extention+directory
 
-#define ERR_str_fmt_line(line, str, i0, iE) "failed getting line (index %zu / length %zu)", i0, str_length(str)
-ErrDecl str_fmt_line(Str *line, const Str *str, size_t i0, size_t *iE);
-void str_get_line(const Str *str, size_t *i0, size_t *iE);
+#define ERR_str_fmt(...) "failed formatting string"
+ErrDecl str_fmt(Str *str, const char *format, ...);
 
 #define ERR_str_fmt_fgbg(out, text, ...) "failed applying foreground/background to string '%.*s'", STR_F(text)
 ErrDecl str_fmt_fgbg(Str *out, const Str *text, const V3u8 fg, const V3u8 bg, bool bold, bool italic, bool underline);
 
-#define ERR_STR_GET_STR     "failed getting string from user"
+#define ERR_str_get_str(...) "failed getting string from user"
 ErrDecl str_get_str(Str *str);
 
-#define ERR_str_expand_path(path, base, home, ...) "failed expanding path"
-//ErrDecl str_expand_path(Str *path, const Str *base, const Str *current, const Str *home);
-ErrDecl str_expand_path(Str *path, const Str *base, const Str *home);
+#define ERR_str_as_int(...) "error while converting string to number"
+ErrDecl str_as_int(const Str str, ssize_t *out);
+#define ERR_rstr_as_int(...) "error while converting string to number"
+ErrDecl rstr_as_int(const RStr str, ssize_t *out);
 
-int str_cmp(const Str *a, const Str *b);
+#define ERR_str_as_bool(...) "error while converting string to bool"
+ErrDecl str_as_bool(const Str str, bool *out, bool expand_pool);
+#define ERR_rstr_as_bool(...) "error while converting string to bool"
+ErrDecl rstr_as_bool(const RStr str, bool *out, bool expand_pool);
+
+
+
+/*OK*/size_t str_writefunc(void *ptr, size_t size, size_t nmemb, Str *str);
+
+/* }}} both , failable */
+
+/* {{{ both , no-fail */
+
+STR_INCLUDE_MOD(void, pop_back_char, RStr *);
+STR_INCLUDE_MOD(void, pop_back_word, RStr *);
+STR_INCLUDE_MOD(void, rremove_ch, char ch, char ch_escape);
+
+STR_INCLUDE_CONST(void, cstr, char *cstr, size_t len);
+
+STR_INCLUDE_CONST(RStr, triml);
+STR_INCLUDE_CONST(RStr, trimr);
+STR_INCLUDE_CONST(RStr, trim);
+
+STR_INCLUDE_CONST(RStr, get_ext);         /* /home/user/file.test -> .test */
+STR_INCLUDE_CONST(RStr, get_noext);       /* /home/user/file.test -> /home/user/file */
+STR_INCLUDE_CONST(RStr, get_dir);         /* /home/user/file.test -> /home/user */
+STR_INCLUDE_CONST(RStr, get_nodir);       /* /home/user/file.test -> file.test */
+STR_INCLUDE_CONST(RStr, get_basename);    /* /home/user/file.test -> file */
+
+STR_INCLUDE_CONST(size_t, find_nch, char ch, size_t n);
+STR_INCLUDE_CONST(size_t, find_ch, char ch, size_t n);
+STR_INCLUDE_CONST(size_t, find_ws);
+STR_INCLUDE_CONST(size_t, find_nws);
+
+STR_INCLUDE_CONST(size_t, rfind_nch, char ch, size_t n);
+STR_INCLUDE_CONST(size_t, rfind_ch, char ch, size_t n);
+STR_INCLUDE_CONST(size_t, rfind_ws);
+STR_INCLUDE_CONST(size_t, rfind_nws);
+
+STR_INCLUDE_CONST(size_t, pair_ch, char c1);
+STR_INCLUDE_CONST(size_t, count_ch, char ch);
+
+STR_INCLUDE_CONST(size_t, hash);
+STR_INCLUDE_CONST(size_t, hash_ci);
+PSTR_INCLUDE_CONST(size_t, hash);
+PSTR_INCLUDE_CONST(size_t, hash_ci);
+
+STR_INCLUDE_CONST(RStr, splice, RStr *prev_splice, char sep);
+
+int str_cmp(const Str a, const Str b);
+int rstr_cmp(const RStr a, const RStr b);
+int str_rstr_cmp(const Str a, const RStr b);
+
+int str_pcmp(const Str *a, const Str *b);
+int rstr_pcmp(const RStr *a, const RStr *b);
+int str_rstr_pcmp(const Str *a, const RStr *b);
+
 int str_cmp_sortable(const Str *a, const Str *b);
+int rstr_cmp_sortable(const RStr *a, const RStr *b);
+int str_rstr_cmp_sortable(const Str *a, const RStr *b);
+
 int str_cmp_ci(const Str *a, const Str *b);
+int rstr_cmp_ci(const RStr *a, const RStr *b);
+int str_rstr_cmp_ci(const Str *a, const RStr *b);
+
+/* }}} both , no-fail */
+
+/* {{{ TODO implement for bot rstr and str */
+size_t str_hash_esci(const Str *a);
 int str_cmp_esci(const Str *a, const Str *b);
 int str_cmp_ci_any(const Str *a, const Str **b, size_t len);
 size_t str_count_overlap(const Str *a, const Str *b, bool ignorecase);
@@ -90,25 +170,10 @@ size_t str_find_substring(const Str *str, const Str *sub);
 size_t str_find_any(const Str *str, const Str *any);
 size_t str_find_nany(const Str *str, const Str *any);
 // TODO size_t str_find_rnany(const Str *str, const Str *any);
-size_t str_nch(const Str *str, char ch, size_t n);
-size_t str_ch(const Str *str, char ch, size_t n);
-size_t str_ch_from(const Str *str, char ch, size_t n, size_t from);
-size_t str_ch_pair(const Str *str, char c1);
-size_t str_find_ws(const Str *str);
-size_t str_find_nws(const Str *str);
-size_t str_find_rnws(const Str *str);
-size_t str_rch(const Str *str, char ch, size_t n);
-size_t str_rnch(const Str *str, char ch, size_t n);
-size_t str_count_ch(const Str *str, char ch);
-size_t str_irch(const Str *str, size_t iE, char ch, size_t n);
-size_t str_hash(const Str *a);
-size_t str_hash_ci(const Str *a);
-size_t str_hash_esci(const Str *a);
-
-Str str_splice(Str *to_splice, Str *prev_splice, char sep);
-
 #define ERR_str_remove_escapes(out, in) "failed removing escape sequences"
 ErrDecl str_remove_escapes(Str *out, Str *in);
+/* }}} TODO implement for bot rstr and str */
+
 
 #define STR_H
 #endif
