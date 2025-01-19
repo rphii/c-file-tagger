@@ -15,7 +15,6 @@
 #
 #   ./tofi-bg.sh                      
 #
-#
 # spawn tofi with a selection of the current image
 #
 #   ./tofi-bg.sh "$(cat $HOME/.config/cft/bg-current.txt)"
@@ -54,7 +53,7 @@ fi
 if [ $histsearch = "true" ]; then
 
     while IFS= read -r line; do
-        cmp=$(echo "$line" | awk '{print $2}')
+        cmp=$(echo "$line" | sed 's/^.*] \(.*\) ([^)]*)/\1/')
         all_tags+="${cmp}"$'\n'
     done < "$histfile_custom"
 
@@ -66,8 +65,8 @@ else
     fi
     all_tags=$(echo "$all_output" | tail -n+2)
     search=$(echo "$all_tags" | tofi --history-file=$histfile_auto $tofi_settings --placeholder-text="$num_tags")
-    search=$(echo "$search" | awk '{print $2}')
-    #echo SEARCH: "$search"
+    search=$(echo "$search" | sed 's/^.*] \(.*\) ([^)]*)/\1/')
+    echo SEARCH: "$search"
 fi
 
 
@@ -77,7 +76,7 @@ if [[ -n "$search" ]]; then
     if [ $histsearch = "true" ]; then
         exists_in_hist=false
         while IFS= read -r line; do
-            cmp=$(echo "$line" | awk '{print $2}')
+            cmp=$(echo "$line" | sed 's/^.*] \(.*\) ([^)]*)/\1/')
             #echo COMPARE: [$cmp], [$search]
             if [[ "$cmp" == "$search" ]]; then
                 exists_in_hist=true
