@@ -23,6 +23,7 @@ typedef struct Cft {
         bool compact;
         bool title;
         bool recursive;
+        bool partial;
         int list_tags;
         int list_files;
         Str extensions;
@@ -34,7 +35,7 @@ typedef struct Cft {
     } options;
     struct {
         VStr dirfiles;
-        Str extension;
+        RStr extension;
         Str content;
     } parse;
     struct {
@@ -49,8 +50,8 @@ ErrDecl cft_init(Cft *cft);
 #define ERR_cft_arg(...) "failed passing arguments to c-file-tagger"
 ErrDecl cft_arg(Cft *cft, Arg *arg);
 
-#define ERR_cft_add(x, filename, tag) "failed adding tag '%.*s' to file '%.*s' in c-file-tagger", STR_F(filename), STR_F(tag)
-ErrDecl cft_add(Cft *cft, const Str *filename, const Str *tag);
+#define ERR_cft_add(x, filename, tag) "failed adding tag '%.*s' to file '%.*s' in c-file-tagger", STR_F(filename), RSTR_F(tag)
+ErrDecl cft_add(Cft *cft, const Str filename, const RStr tag);
 
 #define ERR_cft_retag(x, xy, from, to) "failed renaming '%.*s' to '%.*s'", STR_F(from), STR_F(to)
 ErrDecl cft_retag(Cft *cft, const Str *filename, const Str *from, const Str *to);
@@ -65,10 +66,10 @@ ErrDecl cft_del(Cft *cft, const Str *filename, const Str *tag);
 //ErrDecl cft_find_by_filename(Cft *cft, TrStr **found, const Str *filename, bool create_if_nonexist);
 
 #define ERR_cft_parse(...) "failed parsing"
-ErrDecl cft_parse(Cft *cft, const Str *input, const Str *str);
+ErrDecl cft_parse(Cft *cft, const RStr input, const Str *str);
 
-#define ERR_cft_parse_file(filename, ...) "failed parsing '%.*s'", STR_F(filename)
-ErrDecl cft_parse_file(Str *filename, void *cft_void);
+#define ERR_cft_parse_file(filename, ...) "failed parsing '%.*s'", RSTR_F(filename)
+ErrDecl cft_parse_file(RStr filename, void *cft_void);
 
 #define ERR_cft_del_duplicate_folders(...) "failed removing duplicate folders (for export)"
 ErrDecl cft_del_duplicate_folders(Cft *cft);
@@ -76,13 +77,13 @@ ErrDecl cft_del_duplicate_folders(Cft *cft);
 #define ERR_cft_fmt(...) "failed formatting"
 ErrDecl cft_fmt(Cft *cft, Str *str);
 
-#define ERR_cft_find_any(x, y, find, ...) "failed finding 'any' for tags '%.*s'", STR_F(find)
+#define ERR_cft_find_any(x, y, find, ...) "failed finding 'any' for tags '%.*s'", STR_F(*find)
 //ErrDecl cft_find_any(Cft *cft, TrrTag *found, Str *find);
 
-#define ERR_cft_find_and(x, y, find, ...) "failed finding 'and' for tags '%.*s'", STR_F(find)
+#define ERR_cft_find_and(x, y, find, ...) "failed finding 'and' for tags '%.*s'", STR_F(*find)
 //ErrDecl cft_find_and(Cft *cft, TrrTag *found, Str *find, bool first_query);
 
-#define ERR_cft_find_not(x, y, find, ...) "failed finding 'not' for tags '%.*s'", STR_F(find)
+#define ERR_cft_find_not(x, y, find, ...) "failed finding 'not' for tags '%.*s'", STR_F(*find)
 //ErrDecl cft_find_not(Cft *cft, TrrTag *found, Str *find, bool first_query);
 
 #define ERR_cft_tags_add(...) "failed adding tags"

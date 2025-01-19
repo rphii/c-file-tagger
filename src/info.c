@@ -84,7 +84,7 @@ void info_check(InfoList id, bool status) {
                 if(output) {
                     char *buf = status ? F("ok", FG_GN_B) : F("fail", FG_RD_B);
                     if(s_info.id_prev != id) {
-                        ERR_PRINTF("%.*s " F("..", FG_BK_B) " " F("(!)", FG_BL_B) " ", STR_F(info_query_last(id)));
+                        ERR_PRINTF("%.*s " F("..", FG_BK_B) " " F("(!)", FG_BL_B) " ", STR_F(*info_query_last(id)));
                     }
                     ERR_PRINTF("%s\n", buf);
                 }

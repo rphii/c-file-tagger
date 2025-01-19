@@ -1,7 +1,7 @@
 #### Start of system configuration section. ####
 
-OPTIMIZE := -DNDEBUG -march=native -O3 -fdevirtualize-at-ltrans -fipa-pta -fno-semantic-interposition -flto=auto -pipe
-#OPTIMIZE := -DNDEBUG -march=native -O3
+#OPTIMIZE := -DNDEBUG -march=native -O3 -fdevirtualize-at-ltrans -fipa-pta -fno-semantic-interposition -flto=auto -pipe
+OPTIMIZE := -DNDEBUG -march=native -O2
 
 JEMALLOC_USE := 1
 JEMALLOC_LIB := jemalloc.so
