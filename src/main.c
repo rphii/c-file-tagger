@@ -24,7 +24,7 @@ int main(int argc, const char **argv)
 
     info_disable_all(INFO_LEVEL_ALL);
     //info_enable(INFO_tag_search, INFO_LEVEL_ALL);
-    //info_enable(INFO_tag_create, INFO_LEVEL_ALL);
+    info_enable(INFO_tag_create, INFO_LEVEL_ALL);
     //info_enable(INFO_parsing_file, INFO_LEVEL_ALL);
     //info_enable(INFO_parsing_skip_incorrect_extension, INFO_LEVEL_ALL);
     //info_enable(INFO_parsing_skip_too_large, INFO_LEVEL_ALL);
