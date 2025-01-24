@@ -43,6 +43,30 @@ error:
     return -1;
 } //}}}
 
+#define ERR_cft_create_if_nonexist(...) "failed creating"
+ErrDecl cft_create_if_nonexist(Cft *cft, TTrStr *base, TTrStrItem **table, const Str *add, bool create) {
+    ASSERT_ARG(cft);
+    ASSERT_ARG(base);
+    ASSERT_ARG(table);
+    ASSERT_ARG(add);
+    /* do it */
+    *table = ttrstr_get_kv(base, add);
+    Str temp = {0};
+    /* first add the tag to the file-specific table */
+    if(!*table) {
+        if(!create) return 0;
+        info(INFO_tag_create, "Creating '%.*s'", STR_F(*add));
+        TRYG(str_copy(&temp, add));
+        TRYG(ttrstr_set(base, add, 0));
+        *table = ttrstr_get_kv(base, add);
+        ASSERT(*table, ERR_UNREACHABLE);
+        info_check(INFO_tag_create, true);
+    }
+    return 0;
+error:
+    return -1;
+}
+
 #define ERR_cft_find_by_str(...)    "failed adding string to table"
 ErrDecl cft_find_by_str(Cft *cft, TTrStr *base, TTrStrItem **table, const Str tag, bool create_if_nonexist, bool partial) { //{{{
     ASSERT_ARG(cft);
@@ -55,24 +79,13 @@ ErrDecl cft_find_by_str(Cft *cft, TTrStr *base, TTrStrItem **table, const Str ta
     /* now search */
     info(INFO_tag_search, "Searching '%.*s'", STR_F(find));
     if(!partial) {
-        *table = ttrstr_get_kv(base, findx);
-        Str temp = {0};
-        /* first add the tag to the file-specific table */
-        if(!*table) {
-            if(!create_if_nonexist) return 0;
-            info(INFO_tag_create, "Creating '%.*s'", STR_F(find));
-            str_zero(&temp);
-            TRYG(str_copy(&temp, &find));
-            TRYG(ttrstr_set(base, &temp, 0));
-            *table = ttrstr_get_kv(base, findx);
-            ASSERT(*table, ERR_UNREACHABLE);
-            info_check(INFO_tag_create, true);
-        }
+        TRYC(cft_create_if_nonexist(cft, base, table, &find, create_if_nonexist));
     } else {
         for(TTrStrItem **iter = ttrstr_iter_all(base, 0); iter; iter = ttrstr_iter_all(base, iter)) {
             Str *item = (*iter)->key;
             if(str_find_substring(item, &tag) < str_length(*item)) {
-                printff("%.*s", STR_F(*item));
+                TRYC(cft_create_if_nonexist(cft, base, table, item, create_if_nonexist));
+                //printff("%.*s", STR_F(*item));
             }
         }
     }
