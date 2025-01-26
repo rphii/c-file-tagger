@@ -133,6 +133,7 @@ error:
 
 /* {{{ both , no-fail */
 
+
 #define IMPL_STR_POP_BACK_CHAR(A, N) /*{{{*/ \
     void A##_pop_back_char(N *str, RStr *pop) { \
         ASSERT_ARG(str); \
@@ -448,6 +449,58 @@ IMPL_STR_RFIND_NWS(str, Str);
 IMPL_STR_RFIND_NWS(rstr, RStr);
 /*}}}*/
 
+#define IMPL_STR_COUNT_OVERLAP(A, N) /*{{{*/ \
+    inline size_t A##_count_overlap(const N a, const RStr b, bool ignorecase) { \
+        size_t overlap = 0; \
+        size_t len = A##_length(a) > rstr_length(b) ? rstr_length(b) : A##_length(a); \
+        if(!ignorecase) { \
+            for(size_t i = 0; i < len; ++i) { \
+                char ca = A##_get_at(&a, i); \
+                char cb = rstr_get_at(&b, i); \
+                if(ca == cb) ++overlap; \
+                else break; \
+            } \
+        } else { \
+            for(size_t i = 0; i < len; ++i) { \
+                int ca = tolower(A##_get_at(&a, i)); \
+                int cb = tolower(rstr_get_at(&b, i)); \
+                if(ca == cb) ++overlap; \
+                else break; \
+            } \
+        } \
+        return overlap; \
+    }
+IMPL_STR_COUNT_OVERLAP(str, Str);
+IMPL_STR_COUNT_OVERLAP(rstr, RStr);
+/*}}}*/
+
+#define IMPL_STR_FIND_SUBSTR(A, N) /*{{{*/ \
+    inline size_t A##_find_substr(const N str, const RStr sub) { \
+        /* basic checks */ \
+        if(!rstr_length(sub)) return 0; \
+        if(rstr_length(sub) > A##_length(str)) { \
+            return A##_length(str); \
+        } \
+        /* store original indices */ \
+        N ref = str; \
+        /* check for substring */ \
+        size_t i = 0; \
+        while(rstr_length(sub) <= A##_length(ref)) { \
+            size_t overlap = A##_count_overlap(ref, sub, true); \
+            if(overlap == rstr_length(sub)) { \
+                return i; \
+            } else { \
+                i += overlap + 1; \
+                ref.first += overlap + 1; \
+            } \
+        } \
+        /* restore original */ \
+        return A##_length(str); \
+    }
+IMPL_STR_FIND_SUBSTR(str, Str);
+IMPL_STR_FIND_SUBSTR(rstr, RStr);
+/*}}}*/
+
 
 #define IMPL_STR_PAIR_CH(A, N) /*{{{*/ \
     size_t A##_pair_ch(const N str, char c1) { \
@@ -748,56 +801,6 @@ int str_cmp_ci_any(const Str *a, const Str **b, size_t len) { /*{{{*/
         if(!result) return 0;
     }
     return -1;
-} /*}}}*/
-
-inline size_t str_count_overlap(const Str *restrict a, const Str *restrict b, bool ignorecase) /*{{{*/
-{
-    ASSERT_ARG(a);
-    ASSERT_ARG(b);
-    size_t overlap = 0;
-    size_t len = str_length(*a) > str_length(*b) ? str_length(*b) : str_length(*a);
-    if(!ignorecase) {
-        for(size_t i = 0; i < len; ++i) {
-            char ca = str_get_at(a, i);
-            char cb = str_get_at(b, i);
-            if(ca == cb) ++overlap;
-            else break;
-        }
-    } else {
-        for(size_t i = 0; i < len; ++i) {
-            int ca = tolower(str_get_at(a, i));
-            int cb = tolower(str_get_at(b, i));
-            if(ca == cb) ++overlap;
-            else break;
-        }
-    }
-    return overlap;
-} /*}}}*/
-
-inline size_t str_find_substring(const Str *restrict str, const Str *restrict sub) /*{{{*/
-{
-    ASSERT_ARG(str);
-    ASSERT_ARG(sub);
-    /* basic checks */
-    if(!str_length(*sub)) return 0;
-    if(str_length(*sub) > str_length(*str)) {
-        return str_length(*str);
-    }
-    /* store original indices */
-    Str ref = *str;
-    /* check for substring */
-    size_t i = 0;
-    while(str_length(*sub) <= str_length(ref)) {
-        size_t overlap = str_count_overlap(&ref, sub, true);
-        if(overlap == str_length(*sub)) {
-            return i;
-        } else {
-            i += overlap + 1;
-            ref.first += overlap + 1;
-        }
-    }
-    /* restore original */
-    return str_length(*str);
 } /*}}}*/
 
 size_t str_find_any(const Str *str, const Str *any) { /*{{{*/

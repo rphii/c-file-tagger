@@ -210,6 +210,8 @@ typedef enum {
 #define VEC_INCLUDE_ERR(N, A, T, M) \
     /* error strings for certain fail cases */ \
     char *ERR_##A##_push_back(void *x, ...); \
+    char *ERR_##A##_extend_back(void *x, ...); \
+    char *ERR_r##A##_extend_back(void *x, ...); \
     char *ERR_##A##_copy(void *x, ...); \
     char *ERR_r##A##_copy(void *x, ...); \
     /****************************************/
@@ -299,6 +301,8 @@ typedef enum {
 #define VEC_IMPLEMENT_ERR(N, A, T, M) \
     /* error strings for certain fail cases */ \
     char *ERR_##A##_push_back(void *x, ...) { return "failed pushing back item to vector"; } \
+    char *ERR_r##A##_extend_back(void *x, ...) { return "failed pushing back item to vector"; } \
+    char *ERR_##A##_extend_back(void *x, ...) { return "failed pushing back item to vector"; } \
     char *ERR_##A##_copy(void *x, ...) { return "failed copying vector"; } \
     char *ERR_r##A##_copy(void *x, ...) { return "failed copying vector"; } \
     /****************************************/

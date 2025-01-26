@@ -6,8 +6,9 @@
 #include "arg.h"
 
 typedef struct CftBase {
-    TTrStr file_tags;
-    TTrStr tag_files;
+    TStr strings;
+    TTPStr file_tags;
+    TTPStr tag_files;
 } CftBase;
 
 typedef struct Cft {
@@ -50,8 +51,8 @@ ErrDecl cft_init(Cft *cft);
 #define ERR_cft_arg(...) "failed passing arguments to c-file-tagger"
 ErrDecl cft_arg(Cft *cft, Arg *arg);
 
-#define ERR_cft_add(x, filename, tag) "failed adding tag '%.*s' to file '%.*s' in c-file-tagger", STR_F(filename), RSTR_F(tag)
-ErrDecl cft_add(Cft *cft, const Str filename, const RStr tag);
+#define ERR_cft_add(x, filename, tag) "failed adding tag '%.*s' to file '%.*s' in c-file-tagger", RSTR_F(filename), RSTR_F(tag)
+ErrDecl cft_add(Cft *cft, const RStr filename, const RStr tag);
 
 #define ERR_cft_retag(x, xy, from, to) "failed renaming '%.*s' to '%.*s'", STR_F(from), STR_F(to)
 ErrDecl cft_retag(Cft *cft, const Str *filename, const Str *from, const Str *to);

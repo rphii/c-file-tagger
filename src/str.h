@@ -56,6 +56,7 @@ VEC_INCLUDE(Str, str, char, BY_VAL, ERR);
 #define RSTR_IE(str, iE)        (const RStr){.s = (str).s, .first = (str).first, .last = (str).first + iE}
 
 #define RSTR_STR(str)           (const Str){.s = rstr_iter_begin(str), .last = rstr_length(str)}
+#define STR_RSTR(str)           (const RStr){.s = str_iter_begin(str), .last = str_length(str)}
 
 /* }}} utility macros */
 
@@ -129,6 +130,8 @@ STR_INCLUDE_CONST(size_t, find_nch, char ch, size_t n);
 STR_INCLUDE_CONST(size_t, find_ch, char ch, size_t n);
 STR_INCLUDE_CONST(size_t, find_ws);
 STR_INCLUDE_CONST(size_t, find_nws);
+STR_INCLUDE_CONST(size_t, count_overlap, const RStr b, bool ignorecase);
+STR_INCLUDE_CONST(size_t, find_substr, RStr sub);
 
 STR_INCLUDE_CONST(size_t, rfind_nch, char ch, size_t n);
 STR_INCLUDE_CONST(size_t, rfind_ch, char ch, size_t n);
@@ -167,8 +170,6 @@ int str_rstr_cmp_ci(const Str *a, const RStr *b);
 size_t str_hash_esci(const Str *a);
 int str_cmp_esci(const Str *a, const Str *b);
 int str_cmp_ci_any(const Str *a, const Str **b, size_t len);
-size_t str_count_overlap(const Str *a, const Str *b, bool ignorecase);
-size_t str_find_substring(const Str *str, const Str *sub);
 size_t str_find_any(const Str *str, const Str *any);
 size_t str_find_nany(const Str *str, const Str *any);
 // TODO size_t str_find_rnany(const Str *str, const Str *any);

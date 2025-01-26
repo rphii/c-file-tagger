@@ -4,7 +4,7 @@ files = {}
 tags = {}
 n = 0
 
-for root, dirs, osfiles in os.walk('/home/rphii/dev/c'):
+for root, dirs, osfiles in os.walk('/home/rphii/Images'):
     #print(f'Current Path: {root}')
     #print(f'Subdirectories: {dirs}')
     #print(f'Files: {osfiles}')
