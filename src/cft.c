@@ -376,9 +376,9 @@ error:
 
 void cft_free(Cft *cft) { //{{{
     ASSERT_ARG(cft);
-    tstr_free(&cft->base.strings);
     ttpstr_free(&cft->base.file_tags);
     ttpstr_free(&cft->base.tag_files);
+    tstr_free(&cft->base.strings);
     str_free(&cft->comments);
     str_free(&cft->misc.homedir);
     str_free(&cft->misc.current_dir);
@@ -387,7 +387,7 @@ void cft_free(Cft *cft) { //{{{
     vstr_free(&cft->parse.dirfiles);
 } //}}}
 
-ErrDecl cft_find_any(Cft *cft, TTPStr *found, Str *find) { //{{{
+ErrDecl cft_find_any(Cft *cft, RTTPStr *found, Str *find) { //{{{
     ASSERT_ARG(cft);
     ASSERT_ARG(found);
     ASSERT_ARG(find);
@@ -410,7 +410,7 @@ ErrDecl cft_find_any(Cft *cft, TTPStr *found, Str *find) { //{{{
                 for(TPStrKV **iiter = tpstr_iter_all(sub, 0); iiter; iiter = tpstr_iter_all(sub, iiter)) {
                     Str *file = (*iiter)->key;
                     TPStr *data = ttpstr_get(&cft->base.file_tags, file);
-                    ttpstr_once(found, file, data); // TODO: this is not ideal... (error checking)
+                    rttpstr_once(found, file, data); // TODO: this is not ideal... (error checking)
                 }
             }
         }
@@ -422,12 +422,12 @@ error:
     return -1;
 } //}}}
 
-ErrDecl cft_find_and(Cft *cft, TTPStr *found, Str *find, bool first_query) { //{{{
+ErrDecl cft_find_and(Cft *cft, RTTPStr *found, Str *find, bool first_query) { //{{{
     ASSERT_ARG(cft);
     ASSERT_ARG(found);
     ASSERT_ARG(find);
-    TTPStr temp = {0};
-    TTPStr temp_swap = {0};
+    RTTPStr temp = {0};
+    RTTPStr temp_swap = {0};
     int err = 0;
     RStr tag = {0};
     size_t iteration = (size_t)(!first_query);
@@ -452,19 +452,19 @@ ErrDecl cft_find_and(Cft *cft, TTPStr *found, Str *find, bool first_query) { //{
                     Str filex = STR_LL(str_iter_begin(*file), str_length(*file));
                     if(iteration == 0) {
                         TPStr *data = ttpstr_get(&cft->base.file_tags, &filex);
-                        ttpstr_once(found, file, data); // TODO: this is not ideal... (error checking)
+                        rttpstr_once(found, file, data); // TODO: this is not ideal... (error checking)
                     } else {
-                        TPStr *data = ttpstr_get(found, file);
+                        TPStr *data = rttpstr_get(found, file);
                         if(data) {
                             //printff(" >> ADD [%.*s] it %zu", STR_F(*file), iteration);
-                            ttpstr_once(&temp, file, data); // TODO: this is not ideal... (error checking)
+                            rttpstr_once(&temp, file, data); // TODO: this is not ideal... (error checking)
                         }
                     }
                 }
             }
         }
         if(iteration) {
-            ttpstr_clear(found);
+            rttpstr_clear(found);
             temp_swap = *found;
             *found = temp;
             temp = temp_swap;
@@ -472,13 +472,13 @@ ErrDecl cft_find_and(Cft *cft, TTPStr *found, Str *find, bool first_query) { //{
         ++iteration;
     }
 clean:
-    ttpstr_free(&temp_swap);
+    rttpstr_free(&temp_swap);
     return err;
 error:
     ERR_CLEAN;
 } //}}}
 
-ErrDecl cft_find_not(Cft *cft, TTPStr *found, Str *find, bool first_query) { //{{{
+ErrDecl cft_find_not(Cft *cft, RTTPStr *found, Str *find, bool first_query) { //{{{
 //ErrDecl cft_find_not(Cft *cft, TrTrStr *found, Str *find, bool first_query) { //{{{
     ASSERT_ARG(cft);
     ASSERT_ARG(found);
@@ -486,8 +486,8 @@ ErrDecl cft_find_not(Cft *cft, TTPStr *found, Str *find, bool first_query) { //{
     /* search... */
     RStr tag = {0};
     if(first_query) {
-#if 1
-        TRYG(ttpstr_copy(found, &cft->base.file_tags));
+#if 0
+        //TRYG(rttpstr_copy(found, &cft->base.file_tags));
 #else
         /* add all tags! */
         for(size_t i = 0; i < LUT_CAP(cft->base.file_tags.width); ++i) {
@@ -495,7 +495,7 @@ ErrDecl cft_find_not(Cft *cft, TTPStr *found, Str *find, bool first_query) { //{
             if(!item) continue;
             if(item->hash == LUT_EMPTY) continue;
             TPStr *data = item->val;
-            TRYG(ttpstr_set(found, item->key, data));
+            TRYG(rttpstr_set(found, item->key, data));
         }
 #endif
     }
@@ -518,7 +518,7 @@ ErrDecl cft_find_not(Cft *cft, TTPStr *found, Str *find, bool first_query) { //{
                     if(!item) continue;
                     if(item->hash == LUT_EMPTY) continue;
                     Str *file = item->key;
-                    ttpstr_del(found, file);
+                    rttpstr_del(found, file);
                 }
             }
         }
@@ -574,21 +574,21 @@ error:
 } //}}}
 
 #define ERR_cft_fmt_ttpstr(...) "failed formatting table"
-ErrDecl cft_fmt_ttpstr(Cft *cft, Str *out, TTPStr *base, bool list_sub) {
+ErrDecl cft_fmt_ttpstr(Cft *cft, Str *out, RTTPStr *base, bool list_sub) {
     ASSERT_ARG(cft);
     ASSERT_ARG(base);
     int err = 0;
     VRTTPStrKV dump_main = {0};
     VRTPStrKV dump_sub = {0};
     bool base_has_to_be_freed = false;
-    TRYG(ttpstr_dump(base, &dump_main.items, &dump_main.last));
+    TRYG(rttpstr_dump(base, &dump_main.items, &dump_main.last));
     vrttpstrkv_sort(&dump_main);
     /* optional title */
     if(cft->options.title) {
         TRYC(str_fmt(out, "Total Tags: %zu\n", vrttpstrkv_length(dump_main)));
     }
     for(size_t i = 0; i < vrttpstrkv_length(dump_main); ++i) {
-        TTPStrKV *item = vrttpstrkv_get_at(&dump_main, i);
+        RTTPStrKV *item = vrttpstrkv_get_at(&dump_main, i);
         Str *tag = item->key;
         TPStr *sub = item->val;
         /* optional decoration & compact */
@@ -624,7 +624,7 @@ ErrDecl cft_fmt_ttpstr(Cft *cft, Str *out, TTPStr *base, bool list_sub) {
     }
 clean:
     if(base_has_to_be_freed) {
-        ttpstr_free(base);
+        rttpstr_free(base);
     }
     vrttpstrkv_free(&dump_main);
     vrtpstrkv_free(&dump_sub);
@@ -637,9 +637,9 @@ ErrDecl cft_tags_fmt(Cft *cft, Str *out, VrStr *files) { //{{{
     ASSERT_ARG(cft);
     ASSERT_ARG(out);
     ASSERT_ARG(files);
-    printff("FMT TAGS %zu", cft->base.tag_files.used);
+    //printff("FMT TAGS %zu", cft->base.tag_files.used);
     int err = 0;
-    TTPStr base = {0};
+    RTTPStr base = {0};
     /* filter only matching files */
     bool base_has_to_be_freed = false;
     if(vrstr_length(*files)) {
@@ -651,13 +651,13 @@ ErrDecl cft_tags_fmt(Cft *cft, Str *out, VrStr *files) { //{{{
                 RStr tag = STR_RSTR(*(*iter)->key);
                 TTPStrKV *associated = ttpstr_get_kv(&cft->base.tag_files, &RSTR_STR(tag));
                 //printff("TAG %.*s : %zu", RSTR_F(tag), associated->val->used);
-                TRYG(ttpstr_set(&base, associated->key, associated->val)); //tag_files->val));
+                TRYG(rttpstr_set(&base, associated->key, associated->val)); //tag_files->val));
             }
         }
         //base_has_to_be_freed = true;
         //return 0;
     } else {
-        base = cft->base.tag_files;
+        base = *(RTTPStr *)&cft->base.tag_files;
     }
     TRYG(cft_fmt_ttpstr(cft, out, &base, cft->options.list_files));
 clean:
@@ -674,7 +674,7 @@ ErrDecl cft_files_fmt(Cft *cft, Str *out, VrStr *files) { //{{{
 #if 1
     VRTTPStrKV dump_files = {0};
     VRTPStrKV dump_tags = {0};
-    TTPStr base = {0};
+    RTTPStr base = {0};
     /* filter only matching files */
     bool base_has_to_be_freed = false;
     if(vrstr_length(*files)) {
@@ -682,14 +682,14 @@ ErrDecl cft_files_fmt(Cft *cft, Str *out, VrStr *files) { //{{{
             Str *file = vrstr_get_at(files, i);
             TTPStrKV *file_tags = ttpstr_get_kv(&cft->base.file_tags, file);
             if(!file_tags) continue;
-            TRYG(ttpstr_set(&base, file_tags->key, file_tags->val));
+            TRYG(rttpstr_set(&base, file_tags->key, file_tags->val));
         }
         //base_has_to_be_freed = true;
         //return 0;
     } else {
-        base = cft->base.file_tags;
+        base = *(RTTPStr *)&cft->base.file_tags; /* should probably not assign 1:1 even if it is the exact same structure */
     }
-    TRYG(ttpstr_dump(&base, &dump_files.items, &dump_files.last));
+    TRYG(rttpstr_dump(&base, &dump_files.items, &dump_files.last));
     vrttpstrkv_sort(&dump_files);
     /* optional title */
     if(cft->options.title) {
@@ -771,7 +771,7 @@ ErrDecl cft_files_fmt(Cft *cft, Str *out, VrStr *files) { //{{{
 #endif
 clean:
     if(base_has_to_be_freed) {
-        ttpstr_free(&base);
+        rttpstr_free(&base);
     }
     vrttpstrkv_free(&dump_files);
     vrtpstrkv_free(&dump_tags);
@@ -790,7 +790,7 @@ ErrDecl cft_find_fmt(Cft *cft, Str *out, Str *find_any, Str *find_and, Str *find
 #if 0
 #else
     int err = 0;
-    TTPStr found = {0};
+    RTTPStr found = {0};
     VRTTPStrKV results = {0};
     bool first = true;
     if(str_length(*find_any)) {
@@ -805,10 +805,10 @@ ErrDecl cft_find_fmt(Cft *cft, Str *out, Str *find_any, Str *find_and, Str *find
         TRYC(cft_find_not(cft, &found, find_not, first));
         first = false;
     }
-    TRYG(ttpstr_dump(&found, &results.items, &results.last));
+    TRYG(rttpstr_dump(&found, &results.items, &results.last));
     vrttpstrkv_sort(&results);
     for(size_t i = 0; i < vrttpstrkv_length(results); ++i) {
-        TTPStrKV *item = vrttpstrkv_get_at(&results, i);
+        RTTPStrKV *item = vrttpstrkv_get_at(&results, i);
         Str *file = item->key;
         TPStr *sub = item->val;
         if(cft->options.decorate) {
@@ -838,7 +838,7 @@ ErrDecl cft_find_fmt(Cft *cft, Str *out, Str *find_any, Str *find_and, Str *find
     }
 clean:
     vrttpstrkv_free(&results);
-    ttpstr_free(&found);
+    rttpstr_free(&found);
     return err;
 error:
     ERR_CLEAN;
