@@ -80,7 +80,7 @@ int main(int argc, const char **argv)
         //printff("RE [%.*s]", STR_F(&arg.parsed.tags_re));
         TRYC(cft_tags_re(&cft, &arg.parsed.remains, &arg.parsed.tags_re));
         str_clear(&cft.parse.content);
-        TRYC(cft_fmt(&cft, &cft.parse.content));
+        //TRYC(cft_fmt(&cft, &cft.parse.content));
         //printf("%.*s", STR_F(&cft.parse.content));
         TRYC(file_str_write(arg.parsed.file, &cft.parse.content));
         goto clean;

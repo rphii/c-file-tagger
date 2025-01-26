@@ -204,7 +204,7 @@ ErrDecl platform_expand_path(Str *path, const Str *base, const Str *home) // TOD
     }
     /* remove any and all dot-dot's -> '..' */
     for(;;) {
-        size_t n = str_find_substring(path, &STR(".."));
+        size_t n = str_find_substr(*path, RSTR(".."));
         if(n >= str_length(*path)) break;
         RStr prepend = str_rstr(*path);
         Str append = *path;

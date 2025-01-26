@@ -25,6 +25,15 @@ VEC_INCLUDE(Vu32, vu32, uint32_t, BY_VAL);
 VEC_INCLUDE(Vu64, vu64, uint64_t, BY_VAL);
 #endif
 
+typedef struct TTPStrKV TTPStrKV;
+VEC_INCLUDE(VRTTPStrKV, vrttpstrkv, TTPStrKV, BY_REF, BASE);
+VEC_INCLUDE(VRTTPStrKV, vrttpstrkv, TTPStrKV, BY_REF, SORT);
+
+typedef struct TPStrKV TPStrKV;
+VEC_INCLUDE(VRTPStrKV, vrtpstrkv, TPStrKV, BY_REF, BASE);
+VEC_INCLUDE(VRTPStrKV, vrtpstrkv, TPStrKV, BY_REF, SORT);
+
+#if 0
 typedef struct TTrStrItem TTrStrItem;
 VEC_INCLUDE(VrTTrStrItem, vrttrstritem, TTrStrItem, BY_REF, BASE);
 VEC_INCLUDE(VrTTrStrItem, vrttrstritem, TTrStrItem, BY_REF, SORT);
@@ -36,6 +45,7 @@ VEC_INCLUDE(VrTrTrStrItem, vrtrtrstritem, TrTrStrItem, BY_REF, SORT);
 typedef struct TrStrItem TrStrItem;
 VEC_INCLUDE(VrTrStrItem, vrtrstritem, TrStrItem, BY_REF, BASE);
 VEC_INCLUDE(VrTrStrItem, vrtrstritem, TrStrItem, BY_REF, SORT);
+#endif
 
 typedef struct Str Str;
 VEC_INCLUDE(VStr, vstr, Str, BY_REF, BASE);

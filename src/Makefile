@@ -1,7 +1,7 @@
 #### Start of system configuration section. ####
 
-OPTIMIZE := -DNDEBUG -march=native -O3 -fdevirtualize-at-ltrans -fipa-pta -fno-semantic-interposition -flto=auto -pipe
-#OPTIMIZE := -DNDEBUG -march=native -O2
+#OPTIMIZE := -DNDEBUG -march=native -O3 -fdevirtualize-at-ltrans -fipa-pta -fno-semantic-interposition -flto=auto -pipe
+OPTIMIZE := -DNDEBUG -march=native -O2
 
 JEMALLOC_USE := 1
 JEMALLOC_LIB := jemalloc.so
@@ -20,22 +20,20 @@ GIT_VERSION := "$(shell git describe --abbrev=6 --always --tags 2>/dev/null)"
 CC      := gcc
 CFLAGS  := -Wall -Wextra -Wimplicit -Wfatal-errors -std=gnu2x \
 		   -Wno-unused-parameter \
-		   -DPROC_COUNT=$(shell nproc --all) \
-		   -pg -rdynamic \
-		   ##############\
-		   -Og -rdynamic -ggdb3 \
-		   -Og -fsanitize=address -rdynamic -ggdb3 \
 		   ${OPTIMIZE} $(JEMALLOC) \
+		   ##############\
+		   -Og -fsanitize=address -rdynamic -ggdb3 \
+		   -Og -rdynamic -ggdb3 \
+		   -pg -rdynamic \
 		   -DCOLORPRINT_DISABLE \
 		   ###############
 LDFLAGS := \
 		   -lm \
-		   -pg -rdynamic \
+		   ${OPTIMIZE} $(JEMALLOC) \
 		   ##############\
-		   -Og -rdynamic -ggdb3 \
 		   -Og -fsanitize=address -rdynamic -ggdb3 \
-		   ${OPTIMIZE} $(JEMALLOC) \
-		   ${OPTIMIZE} $(JEMALLOC) \
+		   -Og -rdynamic -ggdb3 \
+		   -pg -rdynamic \
 		   ##############
 CSUFFIX	:= .c
 HSUFFIX	:= .h
