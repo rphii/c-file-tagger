@@ -26,8 +26,12 @@ VEC_INCLUDE(Vu64, vu64, uint64_t, BY_VAL);
 #endif
 
 typedef struct TTPStrKV TTPStrKV;
-VEC_INCLUDE(VRTTPStrKV, vrttpstrkv, TTPStrKV, BY_REF, BASE);
-VEC_INCLUDE(VRTTPStrKV, vrttpstrkv, TTPStrKV, BY_REF, SORT);
+VEC_INCLUDE(VTTPStrKV, vttpstrkv, TTPStrKV, BY_REF, BASE);
+VEC_INCLUDE(VTTPStrKV, vttpstrkv, TTPStrKV, BY_REF, SORT);
+
+typedef struct RTTPStrKV RTTPStrKV;
+VEC_INCLUDE(VRTTPStrKV, vrttpstrkv, RTTPStrKV, BY_REF, BASE);
+VEC_INCLUDE(VRTTPStrKV, vrttpstrkv, RTTPStrKV, BY_REF, SORT);
 
 typedef struct TPStrKV TPStrKV;
 VEC_INCLUDE(VRTPStrKV, vrtpstrkv, TPStrKV, BY_REF, BASE);

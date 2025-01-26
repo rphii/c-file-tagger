@@ -4,7 +4,7 @@
 #include "vector.h"
 #include "lookup.h"
 
-int ttrstrkv_cmp(const TTPStrKV *a, const TTPStrKV *b)
+int ttrstrkv_cmp(const RTTPStrKV *a, const RTTPStrKV *b)
 {
     return str_cmp_sortable(a->key, b->key);
 }
@@ -14,8 +14,8 @@ int tpstrkv_cmp(const TPStrKV *a, const TPStrKV *b)
     return str_cmp_sortable(a->key, b->key);
 }
 
-VEC_IMPLEMENT(VRTTPStrKV, vrttpstrkv, TTPStrKV, BY_REF, BASE, 0);
-VEC_IMPLEMENT(VRTTPStrKV, vrttpstrkv, TTPStrKV, BY_REF, SORT, ttrstrkv_cmp);
+VEC_IMPLEMENT(VRTTPStrKV, vrttpstrkv, RTTPStrKV, BY_REF, BASE, 0);
+VEC_IMPLEMENT(VRTTPStrKV, vrttpstrkv, RTTPStrKV, BY_REF, SORT, ttrstrkv_cmp);
 
 VEC_IMPLEMENT(VRTPStrKV, vrtpstrkv, TPStrKV, BY_REF, BASE, 0);
 VEC_IMPLEMENT(VRTPStrKV, vrtpstrkv, TPStrKV, BY_REF, SORT, tpstrkv_cmp);
