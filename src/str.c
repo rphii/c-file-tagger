@@ -23,10 +23,13 @@ VEC_IMPLEMENT(Str, str, char, BY_VAL, ERR);
 
 #include "vec.h"
 #include "vector.h"
-//VEC_IMPLEMENT(VStr, vstr, Str, BY_REF, BASE, 0);
-//VEC_IMPLEMENT(VStr, vstr, Str, BY_REF, ERR);
-//VEC_IMPLEMENT(VrStr, vrstr, RStr, BY_REF, BASE, 0);
-//VEC_IMPLEMENT(VrStr, vrstr, RStr, BY_REF, ERR);
+
+VEC_IMPLEMENT(VStr, vstr, Str, BY_REF, BASE, 0);
+VEC_IMPLEMENT(VStr, vstr, Str, BY_REF, ERR);
+
+VEC_IMPLEMENT(VrStr, vrstr, RStr, BY_REF, BASE, 0);
+VEC_IMPLEMENT(VrStr, vrstr, RStr, BY_REF, ERR);
+VEC_IMPLEMENT(VrStr, vrstr, RStr, BY_REF, SORT, rstr_cmp_sortable);
 
 /* }}} source-only fluff */
 

@@ -75,11 +75,11 @@ void vrtrstritem_sort(VrTrStrItem *vec)
 
 
 
-VEC_IMPLEMENT(VStr, vstr, Str, BY_REF, BASE, str_free);
-VEC_IMPLEMENT(VStr, vstr, Str, BY_REF, ERR);
-VEC_IMPLEMENT(VrStr, vrstr, Str, BY_REF, BASE, 0);
-VEC_IMPLEMENT(VrStr, vrstr, Str, BY_REF, SORT, str_cmp_sortable);
-VEC_IMPLEMENT(VrStr, vrstr, Str, BY_REF, ERR);
+//VEC_IMPLEMENT(VStr, vstr, Str, BY_REF, BASE, str_free);
+//VEC_IMPLEMENT(VStr, vstr, Str, BY_REF, ERR);
+//VEC_IMPLEMENT(VrStr, vrstr, Str, BY_REF, BASE, 0);
+//VEC_IMPLEMENT(VrStr, vrstr, Str, BY_REF, SORT, str_cmp_sortable);
+//VEC_IMPLEMENT(VrStr, vrstr, Str, BY_REF, ERR);
 
 VEC_IMPLEMENT(VSlice, vslice, Slice, BY_VAL, BASE, 0);
 
