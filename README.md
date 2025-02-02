@@ -6,6 +6,11 @@
 - *\*The command* [`wp`](examples/wp.sh) *is just a bash script that sets my background from a list of files.*
 - *\*The video is from an older date and the arguments have changed slighly*
 
+## Dependencies
+
+- [rphii/c-str](https://github.com/rphii/c-str)
+- [rphii/c-file](https://github.com/rphii/c-file)
+
 ## Install
 
     git clone https://github.com/rphii/c-file-tagger
