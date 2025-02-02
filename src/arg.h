@@ -116,13 +116,13 @@ typedef struct Arg {
         bool recursive;
         bool partial;
         SpecifyList decorate;
-        Str tags_add;
-        Str tags_re;
-        Str tags_del;
-        Str find_any;
-        Str find_and;
-        Str find_not;
-        Str substring_tags;
+        RStr tags_add;
+        RStr tags_re;
+        RStr tags_del;
+        RStr find_any;
+        RStr find_and;
+        RStr find_not;
+        RStr substring_tags;
     } parsed;
     struct {
         int tiny; /* tiny, because short is reserved */

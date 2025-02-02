@@ -78,23 +78,23 @@ ErrDecl cft_del_duplicate_folders(Cft *cft);
 #define ERR_cft_fmt(...) "failed formatting"
 ErrDecl cft_fmt(Cft *cft, Str *str);
 
-#define ERR_cft_find_any(x, y, find, ...) "failed finding 'any' for tags '%.*s'", STR_F(*find)
+#define ERR_cft_find_any(x, y, find, ...) "failed finding 'any' for tags '%.*s'", RSTR_F(*find)
 //ErrDecl cft_find_any(Cft *cft, TrrTag *found, Str *find);
 
-#define ERR_cft_find_and(x, y, find, ...) "failed finding 'and' for tags '%.*s'", STR_F(*find)
+#define ERR_cft_find_and(x, y, find, ...) "failed finding 'and' for tags '%.*s'", RSTR_F(*find)
 //ErrDecl cft_find_and(Cft *cft, TrrTag *found, Str *find, bool first_query);
 
-#define ERR_cft_find_not(x, y, find, ...) "failed finding 'not' for tags '%.*s'", STR_F(*find)
+#define ERR_cft_find_not(x, y, find, ...) "failed finding 'not' for tags '%.*s'", RSTR_F(*find)
 //ErrDecl cft_find_not(Cft *cft, TrrTag *found, Str *find, bool first_query);
 
 #define ERR_cft_tags_add(...) "failed adding tags"
-ErrDecl cft_tags_add(Cft *cft, VrStr *files, Str *tags);
+ErrDecl cft_tags_add(Cft *cft, VrStr *files, RStr *tags);
 
 #define ERR_cft_tags_re(...) "failed renaming tags"
-ErrDecl cft_tags_re(Cft *cft, VrStr *files, Str *tags);
+ErrDecl cft_tags_re(Cft *cft, VrStr *files, RStr *tags);
 
 #define ERR_cft_fmt_substring_tags(...) "failed formatting substring tags"
-ErrDecl cft_fmt_substring_tags(Cft *cft, Str *ostream, Str *tags);
+ErrDecl cft_fmt_substring_tags(Cft *cft, Str *ostream, RStr *tags);
 
 #define ERR_cft_tags_fmt(...) "failed formatting tags"
 ErrDecl cft_tags_fmt(Cft *cft, Str *out, VrStr *files);
@@ -103,7 +103,7 @@ ErrDecl cft_tags_fmt(Cft *cft, Str *out, VrStr *files);
 ErrDecl cft_files_fmt(Cft *cft, Str *out, VrStr *files);
 
 #define ERR_cft_find_fmt(...) "failed formatting findings"
-ErrDecl cft_find_fmt(Cft *cft, Str *out, Str *find_any, Str *find_and, Str *find_not);
+ErrDecl cft_find_fmt(Cft *cft, Str *out, RStr *find_any, RStr *find_and, RStr *find_not);
 
 void cft_free(Cft *cft);
 

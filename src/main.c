@@ -88,15 +88,15 @@ int main(int argc, const char **argv)
 
     /* query files */
     if(cft.options.query) {
-        //printff("any [%.*s]", STR_F(&arg.parsed.find_any));
-        //printff("and [%.*s]", STR_F(&arg.parsed.find_and));
-        //printff("not [%.*s]", STR_F(&arg.parsed.find_not));
+        //printff("any [%.*s]", STR_F(arg.parsed.find_any));
+        //printff("and [%.*s]", RSTR_F(arg.parsed.find_and));
+        //printff("not [%.*s]", STR_F(arg.parsed.find_not));
         TRYC(cft_find_fmt(&cft, &ostream, &arg.parsed.find_any, &arg.parsed.find_and, &arg.parsed.find_not));
         printf("%.*s", STR_F(ostream));
         goto clean;
     }
 
-    if(str_length(arg.parsed.substring_tags)) {
+    if(rstr_length(arg.parsed.substring_tags)) {
         TRYC(cft_fmt_substring_tags(&cft, &ostream, &arg.parsed.substring_tags));
         printf("%.*s", STR_F(ostream));
         goto clean;

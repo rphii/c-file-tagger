@@ -60,8 +60,8 @@ VEC_INCLUDE(Str, str, char, BY_VAL, ERR);
 #define RSTR_I0(str, i0)        (const RStr){.s = (str).s, .first = ((str).first + i0 < (str).last) ? (str).first + i0 : (str).last, .last = (str).last}
 #define RSTR_IE(str, iE)        (const RStr){.s = (str).s, .first = (str).first, .last = (str).first + iE}
 
-#define RSTR_STR(str)           (const Str){.s = rstr_iter_begin(str), .last = rstr_length(str)}
-#define STR_RSTR(str)           (const RStr){.s = str_iter_begin(str), .last = str_length(str)}
+#define RSTR_STR(str)           (const Str){.s = (str).s, .first = (str).first, .last = (str).last}
+#define STR_RSTR(str)           (const RStr){.s = (str).s, .first = (str).first, .last = (str).last}
 
 /* }}} utility macros */
 
