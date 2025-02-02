@@ -22,8 +22,13 @@ typedef struct VStr VStr;
 #include "vec.h"
 //VEC_INCLUDE(VStr, vstr, struct Str, BY_REF, BASE);
 //VEC_INCLUDE(VStr, vstr, struct Str, BY_REF, ERR);
-//VEC_INCLUDE(VrStr, vrstr, struct RStr, BY_REF, BASE);
-//VEC_INCLUDE(VrStr, vrstr, struct RStr, BY_REF, ERR);
+VEC_INCLUDE(VStr, vstr, struct Str, BY_REF, BASE);
+VEC_INCLUDE(VStr, vstr, struct Str, BY_REF, ERR);
+
+//VEC_INCLUDE(VrStr, vrstr, struct Str, BY_REF, BASE);
+//VEC_INCLUDE(VrStr, vrstr, struct Str, BY_REF, ERR);
+VEC_INCLUDE(VrStr, vrstr, struct RStr, BY_REF, BASE);
+VEC_INCLUDE(VrStr, vrstr, struct RStr, BY_REF, ERR);
 
 #define VEC_SETTINGS_DEFAULT_SIZE STR_DEFAULT_SIZE
 #define VEC_SETTINGS_KEEP_ZERO_END 1

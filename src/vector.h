@@ -51,11 +51,11 @@ VEC_INCLUDE(VrTrStrItem, vrtrstritem, TrStrItem, BY_REF, BASE);
 VEC_INCLUDE(VrTrStrItem, vrtrstritem, TrStrItem, BY_REF, SORT);
 #endif
 
-typedef struct Str Str;
-VEC_INCLUDE(VStr, vstr, Str, BY_REF, BASE);
-VEC_INCLUDE(VStr, vstr, Str, BY_REF, ERR);
-VEC_INCLUDE(VrStr, vrstr, Str, BY_REF, BASE);
-VEC_INCLUDE(VrStr, vrstr, Str, BY_REF, ERR);
+//typedef struct Str Str;
+//VEC_INCLUDE(VStr, vstr, Str, BY_REF, BASE);
+//VEC_INCLUDE(VStr, vstr, Str, BY_REF, ERR);
+//VEC_INCLUDE(VrStr, vrstr, Str, BY_REF, BASE);
+//VEC_INCLUDE(VrStr, vrstr, Str, BY_REF, ERR);
 
 typedef struct Slice Slice;
 VEC_INCLUDE(VSlice, vslice, Slice, BY_VAL, BASE);

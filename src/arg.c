@@ -186,10 +186,9 @@ static void arg_static_print_version(Arg *arg)
 }
 
 #define ERR_ARG_EXECUTE "failed executing argument"
-ErrDeclStatic arg_static_execute(Arg *arg, ArgList id, Str *argY)
+ErrDeclStatic arg_static_execute(Arg *arg, ArgList id, RStr argY)
 {
     ASSERT_ARG(arg);
-    ASSERT_ARG(argY);
     if(id >= ARG__COUNT) THROW("incorrect id (%u)", id);
     void *to_verify = 0;
     switch(id) {
@@ -258,8 +257,8 @@ ErrDeclStatic arg_static_execute(Arg *arg, ArgList id, Str *argY)
                     for(size_t i = 1; i < spec2->len; ++i) {
                         if(spec2->ids[i]) ++n;
                     }
-                    if(str_length(*argY)) {
-                        printf("%*s" F("%s", BOLD) " (one of %zu below; invalid provided: '" F("%.*s", BOLD) "')\n", arg->tabs.tiny, "", static_arg[id][1], n, STR_F(*argY));
+                    if(rstr_length(argY)) {
+                        printf("%*s" F("%s", BOLD) " (one of %zu below; invalid provided: '" F("%.*s", BOLD) "')\n", arg->tabs.tiny, "", static_arg[id][1], n, RSTR_F(argY));
                     } else {
                         printf("%*s" F("%s", BOLD) " (one of %zu below; none provided)\n", arg->tabs.tiny, "", static_arg[id][1], n);
                     }
@@ -296,22 +295,20 @@ error:
 }
 
 #define ERR_ARG_ADD_TO_UNKNOWN "failed to add to unknown"
-ErrDeclStatic arg_static_add_to_unknown(Arg *arg, Str *s)
+ErrDeclStatic arg_static_add_to_unknown(Arg *arg, RStr s)
 {
     ASSERT(arg, ERR_NULL_ARG);
-    ASSERT(s, ERR_NULL_ARG);
     bool add_comma = (str_length(arg->unknown) != 0);
-    TRYC(str_fmt(&arg->unknown, "%s%s%.*s", add_comma ? ", " : "", str_length(*s) > 1 ? "" : "-", STR_F(*s)));
+    TRYC(str_fmt(&arg->unknown, "%s%s%.*s", add_comma ? ", " : "", rstr_length(s) > 1 ? "" : "-", RSTR_F(s)));
     return 0;
 error:
     return -1;
 }
 
 #define ERR_ARG_PARSE_SPEC "failed parsing specific argument"
-ErrDeclStatic static_arg_parse_spec(Arg *args, ArgList arg, Str *argY, Specify spec, bool *argY_consumed)
+ErrDeclStatic static_arg_parse_spec(Arg *args, ArgList arg, RStr argY, Specify spec, bool *argY_consumed)
 {
     ASSERT(args, ERR_NULL_ARG);
-    ASSERT(argY, ERR_NULL_ARG);
     if(!spec.len) return 0;
     SpecifyList id0 = spec.ids[0];
     void *to_set = 0;
@@ -337,28 +334,28 @@ ErrDeclStatic static_arg_parse_spec(Arg *args, ArgList arg, Str *argY, Specify s
             for(size_t k = 1; k < spec.len; ++k) {
                 SpecifyList id = spec.ids[k];
                 if(!id) continue;
-                Str specs = STR_L((char *)static_specify_str[id]);
+                RStr specs = RSTR_L((char *)static_specify_str[id]);
                 //printff("  %zu:%.*s == %zu:%.*s\n", specs.last, STR_F(&specs), argY->last, STR_F(argY));
-                if(str_cmp(specs, *argY)) continue;
+                if(rstr_cmp(specs, argY)) continue;
                 *id_set = id;
                 //printf("  SELECTED!!!\n");
                 break;
             }
         } break;
         case SPECIFY_STRING: {
-            if(!str_length(*argY)) THROW("no string specified"); // TODO:do I need this??
+            if(!rstr_length(argY)) THROW("no string specified"); // TODO:do I need this??
             *argY_consumed = true;
-            if(str_length(*(Str *)to_set)) {
-                printf("%*s" F("%s %.*s", BOLD) " can't specify more than one string\n", args->tabs.tiny, "", arg_str(arg), STR_F(*argY));
+            if(rstr_length(*(RStr *)to_set)) {
+                printf("%*s" F("%s %.*s", BOLD) " can't specify more than one string\n", args->tabs.tiny, "", arg_str(arg), RSTR_F(argY));
                 args->exit_early = true;
                 return 0;
             }
             str_clear((Str *)to_set);
-            TRYC(str_fmt((Str *)to_set, "%.*s", STR_F(*argY)));
+            TRYC(str_fmt((Str *)to_set, "%.*s", RSTR_F(argY)));
         } break;
         case SPECIFY_LIST: { /* TODO: can I really just memcpy? why did I fmt SPECIFY_STRING?? is that because if I rebuild? */
             *argY_consumed = true;
-            memcpy((Str *)to_set, argY, sizeof(*argY));
+            memcpy((RStr *)to_set, &argY, sizeof(argY));
         } break;
 #if 0
         case SPECIFY_LIST: {
@@ -370,11 +367,11 @@ ErrDeclStatic static_arg_parse_spec(Arg *args, ArgList arg, Str *argY, Specify s
         } break;
 #endif
         case SPECIFY_NUMBER: {
-            if(!str_length(*argY)) THROW("no number specified");
+            if(!rstr_length(argY)) THROW("no number specified");
             *argY_consumed = true;
             errno = 0;
             char *endptr = 0;
-            char *begin = str_iter_begin(*argY);
+            char *begin = rstr_iter_begin(argY);
             size_t val = 0;
             if(begin) {
                 val = (size_t)strtoll(begin, &endptr, 0);
@@ -384,10 +381,10 @@ ErrDeclStatic static_arg_parse_spec(Arg *args, ArgList arg, Str *argY, Specify s
             *(size_t *)to_set = val;
         } break;
         case SPECIFY_STRINGS: {
-            if(!str_length(*argY)) THROW(F("%s %s", BOLD) " is missing", arg_str(arg), specify_str(SPECIFY_STRING));
+            if(!rstr_length(argY)) THROW(F("%s %s", BOLD) " is missing", arg_str(arg), specify_str(SPECIFY_STRING));
             *argY_consumed = true;
             //str_clear((Str *)to_set);
-            TRYG(vrstr_push_back((VrStr *)to_set, argY));
+            TRYG(vrstr_push_back((VrStr *)to_set, &argY));
             //TRYC(str_fmt((Str *)to_set, "%.*s", STR_F(argY)));
         } break;
         default: THROW("unhandled id0! (%u)", id0);
@@ -418,24 +415,24 @@ int arg_parse(Arg *args, size_t argc, const char **argv) /* {{{ */
     for(size_t i = 1; i < argc; ++i) {
         err_index = i;
         /* current argument */
-        Str arg = STR_L((char *)argv[i]);
-        Str argX = {0};
+        RStr arg = RSTR_L((char *)argv[i]);
+        RStr argX = {0};
         /* determine if it's short arguments or full text */
         size_t argY_i = 0;
         size_t arg_many = 0;
-        if(str_get_front(&arg) != '-') {
+        if(rstr_get_front(&arg) != '-') {
             TRYG(vrstr_push_back(&args->parsed.remains, &arg));
             continue;
         }
         bool arg_opt = false; /* assume arg is one dash */
-        if(!str_cmp(STR_LL(str_iter_begin(arg), str_length(arg) > 2 ? 2 : str_length(arg)), STR("--"))) arg_opt = true; /* arg is two dashes */
+        if(!rstr_cmp(RSTR_LL(rstr_iter_begin(arg), rstr_length(arg) > 2 ? 2 : rstr_length(arg)), RSTR("--"))) arg_opt = true; /* arg is two dashes */
         if(!arg_opt) ++arg_many;
         /* get a possible value provided with = */
-        size_t posY = str_find_ch(arg, '=', 0);
-        Str argYY = STR("");
+        size_t posY = rstr_find_ch(arg, '=', 0);
+        RStr argYY = RSTR("");
         bool argYY_available = false;
-        if(posY < str_length(arg)) {
-            argYY = STR_L(str_iter_at(&arg, posY + 1));
+        if(posY < rstr_length(arg)) {
+            argYY = RSTR_L(rstr_iter_at(&arg, posY + 1));
             argYY_available = true;
         }
         //printff("[%zu] argYY [%.*s] available ? %s", i, STR_F(&argYY), argYY_available ? "true" : "false");
@@ -445,23 +442,23 @@ int arg_parse(Arg *args, size_t argc, const char **argv) /* {{{ */
             err_arg_many = arg_many;
             for(j = 0; j < ARG__COUNT; ++j) {
                 /* prepare for comparison to find current argument */
-                Str cmp = STR_L((char *)static_arg[j][arg_opt]);
-                if(!str_length(cmp)) continue; /* arg to cmp is not even an argument */
-                argX = STR_LL(str_iter_at(&arg, arg_many), 1); /* assume short arguments -> length 1 */
+                RStr cmp = RSTR_L((char *)static_arg[j][arg_opt]);
+                if(!rstr_length(cmp)) continue; /* arg to cmp is not even an argument */
+                argX = RSTR_LL(rstr_iter_at(&arg, arg_many), 1); /* assume short arguments -> length 1 */
                 if(arg_opt) argX.last = argX.first + posY; /* if long arguments, fix length */
-                if(str_cmp(argX, cmp)) continue; /* arg to cmp to is not equal */
+                if(rstr_cmp(argX, cmp)) continue; /* arg to cmp to is not equal */
                 /* found our current argument! */
                 err_arg = j;
                 Specify spec = static_specify[j];
                 /* get a possible arg value */
                 bool argY_consumed = false;
-                Str argY = STR("");
+                RStr argY = RSTR("");
                 if(argYY_available) argY = argYY;
-                else if(i + argY_i + 1 < argc) argY = STR_L((char *)argv[i + argY_i + 1]);
+                else if(i + argY_i + 1 < argc) argY = RSTR_L((char *)argv[i + argY_i + 1]);
                 /* parse & process */
                 //printff("[%s] argY = [%zu]->[%.*s]", arg_str(j), i+argY_i+1, STR_F(&argY));
-                TRY(static_arg_parse_spec(args, j, &argY, spec, &argY_consumed), ERR_ARG_PARSE_SPEC);
-                TRY(arg_static_execute(args, j, &argY), ERR_ARG_EXECUTE);
+                TRY(static_arg_parse_spec(args, j, argY, spec, &argY_consumed), ERR_ARG_PARSE_SPEC);
+                TRY(arg_static_execute(args, j, argY), ERR_ARG_EXECUTE);
                 //printff("argY consumed? %s", argY_consumed ? "true" : "false");
                 if(argY_consumed) {
                     if(argYY_available) {
@@ -477,9 +474,9 @@ int arg_parse(Arg *args, size_t argc, const char **argv) /* {{{ */
             /* confirm for a valid option */
             if(j == ARG__COUNT) {
                 if(arg_opt) {
-                    TRY(arg_static_add_to_unknown(args, &arg), ERR_ARG_ADD_TO_UNKNOWN);
+                    TRY(arg_static_add_to_unknown(args, arg), ERR_ARG_ADD_TO_UNKNOWN);
                 } else {
-                    TRY(arg_static_add_to_unknown(args, &argX), ERR_ARG_ADD_TO_UNKNOWN);
+                    TRY(arg_static_add_to_unknown(args, argX), ERR_ARG_ADD_TO_UNKNOWN);
                 }
             }
             /* is argYY used up? */

@@ -644,8 +644,8 @@ ErrDecl cft_tags_fmt(Cft *cft, Str *out, VrStr *files) { //{{{
     bool base_has_to_be_freed = false;
     if(vrstr_length(*files)) {
         for(size_t i = 0; i < vrstr_length(*files); ++i) {
-            Str *file = vrstr_get_at(files, i);
-            TTPStrKV *file_tags = ttpstr_get_kv(&cft->base.file_tags, file);
+            Str file = RSTR_STR(*vrstr_get_at(files, i));
+            TTPStrKV *file_tags = ttpstr_get_kv(&cft->base.file_tags, &file);
             if(!file_tags) continue;
             for(TPStrKV **iter = tpstr_iter_all(file_tags->val, 0); iter; iter = tpstr_iter_all(file_tags->val, iter)) {
                 RStr tag = STR_RSTR(*(*iter)->key);
@@ -679,8 +679,8 @@ ErrDecl cft_files_fmt(Cft *cft, Str *out, VrStr *files) { //{{{
     bool base_has_to_be_freed = false;
     if(vrstr_length(*files)) {
         for(size_t i = 0; i < vrstr_length(*files); ++i) {
-            Str *file = vrstr_get_at(files, i);
-            TTPStrKV *file_tags = ttpstr_get_kv(&cft->base.file_tags, file);
+            Str file = RSTR_STR(*vrstr_get_at(files, i));
+            TTPStrKV *file_tags = ttpstr_get_kv(&cft->base.file_tags, &file);
             if(!file_tags) continue;
             TRYG(rttpstr_set(&base, file_tags->key, file_tags->val));
         }

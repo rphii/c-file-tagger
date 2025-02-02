@@ -54,7 +54,7 @@ int main(int argc, const char **argv)
     /* read all other specified files */
     if(!cft.options.modify || cft.options.merge) {
         for(size_t i = 0; i < vrstr_length(arg.parsed.inputs); ++i) {
-            RStr input = str_rstr(*vrstr_get_at(&arg.parsed.inputs, i));
+            RStr input = *vrstr_get_at(&arg.parsed.inputs, i);
             Str pop = {0};
             if(!rstr_cmp(input, arg.parsed.file)) {
                 /* TODO add some info here that skips two exact file paths... doesn't
