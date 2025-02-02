@@ -2,8 +2,8 @@
 
 #include <stdbool.h>
 
-#include "err.h"
-#include "str.h"
+#include <rphii/err.h>
+#include <rphii/str.h>
 #include "vector.h"
 
 struct Nexus;

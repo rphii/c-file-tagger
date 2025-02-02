@@ -1,7 +1,7 @@
 #include "cft.h"
 #include "file.h"
 #include "lut.h"
-#include "str.h"
+#include <rphii/str.h>
 #include "info.h"
 #include "vector.h"
 #include "platform.h"

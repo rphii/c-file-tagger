@@ -29,6 +29,7 @@ CFLAGS  := -Wall -Wextra -Wimplicit -Wfatal-errors -std=gnu2x \
 		   ###############
 LDFLAGS := \
 		   -lm \
+		   -L/lib64/rphii -Wl,-R/lib64/rphii -lstr \
 		   ${OPTIMIZE} $(JEMALLOC) \
 		   ##############\
 		   -Og -fsanitize=address -rdynamic -ggdb3 \

@@ -1,4 +1,4 @@
-#include "str.h"
+#include <rphii/str.h>
 
 #include "lookup.h"
 
