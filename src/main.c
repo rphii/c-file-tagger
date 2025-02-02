@@ -2,11 +2,11 @@
 
 #include <stdio.h>
 
-#include "file.h"
+#include <rphii/file.h>
+#include <rphii/str.h>
 #include "lookup.h"
 #include "platform.h"
 #include "arg.h"
-#include <rphii/str.h>
 #include "info.h"
 #include "cft.h"
 

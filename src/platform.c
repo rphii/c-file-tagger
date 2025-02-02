@@ -163,7 +163,7 @@ void platform_trace(void)
 
 
 #if 1 /* STR_EXPAND_PATH ??? -> move to file stuff ... {{{*/
-#include "file.h"
+#include <rphii/file.h>
 ErrDecl platform_expand_path(Str *path, const Str *base, const Str *home) // TODO: move into platform.c ... {{{
 {
     ASSERT_ARG(path);
