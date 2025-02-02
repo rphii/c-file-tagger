@@ -497,7 +497,7 @@ int arg_parse(Arg *args, size_t argc, const char **argv) /* {{{ */
         THROW("unknown arguments"); //: %.*s", STR_F(&args->unknown));
     }
     /* post processing */
-    if((args->parsed.list_tags || args->parsed.list_files) && !str_length(args->parsed.find_and) && !str_length(args->parsed.find_any) && !str_length(args->parsed.find_not)) {
+    if((args->parsed.list_tags || args->parsed.list_files) && !rstr_length(args->parsed.find_and) && !rstr_length(args->parsed.find_any) && !rstr_length(args->parsed.find_not)) {
         if(!args->parsed.decorate) {
             args->parsed.decorate = SPECIFY_OPTION_YES;
         }

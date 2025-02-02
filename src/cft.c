@@ -25,8 +25,8 @@ ErrDecl cft_arg(Cft *cft, Arg *arg) { //{{{
     ASSERT_ARG(arg);
     /* bools */
     cft->options.decorate = (arg->parsed.decorate == SPECIFY_OPTION_YES || arg->parsed.decorate == SPECIFY_OPTION_TRUE || arg->parsed.decorate == SPECIFY_OPTION_Y);
-    cft->options.query = (str_length(arg->parsed.find_and) || str_length(arg->parsed.find_any) || str_length(arg->parsed.find_not));
-    cft->options.modify = (str_length(arg->parsed.tags_add) || str_length(arg->parsed.tags_del) || str_length(arg->parsed.tags_re));
+    cft->options.query = (rstr_length(arg->parsed.find_and) || rstr_length(arg->parsed.find_any) || rstr_length(arg->parsed.find_not));
+    cft->options.modify = (rstr_length(arg->parsed.tags_add) || rstr_length(arg->parsed.tags_del) || rstr_length(arg->parsed.tags_re));
     cft->options.merge = arg->parsed.merge;
     cft->options.list_tags = arg->parsed.list_tags;
     cft->options.list_files = arg->parsed.list_files;
@@ -387,7 +387,7 @@ void cft_free(Cft *cft) { //{{{
     vstr_free(&cft->parse.dirfiles);
 } //}}}
 
-ErrDecl cft_find_any(Cft *cft, RTTPStr *found, Str *find) { //{{{
+ErrDecl cft_find_any(Cft *cft, RTTPStr *found, RStr *find) { //{{{
     ASSERT_ARG(cft);
     ASSERT_ARG(found);
     ASSERT_ARG(find);
@@ -395,8 +395,8 @@ ErrDecl cft_find_any(Cft *cft, RTTPStr *found, Str *find) { //{{{
     /* search... */
     RStr tag = {0};
     for(;;) {
-        if(rstr_iter_end(&tag) >= str_iter_end(find)) break;
-        tag = str_splice(*find, &tag, ',');
+        if(rstr_iter_end(&tag) >= rstr_iter_end(find)) break;
+        tag = rstr_splice(*find, &tag, ',');
         /* search */
         TTPStrKV *tag_files = 0;
         TTPStr *base = &cft->base.tag_files;
@@ -422,7 +422,7 @@ error:
     return -1;
 } //}}}
 
-ErrDecl cft_find_and(Cft *cft, RTTPStr *found, Str *find, bool first_query) { //{{{
+ErrDecl cft_find_and(Cft *cft, RTTPStr *found, RStr *find, bool first_query) { //{{{
     ASSERT_ARG(cft);
     ASSERT_ARG(found);
     ASSERT_ARG(find);
@@ -432,8 +432,8 @@ ErrDecl cft_find_and(Cft *cft, RTTPStr *found, Str *find, bool first_query) { //
     RStr tag = {0};
     size_t iteration = (size_t)(!first_query);
     for(;;) {
-        if(rstr_iter_end(&tag) >= str_iter_end(find)) break;
-        tag = str_splice(*find, &tag, ',');
+        if(rstr_iter_end(&tag) >= rstr_iter_end(find)) break;
+        tag = rstr_splice(*find, &tag, ',');
         /* search */
         TTPStrKV *tag_files = 0;
         TTPStr *base = &cft->base.tag_files;
@@ -478,7 +478,7 @@ error:
     ERR_CLEAN;
 } //}}}
 
-ErrDecl cft_find_not(Cft *cft, RTTPStr *found, Str *find, bool first_query) { //{{{
+ErrDecl cft_find_not(Cft *cft, RTTPStr *found, RStr *find, bool first_query) { //{{{
 //ErrDecl cft_find_not(Cft *cft, TrTrStr *found, Str *find, bool first_query) { //{{{
     ASSERT_ARG(cft);
     ASSERT_ARG(found);
@@ -501,8 +501,8 @@ ErrDecl cft_find_not(Cft *cft, RTTPStr *found, Str *find, bool first_query) { //
     }
     /* search... */
     for(;;) {
-        if(rstr_iter_end(&tag) >= str_iter_end(find)) break;
-        tag = str_splice(*find, &tag, ',');
+        if(rstr_iter_end(&tag) >= rstr_iter_end(find)) break;
+        tag = rstr_splice(*find, &tag, ',');
         /* search */
         TTPStrKV *tag_files = 0;
         TTPStr *base = &cft->base.tag_files;
@@ -529,7 +529,7 @@ error:
     return -1;
 } //}}}
 
-ErrDecl cft_tags_add(Cft *cft, VrStr *files, Str *tags) { //{{{
+ErrDecl cft_tags_add(Cft *cft, VrStr *files, RStr *tags) { //{{{
     ASSERT_ARG(cft);
     ASSERT_ARG(files);
     ASSERT_ARG(tags);
@@ -551,7 +551,7 @@ error:
     return -1;
 } //}}}
 
-ErrDecl cft_tags_re(Cft *cft, VrStr *files, Str *tags) { //{{{
+ErrDecl cft_tags_re(Cft *cft, VrStr *files, RStr *tags) { //{{{
     ASSERT_ARG(cft);
     ASSERT_ARG(files);
     ASSERT_ARG(tags);
@@ -561,7 +561,7 @@ error:
     return -1;
 } //}}}
 
-ErrDecl cft_fmt_substring_tags(Cft *cft, Str *out, Str *tags) { //{{{
+ErrDecl cft_fmt_substring_tags(Cft *cft, Str *out, RStr *tags) { //{{{
     ASSERT_ARG(cft);
     ASSERT_ARG(out);
     ASSERT_ARG(tags);
@@ -781,7 +781,7 @@ error:
     ERR_CLEAN;
 } //}}}
 
-ErrDecl cft_find_fmt(Cft *cft, Str *out, Str *find_any, Str *find_and, Str *find_not) { //{{{
+ErrDecl cft_find_fmt(Cft *cft, Str *out, RStr *find_any, RStr *find_and, RStr *find_not) { //{{{
     ASSERT_ARG(cft);
     ASSERT_ARG(out);
     ASSERT_ARG(find_any);
@@ -793,15 +793,15 @@ ErrDecl cft_find_fmt(Cft *cft, Str *out, Str *find_any, Str *find_and, Str *find
     RTTPStr found = {0};
     VRTTPStrKV results = {0};
     bool first = true;
-    if(str_length(*find_any)) {
+    if(rstr_length(*find_any)) {
         TRYC(cft_find_any(cft, &found, find_any));
         first = false;
     }
-    if(str_length(*find_and)) {
+    if(rstr_length(*find_and)) {
         TRYC(cft_find_and(cft, &found, find_and, first));
         first = false;
     }
-    if(str_length(*find_not)) {
+    if(rstr_length(*find_not)) {
         TRYC(cft_find_not(cft, &found, find_not, first));
         first = false;
     }
