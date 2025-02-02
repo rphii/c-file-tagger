@@ -1,6 +1,6 @@
 #include "cft.h"
 #include "file.h"
-#include "lut.h"
+#include <rphii/lut.h>
 #include <rphii/str.h>
 #include "info.h"
 #include "vector.h"

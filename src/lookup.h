@@ -1,6 +1,6 @@
 #ifndef LOOKUP_H
 
-#include "lut.h"
+#include <rphii/lut.h>
 
 /* other types of lookup tables */
 
