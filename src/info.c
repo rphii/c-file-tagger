@@ -1,6 +1,6 @@
 #include "info.h"
 #include "platform.h"
-#include "str.h"
+#include <rphii/str.h>
 #include <stdarg.h>
 
 static Info s_info; /* I hate public variables ... */

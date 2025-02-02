@@ -1,8 +1,8 @@
 #ifndef INFO_H
 
 #include <stdbool.h>
-#include "err.h"
-#include "str.h"
+#include <rphii/err.h>
+#include <rphii/str.h>
 
 typedef enum {
     INFO_NONE, /* ids below */

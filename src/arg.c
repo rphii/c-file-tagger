@@ -1,8 +1,8 @@
 #include <ctype.h>
 #include <errno.h>
 
+#include <rphii/str.h>
 #include "arg.h"
-#include "str.h"
 #include "vector.h"
 
 #include <pwd.h>

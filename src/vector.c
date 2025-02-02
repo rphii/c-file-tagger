@@ -1,5 +1,4 @@
-#include "str.h"
-#include "slice.h"
+#include <rphii/str.h>
 
 #include "vector.h"
 #include "lookup.h"
@@ -80,8 +79,6 @@ void vrtrstritem_sort(VrTrStrItem *vec)
 //VEC_IMPLEMENT(VrStr, vrstr, Str, BY_REF, BASE, 0);
 //VEC_IMPLEMENT(VrStr, vrstr, Str, BY_REF, SORT, str_cmp_sortable);
 //VEC_IMPLEMENT(VrStr, vrstr, Str, BY_REF, ERR);
-
-VEC_IMPLEMENT(VSlice, vslice, Slice, BY_VAL, BASE, 0);
 
 #if 0
 void vrstr_sort(VrStr *vec, size_t *counts)

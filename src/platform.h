@@ -1,7 +1,7 @@
 #ifndef PLATFORM_H
 
-#include "platform_detect.h"
-#include "str.h"
+#include <rphii/platform_detect.h>
+#include <rphii/str.h>
 
 #define ERR_platform_colorprint_init(...) "failed enabling color prints"
 ErrDecl platform_colorprint_init(void);

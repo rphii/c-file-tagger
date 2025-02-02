@@ -2,10 +2,8 @@
 #include <stdio.h>
 #include <ctype.h>
 
-#include "colorprint.h"
-#include "err.h"
-
-//#include "file.h"
+#include <rphii/colorprint.h>
+#include <rphii/err.h>
 
 /* {{{ source-only fluff */
 
@@ -21,11 +19,11 @@ VEC_IMPLEMENT(Str, str, char, BY_VAL, ERR);
 #undef VEC_SETTINGS_KEEP_ZERO_END
 #undef VEC_SETTINGS_STRUCT_ITEMS
 
-#include "vec.h"
-#include "vector.h"
+#include <rphii/vec.h>
 
 VEC_IMPLEMENT(VStr, vstr, Str, BY_REF, BASE, 0);
 VEC_IMPLEMENT(VStr, vstr, Str, BY_REF, ERR);
+VEC_IMPLEMENT(VStr, vstr, Str, BY_REF, SORT, str_cmp_sortable);
 
 VEC_IMPLEMENT(VrStr, vrstr, RStr, BY_REF, BASE, 0);
 VEC_IMPLEMENT(VrStr, vrstr, RStr, BY_REF, ERR);

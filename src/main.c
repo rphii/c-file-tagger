@@ -5,9 +5,8 @@
 #include "file.h"
 #include "lookup.h"
 #include "platform.h"
-#include "err.h"
 #include "arg.h"
-#include "str.h"
+#include <rphii/str.h>
 #include "info.h"
 #include "cft.h"
 

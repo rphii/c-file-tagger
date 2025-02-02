@@ -3,8 +3,7 @@
 
 #include "platform.h"
 //#include "colorprint.h"
-#include "err.h"
-#include "str.h"
+#include <rphii/str.h>
 
 #if defined(PLATFORM_WINDOWS)
 #include <conio.h>

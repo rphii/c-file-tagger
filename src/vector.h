@@ -1,6 +1,6 @@
 #ifndef VECTOR_H
 
-#include "vec.h"
+#include <rphii/vec.h>
 
 #include <stdint.h>
 
