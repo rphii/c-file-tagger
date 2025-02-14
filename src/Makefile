@@ -18,7 +18,7 @@ endif
 
 GIT_VERSION := "$(shell git describe --abbrev=6 --always --tags 2>/dev/null)"
 CC      := gcc
-CFLAGS  := -Wall -Wextra -Wimplicit -Wfatal-errors -std=gnu2x \
+CFLAGS  := ${CFLAGS} -Wall -Wextra -Wimplicit -Wfatal-errors -std=gnu2x \
 		   -Wno-unused-parameter \
 		   ${OPTIMIZE} $(JEMALLOC) \
 		   ##############\
