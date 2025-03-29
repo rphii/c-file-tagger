@@ -217,6 +217,7 @@ ErrDecl platform_expand_path(Str *path, const Str *base, const Str *home) // TOD
         *path = result;
         result = temp;
     }
+    /* remove any and all folder-dot-folders -> /./ */
 #endif
 clean:
     str_free(&temp);
