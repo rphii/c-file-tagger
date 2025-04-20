@@ -94,7 +94,7 @@ int main(int argc, const char **argv)
     x=argx_init(arg_opt(arg), 'o', RSTR("output"), RSTR("specify output file"));
       argx_str(x, &cft.options.output, 0);
       cft.options.argx.output = x;
-    x=argx_init(arg_opt(arg), 'e', RSTR("expand-paths"), RSTR("specify extensions, comma seperated"));
+    x=argx_init(arg_opt(arg), 'e', RSTR("expand-paths"), RSTR("expand paths"));
       argx_bool(x, &cft.options.expand_paths, 0);
     x=argx_init(arg_opt(arg), 'x', RSTR("extensions"), RSTR("specify extensions, comma seperated"));
       argx_str(x, &cft.options.extensions, &RSTR(".cft"));
