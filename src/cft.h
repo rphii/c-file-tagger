@@ -3,7 +3,7 @@
 #include "err.h"
 #include "vector.h"
 #include "lookup.h"
-#include "arg.h"
+#include <rphii/arg.h>
 
 typedef struct CftBase {
     TStr strings;
@@ -27,12 +27,26 @@ typedef struct Cft {
         bool partial;
         int list_tags;
         int list_files;
-        Str extensions;
+        RStr extensions;
+        RStr output;
+        VrStr inputs;
+        VrStr rest;
+
+        RStr tags_re;
+        RStr tags_add;
+        RStr tags_del;
+
+        RStr find_and;
+        RStr find_any;
+        RStr find_not;
         //Str *find_and;
         //Str *find_any;
         //Str *find_not;
         //Str *tags_add;
         //Str *tags_del;
+        struct {
+            struct ArgX *output;
+        } argx;
     } options;
     struct {
         VStr dirfiles;
@@ -49,7 +63,7 @@ typedef struct Cft {
 ErrDecl cft_init(Cft *cft);
 
 #define ERR_cft_arg(...) "failed passing arguments to c-file-tagger"
-ErrDecl cft_arg(Cft *cft, Arg *arg);
+ErrDecl cft_arg(Cft *cft, struct Arg *arg);
 
 #define ERR_cft_add(x, filename, tag) "failed adding tag '%.*s' to file '%.*s' in c-file-tagger", RSTR_F(filename), RSTR_F(tag)
 ErrDecl cft_add(Cft *cft, const RStr filename, const RStr tag);

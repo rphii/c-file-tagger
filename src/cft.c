@@ -20,7 +20,8 @@ error:
     return -1;
 } //}}}
 
-ErrDecl cft_arg(Cft *cft, Arg *arg) { //{{{
+ErrDecl cft_arg(Cft *cft, struct Arg *arg) { //{{{
+#if 0
     ASSERT_ARG(cft);
     ASSERT_ARG(arg);
     /* bools */
@@ -38,6 +39,7 @@ ErrDecl cft_arg(Cft *cft, Arg *arg) { //{{{
     cft->options.partial = arg->parsed.partial;
     /* TODO ::: THIS IS SO RETARDED MAKE THIS BETTER */
     /* error checking */
+#endif
     return 0;
 error:
     return -1;
@@ -245,8 +247,8 @@ ErrDecl cft_file_prepare(Cft *cft, RStr filename) //{{{
     } else {
         bool parse = false;
         RStr split = {0};
-        Str extensions = cft->options.extensions;
-        while(split = str_splice(extensions, &split, ','), rstr_iter_begin(split) < str_iter_end(&extensions)) {
+        RStr extensions = cft->options.extensions;
+        while(split = rstr_splice(extensions, &split, ','), rstr_iter_begin(split) < rstr_iter_end(&extensions)) {
             if(!rstr_cmp_ci(&cft->parse.extension, &split)) {
                 // TODO make a flag for this?
                 parse = true;
@@ -573,18 +575,6 @@ error:
     return -1;
 } //}}}
 
-ErrDecl cft_fmt_substring_tags(Cft *cft, Str *out, RStr *tags) { //{{{
-    ASSERT_ARG(cft);
-    ASSERT_ARG(out);
-    ASSERT_ARG(tags);
-    int err = 0;
-    THROW("implementation missing");
-clean:
-    return err;
-error:
-    ERR_CLEAN;
-} //}}}
-
 #define ERR_cft_fmt_ttpstr(...) "failed formatting table"
 ErrDecl cft_fmt_ttpstr(Cft *cft, Str *out, RTTPStr *base, bool list_sub) {
     ASSERT_ARG(cft);
@@ -649,11 +639,9 @@ ErrDecl cft_tags_fmt(Cft *cft, Str *out, VrStr *files) { //{{{
     ASSERT_ARG(cft);
     ASSERT_ARG(out);
     ASSERT_ARG(files);
-    //printff("FMT TAGS %zu", cft->base.tag_files.used);
     int err = 0;
     RTTPStr base = {0};
     /* filter only matching files */
-    bool base_has_to_be_freed = false;
     if(vrstr_length(*files)) {
         for(size_t i = 0; i < vrstr_length(*files); ++i) {
             Str file = RSTR_STR(*vrstr_get_at(files, i));
@@ -666,8 +654,6 @@ ErrDecl cft_tags_fmt(Cft *cft, Str *out, VrStr *files) { //{{{
                 TRYG(rttpstr_set(&base, associated->key, associated->val)); //tag_files->val));
             }
         }
-        //base_has_to_be_freed = true;
-        //return 0;
     } else {
         base = *(RTTPStr *)&cft->base.tag_files;
     }

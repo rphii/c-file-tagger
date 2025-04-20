@@ -1,7 +1,8 @@
 #### Start of system configuration section. ####
 
 #OPTIMIZE := -DNDEBUG -march=native -O3 -fdevirtualize-at-ltrans -fipa-pta -fno-semantic-interposition -flto=auto -pipe
-OPTIMIZE := -DNDEBUG -march=native -O2
+#OPTIMIZE := -DNDEBUG -march=native -O2
+OPTIMIZE := 
 
 JEMALLOC_USE := 1
 JEMALLOC_LIB := jemalloc.so
@@ -18,7 +19,7 @@ endif
 
 GIT_VERSION := "$(shell git describe --abbrev=6 --always --tags 2>/dev/null)"
 CC      := gcc
-CFLAGS  := ${CFLAGS} -Wall -Wextra -Wimplicit -Wfatal-errors -std=gnu2x \
+CFLAGS  := ${CFLAGS} -Wall -Wextra -Wimplicit -Wfatal-errors \
 		   -Wno-unused-parameter \
 		   ${OPTIMIZE} $(JEMALLOC) \
 		   ##############\

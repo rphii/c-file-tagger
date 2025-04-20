@@ -7,4 +7,6 @@ data
 *.swp
 src/callgrind.out.*
 temp
+*_old
+cft
 
