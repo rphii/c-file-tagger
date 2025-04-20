@@ -203,7 +203,7 @@ ErrDecl platform_expand_path(Str *path, const Str *base, const Str *home) // TOD
     }
     /* remove any and all dot-dot's -> '..' */
     for(;;) {
-        size_t n = str_find_substr(*path, RSTR(".."));
+        size_t n = str_find_substr(*path, RSTR("../"));
         if(n >= str_length(*path)) break;
         RStr prepend = str_rstr(*path);
         Str append = *path;
@@ -218,6 +218,19 @@ ErrDecl platform_expand_path(Str *path, const Str *base, const Str *home) // TOD
         result = temp;
     }
     /* remove any and all folder-dot-folders -> /./ */
+    for(;;) {
+        size_t n = str_find_substr(*path, RSTR("./"));
+        if(n >= str_length(*path)) break;
+        RStr prepend = str_rstr(*path);
+        Str append = *path;
+        prepend.last = prepend.first + n;
+        append.first = append.first + n + str_length(STR("."));
+        rstr_rremove_ch(&prepend, PLATFORM_CH_SUBDIR, '\\');
+        TRYC(str_fmt(&result, "%.*s%.*s", RSTR_F(prepend), STR_F(append)));
+        temp = *path;
+        *path = result;
+        result = temp;
+    }
 #endif
 clean:
     str_free(&temp);
