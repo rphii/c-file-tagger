@@ -13,8 +13,9 @@
 ## Install
 
     git clone https://github.com/rphii/c-file-tagger
-    cd c-file-tagger/src
-    make install
+    cd c-file-tagger
+    meson setup build
+    meson install -C build
 
 ## Usage
 
