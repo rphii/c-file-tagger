@@ -59,46 +59,46 @@ int main(int argc, const char **argv)
     bool exit_early = false;
     struct ArgX *x = 0;
     struct Arg *arg = arg_new();
-    arg_init(arg, RSTR_L(argv[0]), RSTR("tag managing application"), RSTR(""));
-    arg_init_rest(arg, RSTR("files|tags"), &cft.options.rest);
-    x=argx_init(arg_opt(arg), 'h', RSTR("help"), RSTR("print this help"));
+    arg_init(arg, str_l(argv[0]), str("tag managing application"), str(""));
+    arg_init_rest(arg, str("files|tags"), &cft.options.rest);
+    x=argx_init(arg_opt(arg), 'h', str("help"), str("print this help"));
       argx_help(x, arg);
-    x=argx_init(arg_opt(arg), 0 , RSTR("version"), RSTR("display the version"));
-    x=argx_init(arg_opt(arg), 't', RSTR("tag"), RSTR("tag files"));
+    x=argx_init(arg_opt(arg), 0 , str("version"), str("display the version"));
+    x=argx_init(arg_opt(arg), 't', str("tag"), str("tag files"));
       argx_str(x, &cft.options.tags_add, 0);
-    x=argx_init(arg_opt(arg), 0 , RSTR("retag"), RSTR("TBD rename files"));
+    x=argx_init(arg_opt(arg), 0 , str("retag"), str("TBD rename files"));
       argx_str(x, &cft.options.tags_re, 0);
-    x=argx_init(arg_opt(arg), 'u', RSTR("untag"), RSTR("TBD untag files"));
+    x=argx_init(arg_opt(arg), 'u', str("untag"), str("TBD untag files"));
       argx_str(x, &cft.options.tags_del, 0);
-    x=argx_init(arg_opt(arg), 'r', RSTR("recursive"), RSTR("recursively search subdirectories"));
+    x=argx_init(arg_opt(arg), 'r', str("recursive"), str("recursively search subdirectories"));
       argx_bool(x, &cft.options.recursive, 0);
-    x=argx_init(arg_opt(arg), 'O', RSTR("any"), RSTR("list files with any tags"));
+    x=argx_init(arg_opt(arg), 'O', str("any"), str("list files with any tags"));
       argx_str(x, &cft.options.find_any, 0);
       argx_func(x, 0, set_do_query, &cft, false);
-    x=argx_init(arg_opt(arg), 'A', RSTR("and"), RSTR("list files having multiple tags"));
+    x=argx_init(arg_opt(arg), 'A', str("and"), str("list files having multiple tags"));
       argx_str(x, &cft.options.find_and, 0);
       argx_func(x, 0, set_do_query, &cft, false);
-    x=argx_init(arg_opt(arg), 'N', RSTR("not"), RSTR("list files not having tags"));
+    x=argx_init(arg_opt(arg), 'N', str("not"), str("list files not having tags"));
       argx_str(x, &cft.options.find_not, 0);
       argx_func(x, 0, set_do_query, &cft, false);
-    x=argx_init(arg_opt(arg), 'l', RSTR("list-tags"), RSTR("list all tags"));
+    x=argx_init(arg_opt(arg), 'l', str("list-tags"), str("list all tags"));
       argx_func(x, 0, increment_list_tags, &cft, false);
-    x=argx_init(arg_opt(arg), 'L', RSTR("list-files"), RSTR("list all files"));
+    x=argx_init(arg_opt(arg), 'L', str("list-files"), str("list all files"));
       argx_func(x, 0, increment_list_files, &cft, false);
-    x=argx_init(arg_opt(arg), 'T', RSTR("title"), RSTR("show title in output"));
+    x=argx_init(arg_opt(arg), 'T', str("title"), str("show title in output"));
       argx_bool(x, &cft.options.title, 0);
-    x=argx_init(arg_opt(arg), 'd', RSTR("decorate"), RSTR("specify decoration"));
+    x=argx_init(arg_opt(arg), 'd', str("decorate"), str("specify decoration"));
       argx_bool(x, &cft.options.decorate, 0);
-    x=argx_init(arg_opt(arg), 'i', RSTR("input"), RSTR("specify additional input files"));
+    x=argx_init(arg_opt(arg), 'i', str("input"), str("specify additional input files"));
       argx_vstr(x, &cft.options.inputs, 0);
-    x=argx_init(arg_opt(arg), 'o', RSTR("output"), RSTR("specify output file"));
+    x=argx_init(arg_opt(arg), 'o', str("output"), str("specify output file"));
       argx_str(x, &cft.options.output, 0);
       cft.options.argx.output = x;
-    x=argx_init(arg_opt(arg), 'e', RSTR("expand-paths"), RSTR("expand paths"));
+    x=argx_init(arg_opt(arg), 'e', str("expand-paths"), str("expand paths"));
       argx_bool(x, &cft.options.expand_paths, 0);
-    x=argx_init(arg_opt(arg), 'x', RSTR("extensions"), RSTR("specify extensions, comma seperated"));
-      argx_str(x, &cft.options.extensions, &RSTR(".cft"));
-    x=argx_init(arg_opt(arg), 'p', RSTR("partial"), RSTR("specify searching exact (+ case sensitive) or partially (+ ignores case)"));
+    x=argx_init(arg_opt(arg), 'x', str("extensions"), str("specify extensions, comma seperated"));
+      argx_str(x, &cft.options.extensions, &STR(".cft"));
+    x=argx_init(arg_opt(arg), 'p', str("partial"), str("specify searching exact (+ case sensitive) or partially (+ ignores case)"));
       argx_bool(x, &cft.options.partial, 0);
 
     TRYC(arg_parse(arg, argc, argv, &exit_early));
@@ -112,32 +112,33 @@ int main(int argc, const char **argv)
     //TRYC(file_str_read(&cft.options.output, &cft.parse.content));
 #if 1
     if(file_size(cft.options.output) != SIZE_MAX) {
-        TRYC(file_exec(cft.options.output, &cft.parse.dirfiles, cft.options.recursive, cft_parse_file, &cft));
+        TRYC(file_exec(cft.options.output, &cft.parse.dirfiles, cft.options.recursive, true, cft_parse_file, &cft));
     }
 
     /* read all other specified files */
     if(!cft.options.modify || cft.options.merge) {
-        for(size_t i = 0; i < vrstr_length(cft.options.inputs); ++i) {
-            RStr input = *vrstr_get_at(&cft.options.inputs, i);
+        for(size_t i = 0; i < array_len(cft.options.inputs); ++i) {
+            Str input = array_at(cft.options.inputs, i);
             Str pop = {0};
-            if(!rstr_cmp(input, cft.options.output)) {
+            if(!str_cmp(input, cft.options.output)) {
                 /* TODO add some info here that skips two exact file paths... doesn't
                  * break anything if we DO, but helps to inform the user about what
                  * he's doing (absolutely not happened to me and I did NOT get confused
                  * by it) besides, expanding paths (.. / ~ / . etc) exists, sooo... */
                 continue;
             }
-            TRYC(file_exec(input, &cft.parse.dirfiles, cft.options.recursive, cft_parse_file, &cft));
-            while(vstr_length(cft.parse.dirfiles)) {
-                vstr_pop_back(&cft.parse.dirfiles, &pop);
-                TRYC(file_exec(str_rstr(pop), &cft.parse.dirfiles, cft.options.recursive, cft_parse_file, &cft));
+            TRYC(file_exec(input, &cft.parse.dirfiles, cft.options.recursive, true, cft_parse_file, &cft));
+            while(array_len(cft.parse.dirfiles)) {
+                Str pop = array_pop(cft.parse.dirfiles);
+                TRYC(file_exec(pop, &cft.parse.dirfiles, cft.options.recursive, true, cft_parse_file, &cft));
+                str_free(&pop);
             }
         }
     }
 
     /* reformat */
     if(cft.options.modify || cft.options.merge) {
-        if(!rstr_length(cft.options.output)) {
+        if(!str_len(cft.options.output)) {
             arg_help_set(arg, cft.options.argx.output);
             arg_help(arg);
             THROW("no output provided");

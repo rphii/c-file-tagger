@@ -5,6 +5,9 @@ src/cft.out
 data
 *.vim
 *.swp
+*.out
+*.cache
+build
 src/callgrind.out.*
 temp
 *_old
