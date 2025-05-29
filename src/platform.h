@@ -12,7 +12,7 @@ ErrDecl platform_fmt_home(Str *str);
 #define ERR_platform_fmt_cwd(...) "failed getting current working directory"
 ErrDecl platform_fmt_cwd(Str *str);
 
-void platform_path_up(RStr *path);
+void platform_path_up(Str *path);
 
 #define ERR_platform_expand_path(...) "failed expanding path"
 ErrDecl platform_expand_path(Str *path, const Str *base, const Str *home);

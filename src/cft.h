@@ -27,18 +27,18 @@ typedef struct Cft {
         bool partial;
         int list_tags;
         int list_files;
-        RStr extensions;
-        RStr output;
-        VrStr inputs;
-        VrStr rest;
+        Str extensions;
+        Str output;
+        VStr inputs;
+        VStr rest;
 
-        RStr tags_re;
-        RStr tags_add;
-        RStr tags_del;
+        Str tags_re;
+        Str tags_add;
+        Str tags_del;
 
-        RStr find_and;
-        RStr find_any;
-        RStr find_not;
+        Str find_and;
+        Str find_any;
+        Str find_not;
         //Str *find_and;
         //Str *find_any;
         //Str *find_not;
@@ -50,7 +50,7 @@ typedef struct Cft {
     } options;
     struct {
         VStr dirfiles;
-        RStr extension;
+        Str extension;
         Str content;
     } parse;
     struct {
@@ -65,8 +65,8 @@ ErrDecl cft_init(Cft *cft);
 #define ERR_cft_arg(...) "failed passing arguments to c-file-tagger"
 ErrDecl cft_arg(Cft *cft, struct Arg *arg);
 
-#define ERR_cft_add(x, filename, tag) "failed adding tag '%.*s' to file '%.*s' in c-file-tagger", RSTR_F(filename), RSTR_F(tag)
-ErrDecl cft_add(Cft *cft, const RStr filename, const RStr tag);
+#define ERR_cft_add(x, filename, tag) "failed adding tag '%.*s' to file '%.*s' in c-file-tagger", STR_F(filename), STR_F(tag)
+ErrDecl cft_add(Cft *cft, const Str filename, const Str tag);
 
 #define ERR_cft_retag(x, xy, from, to) "failed renaming '%.*s' to '%.*s'", STR_F(from), STR_F(to)
 ErrDecl cft_retag(Cft *cft, const Str *filename, const Str *from, const Str *to);
@@ -81,10 +81,10 @@ ErrDecl cft_del(Cft *cft, const Str *filename, const Str *tag);
 //ErrDecl cft_find_by_filename(Cft *cft, TrStr **found, const Str *filename, bool create_if_nonexist);
 
 #define ERR_cft_parse(...) "failed parsing"
-ErrDecl cft_parse(Cft *cft, const RStr input, const Str *str);
+ErrDecl cft_parse(Cft *cft, const Str input, const Str *str);
 
-#define ERR_cft_parse_file(filename, ...) "failed parsing '%.*s'", RSTR_F(filename)
-ErrDecl cft_parse_file(RStr filename, void *cft_void);
+#define ERR_cft_parse_file(filename, ...) "failed parsing '%.*s'", STR_F(filename)
+ErrDecl cft_parse_file(Str filename, void *cft_void);
 
 #define ERR_cft_del_duplicate_folders(...) "failed removing duplicate folders (for export)"
 ErrDecl cft_del_duplicate_folders(Cft *cft);
@@ -92,32 +92,32 @@ ErrDecl cft_del_duplicate_folders(Cft *cft);
 #define ERR_cft_fmt(...) "failed formatting"
 ErrDecl cft_fmt(Cft *cft, Str *str);
 
-#define ERR_cft_find_any(x, y, find, ...) "failed finding 'any' for tags '%.*s'", RSTR_F(*find)
+#define ERR_cft_find_any(x, y, find, ...) "failed finding 'any' for tags '%.*s'", STR_F(*find)
 //ErrDecl cft_find_any(Cft *cft, TrrTag *found, Str *find);
 
-#define ERR_cft_find_and(x, y, find, ...) "failed finding 'and' for tags '%.*s'", RSTR_F(*find)
+#define ERR_cft_find_and(x, y, find, ...) "failed finding 'and' for tags '%.*s'", STR_F(*find)
 //ErrDecl cft_find_and(Cft *cft, TrrTag *found, Str *find, bool first_query);
 
-#define ERR_cft_find_not(x, y, find, ...) "failed finding 'not' for tags '%.*s'", RSTR_F(*find)
+#define ERR_cft_find_not(x, y, find, ...) "failed finding 'not' for tags '%.*s'", STR_F(*find)
 //ErrDecl cft_find_not(Cft *cft, TrrTag *found, Str *find, bool first_query);
 
 #define ERR_cft_tags_add(...) "failed adding tags"
-ErrDecl cft_tags_add(Cft *cft, VrStr *files, RStr *tags);
+ErrDecl cft_tags_add(Cft *cft, VStr *files, Str *tags);
 
 #define ERR_cft_tags_re(...) "failed renaming tags"
-ErrDecl cft_tags_re(Cft *cft, VrStr *files, RStr *tags);
+ErrDecl cft_tags_re(Cft *cft, VStr *files, Str *tags);
 
 #define ERR_cft_fmt_substring_tags(...) "failed formatting substring tags"
-ErrDecl cft_fmt_substring_tags(Cft *cft, Str *ostream, RStr *tags);
+ErrDecl cft_fmt_substring_tags(Cft *cft, Str *ostream, Str *tags);
 
 #define ERR_cft_tags_fmt(...) "failed formatting tags"
-ErrDecl cft_tags_fmt(Cft *cft, Str *out, VrStr *files);
+ErrDecl cft_tags_fmt(Cft *cft, Str *out, VStr *files);
 
 #define ERR_cft_files_fmt(...) "failed formatting files"
-ErrDecl cft_files_fmt(Cft *cft, Str *out, VrStr *files);
+ErrDecl cft_files_fmt(Cft *cft, Str *out, VStr *files);
 
 #define ERR_cft_find_fmt(...) "failed formatting findings"
-ErrDecl cft_find_fmt(Cft *cft, Str *out, RStr *find_any, RStr *find_and, RStr *find_not);
+ErrDecl cft_find_fmt(Cft *cft, Str *out, Str *find_any, Str *find_and, Str *find_not);
 
 void cft_free(Cft *cft);
 

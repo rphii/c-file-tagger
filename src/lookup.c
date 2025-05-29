@@ -35,9 +35,9 @@ LUT_IMPLEMENT(TTrStr, ttrstr, Str, BY_REF, TrStr, BY_REF, str_phash, str_pcmp, s
 LUT_IMPLEMENT(TrTrStr, trtrstr, Str, BY_REF, TrStr, BY_REF, str_phash, str_pcmp, 0, 0);
 #endif
 
-LUT_IMPLEMENT(TStr, tstr, Str, BY_REF, void *, BY_VAL, str_phash, str_pcmp, str_free, 0);
-LUT_IMPLEMENT(TPStr, tpstr, Str *, BY_VAL, void *, BY_VAL, str_phash, str_pcmp, 0, 0);
-LUT_IMPLEMENT(TTPStr, ttpstr, Str *, BY_VAL, TPStr, BY_REF, str_phash, str_pcmp, 0, tpstr_free);
-LUT_IMPLEMENT(RTTPStr, rttpstr, Str *, BY_VAL, TPStr, BY_REF, str_phash, str_pcmp, 0, 0);
+LUT_IMPLEMENT(TStr, tstr, Str, BY_REF, void *, BY_VAL, str_hash, str_hcmp, str_free, 0);
+LUT_IMPLEMENT(TPStr, tpstr, Str *, BY_VAL, void *, BY_VAL, str_hash, str_hcmp, 0, 0);
+LUT_IMPLEMENT(TTPStr, ttpstr, Str *, BY_VAL, TPStr, BY_REF, str_hash, str_hcmp, 0, tpstr_free);
+LUT_IMPLEMENT(RTTPStr, rttpstr, Str *, BY_VAL, TPStr, BY_REF, str_hash, str_hcmp, 0, 0);
 
 
