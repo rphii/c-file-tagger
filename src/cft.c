@@ -26,8 +26,8 @@ ErrDecl cft_arg(Cft *cft, struct Arg *arg) { //{{{
     ASSERT_ARG(arg);
     /* bools */
     cft->options.decorate = (arg->parsed.decorate == SPECIFY_OPTION_YES || arg->parsed.decorate == SPECIFY_OPTION_TRUE || arg->parsed.decorate == SPECIFY_OPTION_Y);
-    cft->options.query = (str_len(arg->parsed.find_and) || str_len(arg->parsed.find_any) || str_len(arg->parsed.find_not));
-    cft->options.modify = (str_len(arg->parsed.tags_add) || str_len(arg->parsed.tags_del) || str_len(arg->parsed.tags_re));
+    cft->options.query = (str_len_raw(arg->parsed.find_and) || str_len_raw(arg->parsed.find_any) || str_len_raw(arg->parsed.find_not));
+    cft->options.modify = (str_len_raw(arg->parsed.tags_add) || str_len_raw(arg->parsed.tags_del) || str_len_raw(arg->parsed.tags_re));
     cft->options.merge = arg->parsed.merge;
     cft->options.list_tags = arg->parsed.list_tags;
     cft->options.list_files = arg->parsed.list_files;
@@ -115,7 +115,7 @@ ErrDecl cft_find_by_str(Cft *cft, TTPStr *base, TTPStrKV **table, const Str tag,
     ASSERT_ARG(base);
     ASSERT_ARG(table);
     /* prepare to search */
-    if(!str_len(tag)) return 0;
+    if(!str_len_raw(tag)) return 0;
     /* now search */
     info(INFO_tag_search, "Searching '%.*s'", STR_F(tag));
     if(!partial) {
@@ -124,7 +124,7 @@ ErrDecl cft_find_by_str(Cft *cft, TTPStr *base, TTPStrKV **table, const Str tag,
     } else {
         for(TTPStrKV **iter = ttpstr_iter_all(base, 0); iter; iter = ttpstr_iter_all(base, iter)) {
             Str *item = (*iter)->key;
-            if(str_find_substr(*item, tag, cft->options.partial) < str_len(*item)) {
+            if(str_find_substr(*item, tag, cft->options.partial) < str_len_raw(*item)) {
                 //printff(">> [%.*s]", STR_F(*item));
                 TRYC(cft_create_if_nonexist(cft, base, table, *item, create_if_nonexist));
             }
@@ -146,7 +146,7 @@ ErrDecl cft_add(Cft *cft, const Str filename, const Str tag) { //{{{
     if(!file_tags) return 0; //THROW(ERR_UNREACHABLE "; should have created/found a table");
     for(;;) {
         /* prepare string */
-        if(!str_len(find)) break;
+        if(!str_len_raw(find)) break;
         /* find entry */
         TTPStrKV *tag_files = 0;
         TRYC(cft_find_by_str(cft, &cft->base.tag_files, &tag_files, find, true, false));
@@ -164,7 +164,7 @@ ErrDecl cft_add(Cft *cft, const Str filename, const Str tag) { //{{{
         //printff("TAGGED [%.*s] WITH [%.*s] (%zu)", STR_F(*tag_files->key), STR_F(*file_tags->key), cft->base.tag_files.used);
         /* check next : */
         size_t iE = str_rfind_ch(find, ':');
-        if(iE >= str_len(find)) break;
+        if(iE >= str_len_raw(find)) break;
         //find.last = find.first + iE;
         find.len = iE;
     }
@@ -192,7 +192,7 @@ ErrDecl cft_parse(Cft *cft, const Str input, const Str *str) { //{{{
 #if 1
     size_t line_number = 0;
     info(INFO_parsing, "Parsing");
-    //printff("str_len %zu", str_len(str));
+    //printff("str_len_raw %zu", str_len_raw(str));
     Str filename_real = {0};
     Str prepend = {0};
     str_fmt(&prepend, "%.*s", STR_F(input));
@@ -214,7 +214,7 @@ ErrDecl cft_parse(Cft *cft, const Str input, const Str *str) { //{{{
                 }
                 continue;
             }
-            if(!str_len(val)) continue;
+            if(!str_len_raw(val)) continue;
             if(str_at(filename, 0) == '#') {
                 /* TODO: only read comments when we plan to write out to the file again !!! */
                 /* OTHER TODO: the order will get messed up... because we sort the rest
@@ -291,7 +291,7 @@ ErrDecl cft_parse_file(Str filename, void *cft_void) //{{{
     Cft *cft = cft_void;
 
     TRYC(cft_file_prepare(cft, filename));
-    if(str_len(cft->parse.content)) {
+    if(str_len_raw(cft->parse.content)) {
         //printff("FILE %.*s", STR_F(filename));return 0;
         TRYC(cft_parse(cft, filename, &cft->parse.content));
         info_check(INFO_parsing_file, true);
@@ -340,7 +340,7 @@ ErrDecl cft_fmt(Cft *cft, Str *str) { //{{{
         vrtrstritem_free(&dump_tags);
         str_fmt(str, "\n");
     }
-    if(str_len(cft->comments)) {
+    if(str_len_raw(cft->comments)) {
         str_fmt(str, "%.*s", STR_F(cft->comments));
     }
     info_check(INFO_formatting, true);
@@ -364,15 +364,15 @@ ErrDecl cft_del_duplicate_folders(Cft *cft) { //{{{
         Str tag = *item->key;
         TPStr *sub = item->val;
         size_t iE = str_rfind_ch(tag, ':');
-        if(iE >= str_len(tag)) continue;
+        if(iE >= str_len_raw(tag)) continue;
         Str remove = str_trim(str_iE(tag, iE));
-        if(!str_len(remove)) continue;
+        if(!str_len_raw(remove)) continue;
         for(size_t j = 0; j < LUT_CAP(sub->width); ++j) {
             TPStrKV *item2 = sub->buckets[j];
             if(!item2) continue;
             if(item2->hash == LUT_EMPTY) continue;
             Str *file = item2->key;
-            Str filex = str_ll(file->str, str_len(*file));
+            Str filex = str_ll(file->str, str_len_raw(*file));
             TPStr *modify = ttpstr_get(&cft->base.file_tags, &filex);
             if(!modify) THROW(ERR_UNREACHABLE);
             tpstr_del(modify, &remove);
@@ -414,7 +414,7 @@ ErrDecl cft_find_any(Cft *cft, RTTPStr *found, Str *find) { //{{{
         } else {
             for(TTPStrKV **iter = ttpstr_iter_all(base, 0); iter; iter = ttpstr_iter_all(base, iter)) {
                 Str *item = (*iter)->key;
-                if(str_find_substr(*item, tag, cft->options.partial) < str_len(*item)) {
+                if(str_find_substr(*item, tag, cft->options.partial) < str_len_raw(*item)) {
                     TRYC(cft_create_if_nonexist(cft, base, &tag_files, *item, false));
                     if(!tag_files) continue;
                     /* do the thing */
@@ -454,7 +454,7 @@ ErrDecl cft_find_and(Cft *cft, RTTPStr *found, Str *find, bool first_query) { //
         } else {
             for(TTPStrKV **iter = ttpstr_iter_all(base, 0); iter; iter = ttpstr_iter_all(base, iter)) {
                 Str *item = (*iter)->key;
-                if(str_find_substr(*item, tag, cft->options.partial) < str_len(*item)) {
+                if(str_find_substr(*item, tag, cft->options.partial) < str_len_raw(*item)) {
                     TRYC(cft_create_if_nonexist(cft, base, &tag_files, *item, false));
                     if(!tag_files) continue;
                     /* do the thing */
@@ -464,7 +464,7 @@ ErrDecl cft_find_and(Cft *cft, RTTPStr *found, Str *find, bool first_query) { //
                         if(!item) continue;
                         if(item->hash == LUT_EMPTY) continue;
                         Str *file = item->key;
-                        Str filex = str_ll(file->str, str_len(*file));
+                        Str filex = str_ll(file->str, str_len_raw(*file));
                         if(iteration == 0) {
                             TPStr *data = ttpstr_get(&cft->base.file_tags, &filex);
                             rttpstr_once(found, file, data); // TODO: this is not ideal... (error checking)
@@ -526,7 +526,7 @@ ErrDecl cft_find_not(Cft *cft, RTTPStr *found, Str *find, bool first_query) { //
         } else {
             for(TTPStrKV **iter = ttpstr_iter_all(base, 0); iter; iter = ttpstr_iter_all(base, iter)) {
                 Str *item = (*iter)->key;
-                if(str_find_substr(*item, tag, cft->options.partial) < str_len(*item)) {
+                if(str_find_substr(*item, tag, cft->options.partial) < str_len_raw(*item)) {
                     TRYC(cft_create_if_nonexist(cft, base, &tag_files, *item, false));
                     if(!tag_files) continue;
                     /* do the thing */
@@ -553,7 +553,7 @@ ErrDecl cft_tags_add(Cft *cft, VStr *files, Str *tags) { //{{{
     ASSERT_ARG(files);
     ASSERT_ARG(tags);
 #if 0
-    if(!str_len(*tags)) return 0;
+    if(!str_len_raw(*tags)) return 0;
     for(size_t i = 0; i < vstr_len(*files); ++i) {
         Str *file = vrstr_get_at(files, i);
         Str tag = {0};
@@ -796,15 +796,15 @@ ErrDecl cft_find_fmt(Cft *cft, Str *out, Str *find_any, Str *find_and, Str *find
     RTTPStr found = {0};
     VRTTPStrKV results = {0};
     bool first = true;
-    if(str_len(*find_any)) {
+    if(str_len_raw(*find_any)) {
         TRYC(cft_find_any(cft, &found, find_any));
         first = false;
     }
-    if(str_len(*find_and)) {
+    if(str_len_raw(*find_and)) {
         TRYC(cft_find_and(cft, &found, find_and, first));
         first = false;
     }
-    if(str_len(*find_not)) {
+    if(str_len_raw(*find_not)) {
         TRYC(cft_find_not(cft, &found, find_not, first));
         first = false;
     }

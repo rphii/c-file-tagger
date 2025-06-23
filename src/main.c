@@ -138,7 +138,7 @@ int main(int argc, const char **argv)
 
     /* reformat */
     if(cft.options.modify || cft.options.merge) {
-        if(!str_len(cft.options.output)) {
+        if(!str_len_raw(cft.options.output)) {
             arg_help_set(arg, cft.options.argx.output);
             arg_help(arg);
             THROW("no output provided");
