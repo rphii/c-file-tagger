@@ -81,14 +81,14 @@ void platform_path_up(Str *path) //{{{
     size_t n = 0;
     for(;;) {
         n = str_rfind_ch(path2, PLATFORM_CH_SUBDIR);
-        if(n == 0 || n >= str_len(path2)) {
+        if(n == 0 || n >= str_len_raw(path2)) {
             path2.len = 0;
             break;
         }
         path2.len = n - 1;
         path2 = str_ensure_dir(path2);
         //rstr_rremove_ch(&path2, PLATFORM_CH_SUBDIR, '\\');
-        if(str_len(path2) && str_at(path2, str_len(path2)-1) == PLATFORM_CH_SUBDIR) {
+        if(str_len_raw(path2) && str_at(path2, str_len_raw(path2)-1) == PLATFORM_CH_SUBDIR) {
             --path2.len;
         } else {
             path2.len = n;
@@ -178,8 +178,8 @@ ErrDecl platform_expand_path(Str *path, const Str *base, const Str *home) // TOD
 #if defined(PLATFORM_WINDOWS)
     ABORT("not yet implemented in windows");
 #else
-    if(!str_len(*path)) return 0;
-    if(str_len(*path) >= 2 && !str_cmp(str_iE(*path, 2), STR("~/"))) {
+    if(!str_len_raw(*path)) return 0;
+    if(str_len_raw(*path) >= 2 && !str_cmp(str_iE(*path, 2), STR("~/"))) {
         str_fmt(&result, "%.*s%.*s", STR_F(*home), STR_F(str_i0(*path, 1)));
         /* assign result */
         str_clear(path);
@@ -191,7 +191,7 @@ ErrDecl platform_expand_path(Str *path, const Str *base, const Str *home) // TOD
             platform_path_up(&base2);
         }
         //printff("%.*s .. %.*s", STR_F(&base2), STR_F(path));
-        if(str_len(base2)) {
+        if(str_len_raw(base2)) {
             str_fmt(&result, "%.*s%c%.*s", STR_F(base2), PLATFORM_CH_SUBDIR, STR_F(*path));
         } else {
             str_fmt(&result, "%.*s", STR_F(*path));
@@ -205,11 +205,11 @@ ErrDecl platform_expand_path(Str *path, const Str *base, const Str *home) // TOD
     /* remove any and all dot-dot's -> '..' */
     for(;;) {
         size_t n = str_find_substr(*path, STR("../"), false);
-        if(n >= str_len(*path)) break;
+        if(n >= str_len_raw(*path)) break;
         Str prepend = *path;
         Str append = *path;
         prepend.len = n;
-        append.str = append.str + n + str_len(STR(".."));
+        append.str = append.str + n + str_len_raw(STR(".."));
         prepend = str_ensure_dir(prepend);
         //rstr_rremove_ch(&prepend, PLATFORM_CH_SUBDIR, '\\');
         platform_path_up(&prepend);
@@ -222,11 +222,11 @@ ErrDecl platform_expand_path(Str *path, const Str *base, const Str *home) // TOD
     /* remove any and all folder-dot-folders -> /./ */
     for(;;) {
         size_t n = str_find_substr(*path, STR("./"), false);
-        if(n >= str_len(*path)) break;
+        if(n >= str_len_raw(*path)) break;
         Str prepend = *path;
         Str append = *path;
         prepend.len = n;
-        append.str = append.str + n + str_len(STR("."));
+        append.str = append.str + n + str_len_raw(STR("."));
         prepend = str_ensure_dir(prepend);
         //rstr_rremove_ch(&prepend, PLATFORM_CH_SUBDIR, '\\');
         str_fmt(&result, "%.*s%.*s", STR_F(prepend), STR_F(append));
