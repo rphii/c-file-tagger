@@ -61,8 +61,8 @@ int main(int argc, const char **argv)
     struct Arg *arg = arg_new();
     arg_init(arg, str_l(argv[0]), str("tag managing application"), str(""));
     arg_init_rest(arg, str("files|tags"), &cft.options.rest);
-    x=argx_init(arg_opt(arg), 'h', str("help"), str("print this help"));
-      argx_help(x, arg);
+    argx_builtin_env_compgen(arg);
+    argx_builtin_opt_help(arg);
     x=argx_init(arg_opt(arg), 0 , str("version"), str("display the version"));
     x=argx_init(arg_opt(arg), 't', str("tag"), str("tag files"));
       argx_str(x, &cft.options.tags_add, 0);
