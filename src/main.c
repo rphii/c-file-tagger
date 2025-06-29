@@ -64,6 +64,10 @@ int main(int argc, const char **argv)
     arg_init_rest(arg, str("files|tags"), &cft.options.rest);
     arg_init_fmt(arg);
     o=argx_group(arg, str("Options"));
+    argx_builtin_opt_source(o, str("/etc/cft/cft.conf"));
+    argx_builtin_opt_source(o, str("$HOME/.config/rphiic/colors.conf"));
+    argx_builtin_opt_source(o, str("$HOME/.config/cft/cft.conf"));
+    argx_builtin_opt_source(o, str("$XDG_CONFIG_HOME/cft/cft.conf"));
     argx_builtin_opt_help(o);
     x=argx_init(o, 0 , str("version"), str("display the version"));
     x=argx_init(o, 't', str("tag"), str("tag files"));
@@ -107,7 +111,7 @@ int main(int argc, const char **argv)
     argx_builtin_env_compgen(o);
 
     o=argx_group(arg, str("Color Adjustments"));
-    argx_builtin_opt_rice(o, arg);
+    argx_builtin_opt_rice(o);
 
     TRYC(arg_parse(arg, argc, argv, &exit_early));
     if(exit_early) goto clean;
