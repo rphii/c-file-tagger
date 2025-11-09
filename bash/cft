@@ -1,4 +1,4 @@
 # generic completion function using rphiic
-_completion_loader rphiic
-complete -o bashdefault -o default -F _complete_rphiic cft
+_completion_loader rlc
+complete -o bashdefault -o default -F _complete_rlc cft
 
