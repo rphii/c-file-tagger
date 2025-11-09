@@ -374,7 +374,7 @@ ErrDecl cft_del_duplicate_folders(Cft *cft) { //{{{
             Str *file = item2->key;
             Str filex = str_ll(file->str, str_len_raw(*file));
             TPStr *modify = ttpstr_get(&cft->base.file_tags, &filex);
-            if(!modify) THROW(ERR_UNREACHABLE);
+            if(!modify) THROW(ERR_UNREACHABLE("internal lookup table error"));
             tpstr_del(modify, &remove);
         }
     }
