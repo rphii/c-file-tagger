@@ -1,8 +1,8 @@
 #ifndef INFO_H
 
 #include <stdbool.h>
-#include <rphii/err.h>
-#include <rphii/str.h>
+#include <rlc/err.h>
+#include <rlso.h>
 
 typedef enum {
     INFO_NONE, /* ids below */
@@ -54,14 +54,14 @@ typedef enum {
 typedef struct Info {
     InfoLevelField disabled[INFO__COUNT];
     InfoStatusList status[INFO__COUNT];
-    Str info_last[INFO__COUNT];
+    So info_last[INFO__COUNT];
     InfoList id_prev;
 } Info;
 
 void info_handle_abort(void);
 void info_handle_prev(InfoList current);
 void info_handle_end(InfoList id);
-Str *info_query_last(InfoList id);
+So *info_query_last(InfoList id);
 
 /* The # operator converts symbol 'v' into a string */
 #define STRINGIFY0(v) #v
@@ -71,27 +71,27 @@ Str *info_query_last(InfoList id);
         InfoLevelField disabled = info_query_disabled(id); \
         if(disabled & INFO_LEVEL_TEXT) break; /* like.. if no text -> break entirely */ \
         info_handle_prev(id); \
-        Str *last = info_query_last(id); \
-        str_clear(last); \
+        So *last = info_query_last(id); \
+        so_clear(last); \
         bool decorators = false; \
         if(~disabled & INFO_LEVEL_IS_INFO) { \
-            (void)(str_fmt(last, F("[INFO] ", FG_YL_B BOLD))); \
+            (void)(so_fmt(last, F("[INFO] ", FG_YL_B BOLD))); \
         } \
         if(~disabled & INFO_LEVEL_ID) { \
-            (void)(str_fmt(last, F("<%s> ", FG_BL_B BOLD), STRINGIFY(id))); \
+            (void)(so_fmt(last, F("<%s> ", FG_BL_B BOLD), STRINGIFY(id))); \
         } \
         if(~disabled & INFO_LEVEL_FILE_LINE) { \
-            (void)(str_fmt(last, F("%s%s:%i", FG_WT_B), decorators ? ":" : "", __FILE__, __LINE__)); \
+            (void)(so_fmt(last, F("%s%s:%i", FG_WT_B), decorators ? ":" : "", __FILE__, __LINE__)); \
             decorators = true; \
         } \
         if(~disabled & INFO_LEVEL_FUNCTION) { \
-            (void)(str_fmt(last, F("%s%s", FG_WT_B), decorators ? ":" : "", __func__)); \
+            (void)(so_fmt(last, F("%s%s", FG_WT_B), decorators ? ":" : "", __func__)); \
             decorators = true; \
         } \
-        (void)(str_fmt(last, "%s", decorators ? " " : "")); \
+        (void)(so_fmt(last, "%s", decorators ? " " : "")); \
         decorators = false; \
-        (void)(str_fmt(last, str, ##__VA_ARGS__)); \
-        ERR_PRINTF("%.*s", STR_F(*last)); \
+        (void)(so_fmt(last, str, ##__VA_ARGS__)); \
+        ERR_PRINTF("%.*s", SO_F(*last)); \
         info_handle_end(id); \
     } while(0)
 

@@ -1,16 +1,16 @@
-#include <rphii/str.h>
+#include <rlso.h>
 
 #include "vector.h"
 #include "lookup.h"
 
 int ttrstrkv_cmp(const RTTPStrKV *a, const RTTPStrKV *b)
 {
-    return str_pcmp_sortable(a->key, b->key);
+    return so_cmp_sp(a->key, b->key);
 }
 
 int tpstrkv_cmp(const TPStrKV *a, const TPStrKV *b)
 {
-    return str_pcmp_sortable(a->key, b->key);
+    return so_cmp_sp(a->key, b->key);
 }
 
 VEC_IMPLEMENT(VRTTPStrKV, vrttpstrkv, RTTPStrKV, BY_REF, BASE, 0);
