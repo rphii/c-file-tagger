@@ -3,7 +3,7 @@
 
 #include "platform.h"
 //#include "colorprint.h"
-#include <rphii/str.h>
+#include <rlso.h>
 
 #if defined(PLATFORM_WINDOWS)
 #include <conio.h>
@@ -36,7 +36,7 @@ error:
 #endif
 }
 
-ErrDecl platform_fmt_home(Str *str)
+ErrDecl platform_fmt_home(So *str)
 {
     ASSERT_ARG(str);
 #if defined(PLATFORM_WINDOWS)
@@ -44,15 +44,15 @@ ErrDecl platform_fmt_home(Str *str)
 #else
     struct passwd *pw = getpwuid(getuid());
     const char *homedir = pw->pw_dir;
-    str_copy(str, str_ensure_dir(str_l(homedir)));
-    //str_rremove_ch(str, PLATFORM_CH_SUBDIR, '\\'); // juuuust to be sure
+    so_copy(str, so_ensure_dir(so_l(homedir)));
+    //so_rremove_ch(str, PLATFORM_CH_SUBDIR, '\\'); // juuuust to be sure
 #endif
     return 0;
 error:
     return -1;
 }
 
-ErrDecl platform_fmt_cwd(Str *str)
+ErrDecl platform_fmt_cwd(So *str)
 {
     ASSERT_ARG(str);
 #if defined(PLATFORM_WINDOWS)
@@ -60,35 +60,35 @@ ErrDecl platform_fmt_cwd(Str *str)
 #else
     char cwd[PATH_MAX];
     if(getcwd(cwd, sizeof(cwd)) != NULL) {
-        str_copy(str, str_ensure_dir(str_l(cwd)));
+        so_copy(str, so_ensure_dir(so_l(cwd)));
     } else {
         THROW("getcwd() error");
     }
-    //str_rremove_ch(str, PLATFORM_CH_SUBDIR, '\\'); // juuuust to be sure
+    //so_rremove_ch(str, PLATFORM_CH_SUBDIR, '\\'); // juuuust to be sure
 #endif
    return 0;
 error:
    return -1;
 }
 
-void platform_path_up(Str *path) //{{{
+void platform_path_up(So *path) //{{{
 {
     ASSERT_ARG(path);
-    Str path2 = *path;
+    So path2 = *path;
 #if defined(PLATFORM_WINDOWS)
     ABORT("not yet implemented for windows");
 #else
     size_t n = 0;
     for(;;) {
-        n = str_rfind_ch(path2, PLATFORM_CH_SUBDIR);
-        if(n == 0 || n >= str_len_raw(path2)) {
+        n = so_rfind_ch(path2, PLATFORM_CH_SUBDIR);
+        if(n == 0 || n >= so_len(path2)) {
             path2.len = 0;
             break;
         }
         path2.len = n - 1;
-        path2 = str_ensure_dir(path2);
-        //rstr_rremove_ch(&path2, PLATFORM_CH_SUBDIR, '\\');
-        if(str_len_raw(path2) && str_at(path2, str_len_raw(path2)-1) == PLATFORM_CH_SUBDIR) {
+        path2 = so_ensure_dir(path2);
+        //rso_rremove_ch(&path2, PLATFORM_CH_SUBDIR, '\\');
+        if(so_len(path2) && so_at(path2, so_len(path2)-1) == PLATFORM_CH_SUBDIR) {
             --path2.len;
         } else {
             path2.len = n;
@@ -97,7 +97,7 @@ void platform_path_up(Str *path) //{{{
     }
 #endif
     *path = path2;
-    //printff("PATH2=[%.*s]", STR_F(&path2));
+    //printff("PATH2=[%.*s]", SO_F(&path2));
 } //}}}
 
 /******************************************************************************/
@@ -164,79 +164,78 @@ void platform_trace(void)
 
 
 #if 1 /* STR_EXPAND_PATH ??? -> move to file stuff ... {{{*/
-#include <rphii/file.h>
-ErrDecl platform_expand_path(Str *path, const Str *base, const Str *home) // TODO: move into platform.c ... {{{
+ErrDecl platform_expand_path(So *path, const So *base, const So *home) // TODO: move into platform.c ... {{{
 {
     ASSERT_ARG(path);
     ASSERT_ARG(base);
     ASSERT_ARG(home);
     int err = 0;
-    Str result = {0};
-    Str temp = {0};
-    Str base2 = *base;
-    str_trim(*path);
+    So result = {0};
+    So temp = {0};
+    So base2 = *base;
+    so_trim(*path);
 #if defined(PLATFORM_WINDOWS)
     ABORT("not yet implemented in windows");
 #else
-    if(!str_len_raw(*path)) return 0;
-    if(str_len_raw(*path) >= 2 && !str_cmp(str_iE(*path, 2), STR("~/"))) {
-        str_fmt(&result, "%.*s%.*s", STR_F(*home), STR_F(str_i0(*path, 1)));
+    if(!so_len(*path)) return 0;
+    if(so_len(*path) >= 2 && !so_cmp(so_iE(*path, 2), so("~/"))) {
+        so_fmt(&result, "%.*s%.*s", SO_F(*home), SO_F(so_i0(*path, 1)));
         /* assign result */
-        str_clear(path);
+        so_clear(path);
         temp = *path;
         *path = result;
         result = temp;
-    } else if(str_at(*path, 0) != PLATFORM_CH_SUBDIR) {
-        if(file_get_type(base2) != FILE_TYPE_DIR) {
+    } else if(so_at(*path, 0) != PLATFORM_CH_SUBDIR) {
+        if(so_file_get_type(base2) != SO_FILE_TYPE_DIR) {
             platform_path_up(&base2);
         }
-        //printff("%.*s .. %.*s", STR_F(&base2), STR_F(path));
-        if(str_len_raw(base2)) {
-            str_fmt(&result, "%.*s%c%.*s", STR_F(base2), PLATFORM_CH_SUBDIR, STR_F(*path));
+        //printff("%.*s .. %.*s", SO_F(&base2), SO_F(path));
+        if(so_len(base2)) {
+            so_fmt(&result, "%.*s%c%.*s", SO_F(base2), PLATFORM_CH_SUBDIR, SO_F(*path));
         } else {
-            str_fmt(&result, "%.*s", STR_F(*path));
+            so_fmt(&result, "%.*s", SO_F(*path));
         }
         /* assign result */
-        str_clear(path);
+        so_clear(path);
         temp = *path;
         *path = result;
         result = temp;
     }
     /* remove any and all dot-dot's -> '..' */
     for(;;) {
-        size_t n = str_find_substr(*path, STR("../"), false);
-        if(n >= str_len_raw(*path)) break;
-        Str prepend = *path;
-        Str append = *path;
+        size_t n = so_find_sub(*path, so("../"), false);
+        if(n >= so_len(*path)) break;
+        So prepend = *path;
+        So append = *path;
         prepend.len = n;
-        append.str = append.str + n + str_len_raw(STR(".."));
-        prepend = str_ensure_dir(prepend);
-        //rstr_rremove_ch(&prepend, PLATFORM_CH_SUBDIR, '\\');
+        append.str = append.str + n + so_len(so(".."));
+        prepend = so_ensure_dir(prepend);
+        //rso_rremove_ch(&prepend, PLATFORM_CH_SUBDIR, '\\');
         platform_path_up(&prepend);
-        str_clear(&result);
-        str_fmt(&result, "%.*s%.*s", STR_F(prepend), STR_F(append));
+        so_clear(&result);
+        so_fmt(&result, "%.*s%.*s", SO_F(prepend), SO_F(append));
         temp = *path;
         *path = result;
         result = temp;
     }
     /* remove any and all folder-dot-folders -> /./ */
     for(;;) {
-        size_t n = str_find_substr(*path, STR("./"), false);
-        if(n >= str_len_raw(*path)) break;
-        Str prepend = *path;
-        Str append = *path;
+        size_t n = so_find_sub(*path, so("./"), false);
+        if(n >= so_len(*path)) break;
+        So prepend = *path;
+        So append = *path;
         prepend.len = n;
-        append.str = append.str + n + str_len_raw(STR("."));
-        prepend = str_ensure_dir(prepend);
-        //rstr_rremove_ch(&prepend, PLATFORM_CH_SUBDIR, '\\');
-        str_fmt(&result, "%.*s%.*s", STR_F(prepend), STR_F(append));
+        append.str = append.str + n + so_len(so("."));
+        prepend = so_ensure_dir(prepend);
+        //rso_rremove_ch(&prepend, PLATFORM_CH_SUBDIR, '\\');
+        so_fmt(&result, "%.*s%.*s", SO_F(prepend), SO_F(append));
         temp = *path;
         *path = result;
         result = temp;
     }
 #endif
 clean:
-    str_free(&temp);
+    so_free(&temp);
     return err;
 error:
     ERR_CLEAN;

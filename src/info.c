@@ -1,6 +1,5 @@
 #include "info.h"
 #include "platform.h"
-#include <rphii/str.h>
 #include <stdarg.h>
 
 static Info s_info; /* I hate public variables ... */
@@ -15,7 +14,7 @@ InfoTypeList info_query_type(InfoList id) {
     }
 }
 
-Str *info_query_last(InfoList id) {
+So *info_query_last(InfoList id) {
     ASSERT(id < INFO__COUNT, "id (%u) > COUNT (%u)", id, INFO__COUNT);
     return &s_info.info_last[id];
 }
@@ -44,8 +43,8 @@ void info_handle_abort(void) {
     }
     info_handle_end(INFO_NONE);
     for(size_t id = 0; id < INFO__COUNT; ++id) {
-        Str *last = info_query_last(id);
-        str_free(last);
+        So *last = info_query_last(id);
+        so_free(last);
     }
 }
 
@@ -88,7 +87,7 @@ void info_check(InfoList id, bool status) {
                 if(output) {
                     char *buf = status ? F("ok", FG_GN_B) : F("fail", FG_RD_B);
                     if(s_info.id_prev != id) {
-                        ERR_PRINTF("%.*s " F("..", FG_BK_B) " " F("(!)", FG_BL_B) " ", STR_F(*info_query_last(id)));
+                        ERR_PRINTF("%.*s " F("..", FG_BK_B) " " F("(!)", FG_BL_B) " ", SO_F(*info_query_last(id)));
                     }
                     ERR_PRINTF("%s\n", buf);
                 }
