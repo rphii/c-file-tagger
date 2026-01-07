@@ -3,21 +3,21 @@
 #include "vector.h"
 #include "lookup.h"
 
-int ttrstrkv_cmp(const RTTPStrKV *a, const RTTPStrKV *b)
+int ttrstrkv_cmp(const RTTPStr_KV *a, const RTTPStr_KV *b)
 {
     return so_cmp_sp(a->key, b->key);
 }
 
-int tpstrkv_cmp(const TPStrKV *a, const TPStrKV *b)
+int tpstrkv_cmp(const TPStr_KV *a, const TPStr_KV *b)
 {
     return so_cmp_sp(a->key, b->key);
 }
 
-VEC_IMPLEMENT(VRTTPStrKV, vrttpstrkv, RTTPStrKV, BY_REF, BASE, 0);
-VEC_IMPLEMENT(VRTTPStrKV, vrttpstrkv, RTTPStrKV, BY_REF, SORT, ttrstrkv_cmp);
+VEC_IMPLEMENT(VRTTPStr_KV, vrttpstrkv, RTTPStr_KV, BY_REF, BASE, 0);
+VEC_IMPLEMENT(VRTTPStr_KV, vrttpstrkv, RTTPStr_KV, BY_REF, SORT, ttrstrkv_cmp);
 
-VEC_IMPLEMENT(VRTPStrKV, vrtpstrkv, TPStrKV, BY_REF, BASE, 0);
-VEC_IMPLEMENT(VRTPStrKV, vrtpstrkv, TPStrKV, BY_REF, SORT, tpstrkv_cmp);
+VEC_IMPLEMENT(VRTPStr_KV, vrtpstrkv, TPStr_KV, BY_REF, BASE, 0);
+VEC_IMPLEMENT(VRTPStr_KV, vrtpstrkv, TPStr_KV, BY_REF, SORT, tpstrkv_cmp);
 
 #if 0
 VEC_IMPLEMENT(VrTTrStrItem, vrttrstritem, TTrStrItem, BY_REF, BASE, 0);

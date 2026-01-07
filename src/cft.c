@@ -45,13 +45,13 @@ error:
 } //}}}
 
 #define ERR_cft_create_if_nonexist(...) "failed creating"
-ErrDecl cft_create_if_nonexist(Cft *cft, TTPStr *base, TTPStrKV **table, const So add, bool create) { /*{{{*/
+ErrDecl cft_create_if_nonexist(Cft *cft, TTPStr *base, TTPStr_KV **table, const So add, bool create) { /*{{{*/
     ASSERT_ARG(cft);
     ASSERT_ARG(base);
     ASSERT_ARG(table);
     //printff("create if nonexist: [%.*s]", SO_F(add));getchar();
 
-    TStrKV *str = tstr_get_kv(&cft->base.strings, &add);
+    TStr_KV *str = tstr_get_kv(&cft->base.strings, &add);
     if(!str) {
         So alloc = {0};
         //printff("ALLOC [%.*s]", SO_F(add));
@@ -69,13 +69,13 @@ ErrDecl cft_create_if_nonexist(Cft *cft, TTPStr *base, TTPStrKV **table, const S
 
 #if 1
 #if 0
-    TTStrKV *kv = ttpstr_get_kv(&cft->base.file_tags, &add);
+    TTStr_KV *kv = ttpstr_get_kv(&cft->base.file_tags, &add);
     if(!kv) {
         printff("CREATE [%.*s]", SO_F(add));
         kv = ttpstr_once(&cft->base.file_tags, &add, 0);
     }
 
-    TStrKV *str = tstr_get_kv(&cft->base.strings, &RSTR_STR(tag));
+    TStr_KV *str = tstr_get_kv(&cft->base.strings, &RSTR_STR(tag));
     if(!str) {
         So alloc = {0};
         TRYG(rstr_copy(&alloc, &tag));
@@ -109,7 +109,7 @@ error:
 } /*}}}*/
 
 #define ERR_cft_find_by_str(...)    "failed adding string to table"
-ErrDecl cft_find_by_str(Cft *cft, TTPStr *base, TTPStrKV **table, const So tag, bool create_if_nonexist, bool partial) { //{{{
+ErrDecl cft_find_by_str(Cft *cft, TTPStr *base, TTPStr_KV **table, const So tag, bool create_if_nonexist, bool partial) { //{{{
     ASSERT_ARG(cft);
     ASSERT_ARG(base);
     ASSERT_ARG(table);
@@ -121,7 +121,7 @@ ErrDecl cft_find_by_str(Cft *cft, TTPStr *base, TTPStrKV **table, const So tag, 
         //printff("TAG %.*s",SO_F(tag));getchar();
         TRYC(cft_create_if_nonexist(cft, base, table, tag, create_if_nonexist));
     } else {
-        for(TTPStrKV **iter = ttpstr_iter_all(base, 0); iter; iter = ttpstr_iter_all(base, iter)) {
+        for(TTPStr_KV **iter = ttpstr_iter_all(base, 0); iter; iter = ttpstr_iter_all(base, iter)) {
             So *item = (*iter)->key;
             if(so_find_sub(*item, tag, cft->options.partial) < so_len(*item)) {
                 //printff(">> [%.*s]", SO_F(*item));
@@ -140,14 +140,14 @@ ErrDecl cft_add(Cft *cft, const So filename, const So tag) { //{{{
     /* prepare to search */
     So find = so_trim(tag);
     /* search if we have a matching file ... */
-    TTPStrKV *file_tags = 0;
+    TTPStr_KV *file_tags = 0;
     TRYC(cft_find_by_str(cft, &cft->base.file_tags, &file_tags, filename, true, false));
     if(!file_tags) return 0; //THROW(ERR_UNREACHABLE "; should have created/found a table");
     for(;;) {
         /* prepare string */
         if(!so_len(find)) break;
         /* find entry */
-        TTPStrKV *tag_files = 0;
+        TTPStr_KV *tag_files = 0;
         TRYC(cft_find_by_str(cft, &cft->base.tag_files, &tag_files, find, true, false));
         if(!tag_files) return 0;
         /* cross-reference */
@@ -370,7 +370,7 @@ ErrDecl cft_del_duplicate_folders(Cft *cft) { //{{{
     ASSERT_ARG(cft);
     int err = 0;
     for(size_t i = 0; i < LUT_CAP(cft->base.tag_files.width); ++i) {
-        TTPStrKV *item = cft->base.tag_files.buckets[i];
+        TTPStr_KV *item = cft->base.tag_files.buckets[i];
         if(!item) continue;
         if(item->hash == LUT_EMPTY) continue;
         So tag = *item->key;
@@ -380,7 +380,7 @@ ErrDecl cft_del_duplicate_folders(Cft *cft) { //{{{
         So remove = so_trim(so_iE(tag, iE));
         if(!so_len(remove)) continue;
         for(size_t j = 0; j < LUT_CAP(sub->width); ++j) {
-            TPStrKV *item2 = sub->buckets[j];
+            TPStr_KV *item2 = sub->buckets[j];
             if(!item2) continue;
             if(item2->hash == LUT_EMPTY) continue;
             So *file = item2->key;
@@ -419,19 +419,19 @@ ErrDecl cft_find_any(Cft *cft, RTTPStr *found, So *find) { //{{{
     for(tag.str = 0; so_splice(*find, &tag, ','); ) {
         if(!tag.str) continue;
         /* search */
-        TTPStrKV *tag_files = 0;
+        TTPStr_KV *tag_files = 0;
         TTPStr *base = &cft->base.tag_files;
         if(!cft->options.partial) {
             TRYC(cft_create_if_nonexist(cft, base, &tag_files, tag, false));
         } else {
-            for(TTPStrKV **iter = ttpstr_iter_all(base, 0); iter; iter = ttpstr_iter_all(base, iter)) {
+            for(TTPStr_KV **iter = ttpstr_iter_all(base, 0); iter; iter = ttpstr_iter_all(base, iter)) {
                 So *item = (*iter)->key;
                 if(so_find_sub(*item, tag, cft->options.partial) < so_len(*item)) {
                     TRYC(cft_create_if_nonexist(cft, base, &tag_files, *item, false));
                     if(!tag_files) continue;
                     /* do the thing */
                     TPStr *sub = tag_files->val;
-                    for(TPStrKV **iiter = tpstr_iter_all(sub, 0); iiter; iiter = tpstr_iter_all(sub, iiter)) {
+                    for(TPStr_KV **iiter = tpstr_iter_all(sub, 0); iiter; iiter = tpstr_iter_all(sub, iiter)) {
                         So *file = (*iiter)->key;
                         TPStr *data = ttpstr_get(&cft->base.file_tags, file);
                         rttpstr_once(found, file, data); // TODO: this is not ideal... (error checking)
@@ -459,12 +459,12 @@ ErrDecl cft_find_and(Cft *cft, RTTPStr *found, So *find, bool first_query) { //{
     for(tag.str = 0; so_splice(*find, &tag, ','); ) {
         if(!tag.str) continue;
         /* search */
-        TTPStrKV *tag_files = 0;
+        TTPStr_KV *tag_files = 0;
         TTPStr *base = &cft->base.tag_files;
         if(!cft->options.partial) {
             TRYC(cft_create_if_nonexist(cft, base, &tag_files, tag, false));
         } else {
-            for(TTPStrKV **iter = ttpstr_iter_all(base, 0); iter; iter = ttpstr_iter_all(base, iter)) {
+            for(TTPStr_KV **iter = ttpstr_iter_all(base, 0); iter; iter = ttpstr_iter_all(base, iter)) {
                 So *item = (*iter)->key;
                 if(so_find_sub(*item, tag, cft->options.partial) < so_len(*item)) {
                     TRYC(cft_create_if_nonexist(cft, base, &tag_files, *item, false));
@@ -472,7 +472,7 @@ ErrDecl cft_find_and(Cft *cft, RTTPStr *found, So *find, bool first_query) { //{
                     /* do the thing */
                     TPStr *sub = tag_files->val;
                     for(size_t i = 0; i < LUT_CAP(sub->width); ++i) {
-                        TPStrKV *item = sub->buckets[i];
+                        TPStr_KV *item = sub->buckets[i];
                         if(!item) continue;
                         if(item->hash == LUT_EMPTY) continue;
                         So *file = item->key;
@@ -519,7 +519,7 @@ ErrDecl cft_find_not(Cft *cft, RTTPStr *found, So *find, bool first_query) { //{
 #else
         /* add all tags! */
         for(size_t i = 0; i < LUT_CAP(cft->base.file_tags.width); ++i) {
-            TTPStrKV *item = cft->base.file_tags.buckets[i];
+            TTPStr_KV *item = cft->base.file_tags.buckets[i];
             if(!item) continue;
             if(item->hash == LUT_EMPTY) continue;
             TPStr *data = item->val;
@@ -531,12 +531,12 @@ ErrDecl cft_find_not(Cft *cft, RTTPStr *found, So *find, bool first_query) { //{
     for(tag.str = 0; so_splice(*find, &tag, ','); ) {
         if(!tag.str) continue;
         /* search */
-        TTPStrKV *tag_files = 0;
+        TTPStr_KV *tag_files = 0;
         TTPStr *base = &cft->base.tag_files;
         if(!cft->options.partial) {
             TRYC(cft_create_if_nonexist(cft, base, &tag_files, tag, false));
         } else {
-            for(TTPStrKV **iter = ttpstr_iter_all(base, 0); iter; iter = ttpstr_iter_all(base, iter)) {
+            for(TTPStr_KV **iter = ttpstr_iter_all(base, 0); iter; iter = ttpstr_iter_all(base, iter)) {
                 So *item = (*iter)->key;
                 if(so_find_sub(*item, tag, cft->options.partial) < so_len(*item)) {
                     TRYC(cft_create_if_nonexist(cft, base, &tag_files, *item, false));
@@ -544,7 +544,7 @@ ErrDecl cft_find_not(Cft *cft, RTTPStr *found, So *find, bool first_query) { //{
                     /* do the thing */
                     TPStr *sub = tag_files->val;
                     for(size_t i = 0; i < LUT_CAP(sub->width); ++i) {
-                        TPStrKV *item = sub->buckets[i];
+                        TPStr_KV *item = sub->buckets[i];
                         if(!item) continue;
                         if(item->hash == LUT_EMPTY) continue;
                         So *file = item->key;
@@ -597,8 +597,8 @@ ErrDecl cft_fmt_ttpstr(Cft *cft, So *out, RTTPStr *base, bool list_sub) {
     ASSERT_ARG(cft);
     ASSERT_ARG(base);
     int err = 0;
-    VRTTPStrKV dump_main = {0};
-    VRTPStrKV dump_sub = {0};
+    VRTTPStr_KV dump_main = {0};
+    VRTPStr_KV dump_sub = {0};
     bool base_has_to_be_freed = false;
     TRYG(rttpstr_dump(base, &dump_main.items, &dump_main.last));
     vrttpstrkv_sort(&dump_main);
@@ -607,7 +607,7 @@ ErrDecl cft_fmt_ttpstr(Cft *cft, So *out, RTTPStr *base, bool list_sub) {
         so_fmt(out, "Total Tags: %zu\n", vrttpstrkv_length(dump_main));
     }
     for(size_t i = 0; i < vrttpstrkv_length(dump_main); ++i) {
-        RTTPStrKV *item = vrttpstrkv_get_at(&dump_main, i);
+        RTTPStr_KV *item = vrttpstrkv_get_at(&dump_main, i);
         So *tag = item->key;
         TPStr *sub = item->val;
         /* optional decoration & compact */
@@ -629,7 +629,7 @@ ErrDecl cft_fmt_ttpstr(Cft *cft, So *out, RTTPStr *base, bool list_sub) {
             TRYG(tpstr_dump(sub, &dump_sub.items, &dump_sub.last));
             vrtpstrkv_sort(&dump_sub);
             for(size_t j = 0; j < vrtpstrkv_length(dump_sub); ++j) {
-                TPStrKV *file = vrtpstrkv_get_at(&dump_sub, j);
+                TPStr_KV *file = vrtpstrkv_get_at(&dump_sub, j);
                 so_fmt(out, "%s%.*s", cft->options.decorate && !j ? " " : ",", SO_F(*file->key));
             }
             vrtpstrkv_free(&dump_sub);
@@ -662,11 +662,11 @@ ErrDecl cft_tags_fmt(Cft *cft, So *out, VSo *files) { //{{{
     if(array_len(*files)) {
         for(size_t i = 0; i < array_len(*files); ++i) {
             So file = array_at(*files, i);
-            TTPStrKV *file_tags = ttpstr_get_kv(&cft->base.file_tags, &file);
+            TTPStr_KV *file_tags = ttpstr_get_kv(&cft->base.file_tags, &file);
             if(!file_tags) continue;
-            for(TPStrKV **iter = tpstr_iter_all(file_tags->val, 0); iter; iter = tpstr_iter_all(file_tags->val, iter)) {
+            for(TPStr_KV **iter = tpstr_iter_all(file_tags->val, 0); iter; iter = tpstr_iter_all(file_tags->val, iter)) {
                 So *tag = (*iter)->key;
-                TTPStrKV *associated = ttpstr_get_kv(&cft->base.tag_files, tag);
+                TTPStr_KV *associated = ttpstr_get_kv(&cft->base.tag_files, tag);
                 //printff("TAG %.*s : %zu", SO_F(tag), associated->val->used);
                 TRYG(rttpstr_set(&base, associated->key, associated->val)); //tag_files->val));
             }
@@ -687,15 +687,15 @@ ErrDecl cft_files_fmt(Cft *cft, So *out, VSo *files) { //{{{
     ASSERT_ARG(files);
     int err = 0;
 #if 1
-    VRTTPStrKV dump_files = {0};
-    VRTPStrKV dump_tags = {0};
+    VRTTPStr_KV dump_files = {0};
+    VRTPStr_KV dump_tags = {0};
     RTTPStr base = {0};
     /* filter only matching files */
     bool base_has_to_be_freed = false;
     if(array_len(*files)) {
         for(size_t i = 0; i < array_len(*files); ++i) {
             So file = array_at(*files, i);
-            TTPStrKV *file_tags = ttpstr_get_kv(&cft->base.file_tags, &file);
+            TTPStr_KV *file_tags = ttpstr_get_kv(&cft->base.file_tags, &file);
             if(!file_tags) continue;
             TRYG(rttpstr_set(&base, file_tags->key, file_tags->val));
         }
@@ -806,7 +806,7 @@ ErrDecl cft_find_fmt(Cft *cft, So *out, So *find_any, So *find_and, So *find_not
 #else
     int err = 0;
     RTTPStr found = {0};
-    VRTTPStrKV results = {0};
+    VRTTPStr_KV results = {0};
     bool first = true;
     if(so_len(*find_any)) {
         TRYC(cft_find_any(cft, &found, find_any));
@@ -823,7 +823,7 @@ ErrDecl cft_find_fmt(Cft *cft, So *out, So *find_any, So *find_and, So *find_not
     TRYG(rttpstr_dump(&found, &results.items, &results.last));
     vrttpstrkv_sort(&results);
     for(size_t i = 0; i < vrttpstrkv_length(results); ++i) {
-        RTTPStrKV *item = vrttpstrkv_get_at(&results, i);
+        RTTPStr_KV *item = vrttpstrkv_get_at(&results, i);
         So *file = item->key;
         TPStr *sub = item->val;
         if(cft->options.decorate) {
@@ -836,7 +836,7 @@ ErrDecl cft_find_fmt(Cft *cft, So *out, So *find_any, So *find_and, So *find_not
         so_fmt(out, "%.*s", SO_F(*file));
         if(cft->options.list_tags) {
             for(size_t j = 0; j < LUT_CAP(sub->width); ++j) {
-                TPStrKV *tag = sub->buckets[j];
+                TPStr_KV *tag = sub->buckets[j];
                 if(!tag) continue;
                 if(tag->hash == LUT_EMPTY) continue;
                 so_fmt(out, ",%.*s", SO_F(*tag->key));
