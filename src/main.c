@@ -14,22 +14,25 @@
 
 //#include <ctype.h>
 
-int *increment_list_tags(Cft *x) {
-    ASSERT_ARG(x);
+int increment_list_tags(struct Argx *argx, void *user, So so) {
+    ASSERT_ARG(user);
+    Cft *x = user;
     if(x->options.list_files) ++x->options.list_files;
     ++x->options.list_tags;
     return 0;
 }
 
-int *increment_list_files(Cft *x) {
-    ASSERT_ARG(x);
+int increment_list_files(struct Argx *argx, void *user, So so) {
+    ASSERT_ARG(user);
+    Cft *x = user;
     if(x->options.list_tags) ++x->options.list_tags;
     ++x->options.list_files;
     return 0;
 }
 
-int *set_do_query(Cft *x) {
-    ASSERT_ARG(x);
+int set_do_query(struct Argx *argx, void *user, So so) {
+    ASSERT_ARG(user);
+    Cft *x = user;
     x->options.query = true;
     return 0;
 }
@@ -56,64 +59,65 @@ int main(int argc, const char **argv)
     So ostream = {0};
 
     bool exit_early = false;
-    struct ArgXGroup *o = 0;
-    struct ArgX *x = 0;
-    struct Arg *arg = arg_new();
-    arg_init(arg, so_l(argv[0]), so("tag managing application"), so(""));
-    arg_init_rest(arg, so("files|tags"), &cft.options.rest);
-    arg_init_fmt(arg);
-    o=argx_group(arg, so("Options"), false);
-    argx_builtin_opt_help(o);
-    argx_builtin_opt_source(o, so("/etc/cft/cft.conf"));
-    argx_builtin_opt_source(o, so("$HOME/.config/rphiic/colors.conf"));
-    argx_builtin_opt_source(o, so("$HOME/.config/cft/cft.conf"));
-    argx_builtin_opt_source(o, so("$XDG_CONFIG_HOME/cft/cft.conf"));
-    x=argx_init(o, 0 , so("version"), so("display the version"));
-    x=argx_init(o, 't', so("tag"), so("tag files"));
-      argx_str(x, &cft.options.tags_add, 0);
-    x=argx_init(o, 0 , so("retag"), so("TBD rename files"));
-      argx_str(x, &cft.options.tags_re, 0);
-    x=argx_init(o, 'u', so("untag"), so("TBD untag files"));
-      argx_str(x, &cft.options.tags_del, 0);
-    x=argx_init(o, 'r', so("recursive"), so("recursively search subdirectories"));
-      argx_bool(x, &cft.options.recursive, 0);
-    x=argx_init(o, 'O', so("any"), so("list files with any tags"));
-      argx_str(x, &cft.options.find_any, 0);
-      argx_func(x, 0, set_do_query, &cft, false, false);
-    x=argx_init(o, 'A', so("and"), so("list files having multiple tags"));
-      argx_str(x, &cft.options.find_and, 0);
-      argx_func(x, 0, set_do_query, &cft, false, false);
-    x=argx_init(o, 'N', so("not"), so("list files not having tags"));
-      argx_str(x, &cft.options.find_not, 0);
-      argx_func(x, 0, set_do_query, &cft, false, false);
-    x=argx_init(o, 'l', so("list-tags"), so("list all tags"));
-      argx_func(x, 0, increment_list_tags, &cft, true, false);
-    x=argx_init(o, 'L', so("list-files"), so("list all files"));
-      argx_func(x, 0, increment_list_files, &cft, true, false);
-    x=argx_init(o, 'T', so("title"), so("show title in output"));
-      argx_bool(x, &cft.options.title, 0);
-    x=argx_init(o, 'd', so("decorate"), so("specify decoration"));
-      argx_bool(x, &cft.options.decorate, 0);
-    x=argx_init(o, 'i', so("input"), so("specify additional input files"));
-      argx_vstr(x, &cft.options.inputs, 0);
-    x=argx_init(o, 'o', so("output"), so("specify output file"));
-      argx_str(x, &cft.options.output, 0);
+    struct Argx_Group *o = 0;
+    struct Argx *x = 0;
+    struct Arg_Config *arg_config = arg_config_new();
+    arg_config_set_program(arg_config, so_l(argv[0]));
+    arg_config_set_description(arg_config, so("tag managing application"));
+    struct Arg *arg = arg_new(arg_config);
+
+    x=argx_pos(arg, so("files|tags"), so(""));
+      argx_type_rest(x, &cft.options.rest);
+
+    o=argx_group(arg, so("options"));
+    argx_builtin_opt_help(o, ARGX_BUILTIN_OPT_HELP);
+    argx_builtin_opt_source(o, ARGX_BUILTIN_OPT_SOURCE, so("/etc/cft/cft.conf"));
+    argx_builtin_opt_source(o, ARGX_BUILTIN_OPT_SOURCE, so("$HOME/.config/rphiic/colors.conf"));
+    argx_builtin_opt_source(o, ARGX_BUILTIN_OPT_SOURCE, so("$HOME/.config/cft/cft.conf"));
+    argx_builtin_opt_source(o, ARGX_BUILTIN_OPT_SOURCE, so("$XDG_CONFIG_HOME/cft/cft.conf"));
+    x=argx_opt(o, 0 , so("version"), so("display the version"));
+    x=argx_opt(o, 't', so("tag"), so("tag files"));
+      argx_type_so(x, &cft.options.tags_add, 0);
+    x=argx_opt(o, 0 , so("retag"), so("TBD rename files"));
+      argx_type_so(x, &cft.options.tags_re, 0);
+    x=argx_opt(o, 'u', so("untag"), so("TBD untag files"));
+      argx_type_so(x, &cft.options.tags_del, 0);
+    x=argx_opt(o, 'r', so("recursive"), so("recursively search subdirectories"));
+      argx_type_bool(x, &cft.options.recursive, 0);
+    x=argx_opt(o, 'O', so("any"), so("list files with any tags"));
+      argx_type_so(x, &cft.options.find_any, 0);
+      argx_callback(x, set_do_query, &cft, ARGX_PRIORITY_IMMEDIATELY);
+    x=argx_opt(o, 'A', so("and"), so("list files having multiple tags"));
+      argx_type_so(x, &cft.options.find_and, 0);
+      argx_callback(x, set_do_query, &cft, ARGX_PRIORITY_IMMEDIATELY);
+    x=argx_opt(o, 'N', so("not"), so("list files not having tags"));
+      argx_type_so(x, &cft.options.find_not, 0);
+      argx_callback(x, set_do_query, &cft, ARGX_PRIORITY_IMMEDIATELY);
+    x=argx_opt(o, 'l', so("list-tags"), so("list all tags"));
+      argx_callback(x, increment_list_tags, &cft, ARGX_PRIORITY_IMMEDIATELY);
+    x=argx_opt(o, 'L', so("list-files"), so("list all files"));
+      argx_callback(x, increment_list_files, &cft, ARGX_PRIORITY_IMMEDIATELY);
+    x=argx_opt(o, 'T', so("title"), so("show title in output"));
+      argx_type_bool(x, &cft.options.title, 0);
+    x=argx_opt(o, 'd', so("decorate"), so("specify decoration"));
+      argx_type_bool(x, &cft.options.decorate, 0);
+    x=argx_opt(o, 'i', so("input"), so("specify additional input files"));
+      argx_type_array_so(x, &cft.options.inputs, 0);
+    x=argx_opt(o, 'o', so("output"), so("specify output file"));
+      argx_type_so(x, &cft.options.output, 0);
       cft.options.argx.output = x;
-    x=argx_init(o, 'e', so("expand-paths"), so("expand paths"));
-      argx_bool(x, &cft.options.expand_paths, 0);
-    x=argx_init(o, 'x', so("extensions"), so("specify extensions, comma seperated"));
-      argx_str(x, &cft.options.extensions, &so(".cft"));
-    x=argx_init(o, 'p', so("partial"), so("specify searching exact (+ case sensitive) or partially (+ ignores case)"));
-      argx_bool(x, &cft.options.partial, 0);
+    x=argx_opt(o, 'e', so("expand-paths"), so("expand paths"));
+      argx_type_bool(x, &cft.options.expand_paths, 0);
+    x=argx_opt(o, 'x', so("extensions"), so("specify extensions, comma seperated"));
+      argx_type_so(x, &cft.options.extensions, &so(".cft"));
+    x=argx_opt(o, 'p', so("partial"), so("specify searching exact (+ case sensitive) or partially (+ ignores case)"));
+      argx_type_bool(x, &cft.options.partial, 0);
 
-    o=argx_group(arg, so("Environment Variables"), false);
-    argx_builtin_env_compgen(o);
+    argx_builtin_env_compgen(arg);
+    argx_builtin_rice(arg);
 
-    o=argx_group(arg, so("Color Adjustments"), true);
-    argx_builtin_opt_rice(o);
-
-    TRYC(arg_parse(arg, argc, argv, &exit_early));
-    if(exit_early) goto clean;
+    err = arg_parse(arg, argc, argv, &exit_early);
+    if(err || exit_early) goto clean;
 
     /* program start */
     TRYC(cft_arg(&cft, arg));
@@ -154,7 +158,8 @@ int main(int argc, const char **argv)
     /* reformat */
     if(cft.options.modify || cft.options.merge) {
         if(!so_len(cft.options.output)) {
-            arg_help_set(arg, cft.options.argx.output);
+            ABORT("TODO");
+            //arg_help_set(arg, cft.options.argx.output);
             arg_help(arg);
             THROW("no output provided");
             goto clean;

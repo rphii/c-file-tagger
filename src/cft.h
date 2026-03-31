@@ -45,7 +45,7 @@ typedef struct Cft {
         //So *tags_add;
         //So *tags_del;
         struct {
-            struct ArgX *output;
+            struct Argx *output;
         } argx;
     } options;
     struct {
